@@ -433,3 +433,19 @@ body {
 .pulse {
     animation: pulse 2s infinite;
 }
+
+.memory-grid {
+     display: grid;
+  grid-template-columns: repeat(4, minmax(70px, 1fr));
+    
+}
+.memory-card {
+    background: #7ddcd6b5;
+    border-radius: 5px;
+   width: 100%;
+   
+  aspect-ratio: 1/1;
+
+    cursor: pointer;
+    
+}
