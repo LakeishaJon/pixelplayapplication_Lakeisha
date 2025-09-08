@@ -1,0 +1,1312 @@
+[
+  {
+    "scene_number": 1,
+    "shot_number": 1,
+    "shot_type": "EXT. {{LOCATION_1}} - DAY",
+    "shot_description": "Epic establishing wide shot of {{LOCATION_1}}. The landscape is vast and full of wonder. A sense of grand adventure awaits.",
+    "sound_design": "An inspiring, orchestral swell of music begins. The gentle, ambient sounds of {{LOCATION_1}} (e.g., rustling leaves, distant alien birds, soft cosmic hum).",
+    "dialogue": "Guide (Voiceover, warm and exciting): 'Welcome, {{CHARACTER_NAME}}, to the world of {{ADVENTURE_THEME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 1,
+    "shot_number": 2,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} appears in a shimmer of light, looking around with wide, curious eyes. They are wearing their custom adventure gear. They take a confident step forward.",
+    "sound_design": "A magical 'shimmer' sound effect. The orchestral music softens to a gentle, curious melody. The sound of {{CHARACTER_NAME}}'s footsteps on the terrain (e.g., crunching on leaves, soft thud on alien soil).",
+    "dialogue": "Guide (Voiceover): 'Your greatest quest is about to begin. Your mission: to {{MAIN_OBJECTIVE}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 1,
+    "shot_number": 3,
+    "shot_type": "POV SHOT - FROM {{CHARACTER_NAME}}'s EYES",
+    "shot_description": "A quick point-of-view shot, looking ahead at the path forward. In the distance, we see the first obstacle: {{OBSTACLE_1}}.",
+    "sound_design": "A subtle whoosh as the camera perspective shifts. A low, ominous musical sting hints at the challenge ahead.",
+    "dialogue": "Guide (Voiceover): 'But be warned! The path is not always easy. Look ahead!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 4,
+    "shot_type": "CLOSE UP - {{CHARACTER_NAME}}'s FACE",
+    "shot_description": "{{CHARACTER_NAME}} looks determined, nodding with a brave smile. They clench their fists, ready for the first challenge.",
+    "sound_design": "Determined, upbeat musical transition. A soft 'thump' of a fist clenching.",
+    "dialogue": "Guide (Voiceover): 'To get past the {{OBSTACLE_1}}, you'll need power! Let's get ready with our first exercise: {{EXERCISE_1_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 5,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "An energetic, holographic outline of a character appears next to {{CHARACTER_NAME}}, perfectly demonstrating the form for the {{EXERCISE_1_NAME}}. The movements are clear and exaggerated.",
+    "sound_design": "A futuristic 'hologram activation' sound. The music becomes a rhythmic, driving beat. Clear, concise sound effects match the demonstrated movement.",
+    "dialogue": "Guide (Voiceover): 'Watch closely! Here's how you do it: {{EXERCISE_1_DESCRIPTION}}. Ready? Let's go!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 6,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} begins performing {{EXERCISE_1_NAME}} with energy and enthusiasm. The camera is low, making them look powerful. Colorful energy glows around them as they move.",
+    "sound_design": "The rhythmic beat continues. Sounds of exertion: effortful grunts, breathing. Magical 'swish' and 'sparkle' sound effects synced to their movements.",
+    "dialogue": "Guide (Voiceover): 'That's it! Great form! Feel the energy building!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 7,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "A steady medium shot focusing on {{CHARACTER_NAME}}'s upper body and face. They are focused, maybe breaking a slight sweat, but smiling through the effort.",
+    "sound_design": "The rhythmic beat is strong. We clearly hear their steady breathing and the rustle of their adventure gear as they move.",
+    "dialogue": "Guide (Voiceover): 'You're doing great! Keep that rhythm!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 8,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera moves alongside {{CHARACTER_NAME}} as they perform the exercise, creating a sense of forward momentum and speed. The background blurs slightly.",
+    "sound_design": "A subtle 'whoosh' accompanies the camera move. The music intensifies slightly, adding a layer of synth or percussion.",
+    "dialogue": "Guide (Voiceover): 'Halfway there! Don't stop now!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 9,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "Extreme close up on a key part of the movement. For 'Stomping Giants', this is a shot of their feet hitting the ground, kicking up dust or creating energy ripples.",
+    "sound_design": "The sound is focused and exaggerated: a loud, satisfying STOMP or THUD that reverberates. The music is momentarily quieter to emphasize the impact.",
+    "dialogue": "Guide (Voiceover): 'More power! Every single step!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 10,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "Looking down on {{CHARACTER_NAME}}, we see the area of effect their energy is having on the ground around them. The patterns of light expand with each repetition.",
+    "sound_design": "A low, humming sound of contained energy grows with each movement. The driving beat of the music returns to full force.",
+    "dialogue": "Guide (Voiceover): 'Almost there! Ten seconds left!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 11,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "The exercise ends. {{CHARACTER_NAME}} strikes a cool, heroic pose, sweat glistening on their brow. The glowing energy around them coalesces into a bright ball in their hands.",
+    "sound_design": "Music crescendos and ends with a final, satisfying beat. A powerful 'power-up' sound effect. The sound of a final, deep breath.",
+    "dialogue": "Guide (Voiceover): '5, 4, 3, 2, 1! Amazing work! One down, two to go!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 12,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} takes a deep breath, lets the ball of energy float beside them, and gets ready for the next challenge. They look eager.",
+    "sound_design": "A short, inspiring musical bridge. The floating energy ball has a soft, pulsating hum.",
+    "dialogue": "Guide (Voiceover): 'Alright, now we need some agility! Get ready for {{EXERCISE_2_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 13,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The holographic demonstrator reappears, showing the perfect form for {{EXERCISE_2_NAME}}. The movements are quick and precise.",
+    "sound_design": "Hologram activation sound. A new, faster-paced rhythmic track begins.",
+    "dialogue": "Guide (Voiceover): 'Here's how it's done: {{EXERCISE_2_DESCRIPTION}}. Let's see your quick moves!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 14,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "Following the same shot progression, {{CHARACTER_NAME}} begins {{EXERCISE_2_NAME}}. The low angle emphasizes their speed and dexterity. Streaks of light follow their limbs.",
+    "sound_design": "Fast-paced music. Quick 'swoosh' and 'zip' sound effects sync with the agile movements.",
+    "dialogue": "Guide (Voiceover): 'Fantastic! Quick and clean!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 15,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "Focus on the character's quick reflexes and focused expression as they perform the agile movements of {{EXERCISE_2_NAME}}.",
+    "sound_design": "The up-tempo music drives the action forward. The sound of light, quick footsteps is prominent.",
+    "dialogue": "Guide (Voiceover): 'Keep it up! You're a blur!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 16,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera circles {{CHARACTER_NAME}}, capturing their 360-degree movement and showcasing their agility from all angles.",
+    "sound_design": "Camera movement 'whoosh'. The music adds a swirling synth element to match the circular motion.",
+    "dialogue": "Guide (Voiceover): 'Awesome! You're untouchable!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 17,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "Extreme close up on hands moving quickly, or feet performing a fancy step, depending on the exercise.",
+    "sound_design": "Sharp, distinct sound effects for the detailed action. The music briefly dips to highlight the sounds.",
+    "dialogue": "Guide (Voiceover): 'Precision and speed! That's the key!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 18,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From above, we see {{CHARACTER_NAME}} moving rapidly, the light trails from their limbs creating a beautiful, complex pattern on the ground.",
+    "sound_design": "The music reaches its peak for this exercise. The humming energy sound is higher-pitched and more active.",
+    "dialogue": "Guide (Voiceover): 'Just a little longer! Give it your all!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 19,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} finishes in a nimble, ready stance. A second, different colored ball of energy appears and orbits the first one.",
+    "sound_design": "Music ends on a sharp, energetic note. A second 'power-up' sound, lighter and quicker than the first, is heard.",
+    "dialogue": "Guide (Voiceover): '3, 2, 1... Perfect! You've mastered agility!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 20,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "With two energy orbs floating nearby, {{CHARACTER_NAME}} looks at their hands, feeling the power. They look up, ready for the final push.",
+    "sound_design": "A new, even more heroic musical bridge. The two orbs hum in harmony.",
+    "dialogue": "Guide (Voiceover): 'One last challenge to gather all the energy we need! Time for {{EXERCISE_3_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 21,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates the final, explosive movements of {{EXERCISE_3_NAME}}.",
+    "sound_design": "Hologram sound. A powerful, anthemic rock or electronic track begins.",
+    "dialogue": "Guide (Voiceover): 'This is the big one! {{EXERCISE_3_DESCRIPTION}}. Let's finish strong!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 22,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} explodes into motion for {{EXERCISE_3_NAME}}. The low angle captures the power and height of their movements (e.g., a big jump).",
+    "sound_design": "The anthemic track kicks in fully. Big sound effects like 'KRAKOOM' for jumps or 'SWOOSH' for big arm movements.",
+    "dialogue": "Guide (Voiceover): 'YES! That's the power I was looking for!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 23,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "Pure determination on their face. This is their maximum effort, and they are loving it. The two energy orbs whirl around them faster.",
+    "sound_design": "Music is at full intensity. The whirring of the energy orbs is loud and clear.",
+    "dialogue": "Guide (Voiceover): 'Unleash your strength, {{CHARACTER_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 24,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera pushes in and pulls out dramatically (a 'zolly' shot) as {{CHARACTER_NAME}} performs a powerful move, warping the background and focusing intensity on them.",
+    "sound_design": "A dramatic, bass-heavy 'BWWAAAH' sound effect accompanies the zolly shot. The music is epic and cinematic.",
+    "dialogue": "Guide (Voiceover): 'Feel the ground shake!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 25,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "An intense close-up of their determined eyes, reflecting the crackling energy around them.",
+    "sound_design": "The sound of crackling electricity and raw power. The music is a driving, repetitive anthem.",
+    "dialogue": "Guide (Voiceover): 'You've almost got it! Don't give up!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 26,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From above, {{CHARACTER_NAME}} is the epicenter of a massive storm of energy. The ground cracks and glows beneath them.",
+    "sound_design": "The music, energy sounds, and sound effects all build to a massive crescendo.",
+    "dialogue": "Guide (Voiceover): 'Final countdown! Give me one more!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 2,
+    "shot_number": 27,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} lands the final move. A third, brilliant orb of energy appears and all three merge together into one giant, dazzling sphere of power held above their head.",
+    "sound_design": "All sound cuts out for a split second, followed by a huge, climactic 'BOOM' and a final, triumphant musical sting. The new energy sphere has a deep, powerful thrum.",
+    "dialogue": "Guide (Voiceover): 'POWER-UP COMPLETE! You are unstoppable!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 3,
+    "shot_number": 28,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} looks up at the massive sphere of energy they've created, then turns their gaze towards {{OBSTACLE_1}} with unwavering confidence.",
+    "sound_design": "The powerful thrum of the energy sphere. A heroic, resolute musical underscore begins.",
+    "dialogue": "Guide (Voiceover): 'You have the power. Now, it's time to clear the way!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 3,
+    "shot_number": 29,
+    "shot_type": "WIDE SHOT - OVERCOMING THE OBSTACLE",
+    "shot_description": "{{CHARACTER_NAME}} thrusts their hands forward, launching the massive sphere of energy. It collides with {{OBSTACLE_1}} in a spectacular, non-violent explosion of light, completely clearing the path.",
+    "sound_design": "A massive, cinematic 'energy blast' sound effect, followed by the 'disintegration' or 'clearing' of the obstacle. The triumphant score swells.",
+    "dialogue": "",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 3,
+    "shot_number": 30,
+    "shot_type": "TRACKING SHOT - MOVING FORWARD",
+    "shot_description": "The camera follows behind a triumphant {{CHARACTER_NAME}} as they walk or run down the newly cleared path. In the distance, the next destination, {{LOCATION_2}}, comes into view.",
+    "sound_design": "The triumphant music transitions into a traveling theme. The sound of {{CHARACTER_NAME}}'s confident footsteps.",
+    "dialogue": "Guide (Voiceover): 'Incredible! You did it! But the adventure is just beginning. On to {{LOCATION_2}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 4,
+    "shot_number": 31,
+    "shot_type": "EXT. {{LOCATION_2}} - DAY",
+    "shot_description": "Stunning establishing shot of {{LOCATION_2}}. It's a completely different environment from the last (e.g., a cavern of glowing crystals, a field of floating islands). The air shimmers with a new kind of energy.",
+    "sound_design": "A new musical theme begins, more mystical or wondrous than before. New ambient sounds dominate: the gentle chime of crystals, the low whoosh of wind between floating rocks, the bubbling of a geyser.",
+    "dialogue": "Guide (Voiceover): 'You've made it, {{CHARACTER_NAME}}! Welcome to {{LOCATION_2}}! But you're not alone here...'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 4,
+    "shot_number": 32,
+    "shot_type": "MEDIUM SHOT - MEETING {{FRIENDLY_CHARACTER}}",
+    "shot_description": "{{CHARACTER_NAME}} looks around in awe. From behind a large crystal or rock, {{FRIENDLY_CHARACTER}} peeks out, looking curious but shy. They make a friendly, inquisitive gesture.",
+    "sound_design": "A soft, playful musical sting (e.g., a pizzicato string melody or a flute trill) signals the character's appearance. The {{FRIENDLY_CHARACTER}} makes a gentle, characteristic sound (a soft chirp, a friendly metallic whir).",
+    "dialogue": "Guide (Voiceover): 'It looks like you've found a friend! This is {{FRIENDLY_CHARACTER}}, a guardian of this place.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 4,
+    "shot_number": 33,
+    "shot_type": "OVER-THE-SHOULDER SHOT",
+    "shot_description": "From over {{CHARACTER_NAME}}'s shoulder, we see {{FRIENDLY_CHARACTER}} point a finger/appendage towards a new, more complex obstacle: {{OBSTACLE_2}} (e.g., a massive, blocked energy conduit, a chasm with a broken bridge). The friendly character looks worried.",
+    "sound_design": "A low, troubling musical chord plays. The sound of {{OBSTACLE_2}} is faintly audible (a deep hum, a crumbling sound).",
+    "dialogue": "Guide (Voiceover): 'Oh no, it looks like there's trouble. To continue your quest, you'll have to get past that {{OBSTACLE_2}} together!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 34,
+    "shot_type": "CLOSE UP - {{CHARACTER_NAME}} & {{FRIENDLY_CHARACTER}}",
+    "shot_description": "{{CHARACTER_NAME}} gives their new friend a reassuring nod, then looks towards the challenge with renewed determination. {{FRIENDLY_CHARACTER}} bounces on their feet, ready to cheer them on.",
+    "sound_design": "An upbeat, motivational musical track begins. A sound of agreement or encouragement from {{FRIENDLY_CHARACTER}}.",
+    "dialogue": "Guide (Voiceover): 'This obstacle requires balance and control. Let's power up with {{EXERCISE_4_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 35,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The holographic demonstrator appears, showcasing the precise, controlled movements of {{EXERCISE_4_NAME}}. In the background, {{FRIENDLY_CHARACTER}} watches with intense curiosity.",
+    "sound_design": "Hologram activation sound. A new rhythmic track, focused on steady beats rather than explosive sounds, begins to play.",
+    "dialogue": "Guide (Voiceover): 'Focus on your core! {{EXERCISE_4_DESCRIPTION}}. Ready? Let's do it!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 36,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} begins {{EXERCISE_4_NAME}}. The low angle emphasizes their stability and grace. This time, the energy coalescing around them is a calming, steady blue or green.",
+    "sound_design": "The steady beat of the music. The sound is less about impact and more about smooth motion, with soft 'swoosh' sounds.",
+    "dialogue": "Guide (Voiceover): 'Excellent control! You're solid as a rock!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 37,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "A profile shot showing {{CHARACTER_NAME}}'s perfect posture and intense focus. {{FRIENDLY_CHARACTER}} is in the background, trying to mimic the move and wobbling humorously.",
+    "sound_design": "The music is clear and focused. A soft, comedic 'wobble' sound effect for {{FRIENDLY_CHARACTER}}.",
+    "dialogue": "Guide (Voiceover): 'That's it! Looks like you have a training partner!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 38,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera slowly rotates 360 degrees around {{CHARACTER_NAME}}, highlighting their unwavering stability from every angle as they perform the exercise.",
+    "sound_design": "A low, resonant hum builds as the camera circles. The music adds a flowing, melodic layer.",
+    "dialogue": "Guide (Voiceover): 'Perfect balance! Nothing can shake you!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 39,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "Extreme close up on core muscles tensing, or feet planted firmly on the ground, showing absolute stability. The ground beneath them glows faintly.",
+    "sound_design": "A deep, centered 'om' or humming sound, emphasizing core strength. The music is minimal, focusing on the hum.",
+    "dialogue": "Guide (Voiceover): 'All your power comes from your center!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 40,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From above, we see the steady, pulsing aura of blue energy forming a perfect circle on the ground around {{CHARACTER_NAME}}.",
+    "sound_design": "The music builds, adding a layer of ethereal choir sounds. The pulsing of the aura has a soft, rhythmic 'thrum.'",
+    "dialogue": "Guide (Voiceover): 'Ten seconds to go! Stay focused!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 41,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} finishes the exercise in a calm, centered pose. The blue energy rises from the ground and forms a sturdy, translucent shield on one of their arms.",
+    "sound_design": "Music ends with a resonant, sustained chord. A solid, satisfying 'SHIELD' activation sound effect. {{FRIENDLY_CHARACTER}} claps or cheers.",
+    "dialogue": "Guide (Voiceover): '5, 4, 3, 2, 1... Power-up acquired: Energy Shield!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 42,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} inspects their new energy shield with a look of awe. {{FRIENDLY_CHARACTER}} comes closer and gently taps it, causing it to ripple.",
+    "sound_design": "A curious musical bridge. A light 'ping' and 'ripple' sound effect when the shield is tapped.",
+    "dialogue": "Guide (Voiceover): 'A good defense needs a great offense. Let's build on that power with {{EXERCISE_5_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 43,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates {{EXERCISE_5_NAME}}, which involves more dynamic, full-body movements.",
+    "sound_design": "Hologram sound. A new, more complex rhythmic track with multiple layers of percussion begins.",
+    "dialogue": "Guide (Voiceover): 'Now let's use our whole body! {{EXERCISE_5_DESCRIPTION}}. Follow along!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 44,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "As {{CHARACTER_NAME}} performs {{EXERCISE_5_NAME}}, the energy shield on their arm glows brighter with each movement. The energy is now a vibrant purple, swirling around them.",
+    "sound_design": "Driving percussive music. The sound effects are a mix of solid 'thuds' and quick 'swishes'.",
+    "dialogue": "Guide (Voiceover): 'Yes! Every muscle working together!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 49,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} strikes a dynamic pose. The purple energy flows into the shield, adding a second, more intricate layer to it and making it larger.",
+    "sound_design": "Music ends with a powerful drum fill. A 'SHIELD UPGRADE' sound effect, like a power-up being layered on top of another.",
+    "dialogue": "Guide (Voiceover): 'Incredible! The shield is getting stronger!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 50,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} admires the powered-up shield. It's now humming with energy. They give {{FRIENDLY_CHARACTER}} a confident grin.",
+    "sound_design": "A short, heroic musical bridge. The shield's hum is more pronounced.",
+    "dialogue": "Guide (Voiceover): 'One final push to make it unstoppable! Let's go! Time for {{EXERCISE_6_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 51,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates the final and most complex exercise of the chapter, {{EXERCISE_6_NAME}}.",
+    "sound_design": "Hologram sound. An epic, synth-rock track begins, signaling the final effort.",
+    "dialogue": "Guide (Voiceover): 'This one takes everything you've got! {{EXERCISE_6_DESCRIPTION}}. Let's see your ultimate power!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 52,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} performs the exercise with maximum effort. The energy is now a brilliant, fiery orange, crackling around them and their powerful shield.",
+    "sound_design": "Epic music soars. The sound of crackling electricity is layered with explosive 'impact' sounds for each movement.",
+    "dialogue": "Guide (Voiceover): 'AMAZING! YOU'RE OVERFLOWING WITH ENERGY!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 5,
+    "shot_number": 57,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "In a final, epic pose, {{CHARACTER_NAME}} slams a fist into the ground. All the orange energy is absorbed into the shield, which now glows with a golden light, covering their entire body in a protective aura.",
+    "sound_design": "Music hits a massive crescendo and cuts out. A huge 'KRA-KOOM' as their fist hits the ground. A final, ultimate 'AURA ACTIVATION' sound that resonates with power.",
+    "dialogue": "Guide (Voiceover): 'FULL POWER! The Guardian Aura is active!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 6,
+    "shot_number": 58,
+    "shot_type": "TWO SHOT - HEROES ASSEMBLE",
+    "shot_description": "{{CHARACTER_NAME}}, glowing within their new Guardian Aura, shares a look of determination with {{FRIENDLY_CHARACTER}}. Their new friend makes a brave sound and points to a weak spot on {{OBSTACLE_2}}.",
+    "sound_design": "A heroic, resolute musical theme begins. The aura thrums with immense power.",
+    "dialogue": "Guide (Voiceover): 'Your friend sees the way! Get ready... it's time to work together!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 6,
+    "shot_number": 59,
+    "shot_type": "WIDE SHOT - TEAMWORK ACTION",
+    "shot_description": "{{CHARACTER_NAME}} charges forward, using their Guardian Aura to absorb or block the danger from {{OBSTACLE_2}}. At the same time, {{FRIENDLY_CHARACTER}} performs a key action (e.g., pulls a lever, guides a beam of light) that disables the obstacle.",
+    "sound_design": "A massive symphony of sound: the roar of the aura deflecting danger, the mechanical or magical sound of the friendly character's action, and the sound of the obstacle powering down.",
+    "dialogue": "",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 6,
+    "shot_number": 60,
+    "shot_type": "TRACKING SHOT - VICTORY AND FAREWELL",
+    "shot_description": "The path is clear. {{CHARACTER_NAME}}'s aura fades as they give {{FRIENDLY_CHARACTER}} a high-five or a thankful gesture. The friend points them toward the next location, {{LOCATION_3}}, before waving goodbye.",
+    "sound_design": "The triumphant music softens into the adventurous traveling theme. The sound of a friendly high-five.",
+    "dialogue": "Guide (Voiceover): 'Teamwork makes the dream work! You did it! Your journey continues... to the mysteries of {{LOCATION_3}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 7,
+    "shot_number": 61,
+    "shot_type": "EXT. {{LOCATION_3}} - DAY",
+    "shot_description": "Epic establishing shot of {{LOCATION_3}}, a place of ancient mystery (e.g., crumbling sky-temple ruins, a petrified forest of giant mushrooms). The atmosphere is quiet, contemplative, and ancient.",
+    "sound_design": "A new musical theme begins, filled with wonder, mystery, and a hint of melancholy (e.g., a lone flute over soft strings). The dominant ambient sound is the low, mournful whistle of wind through ruins or the soft rustle of strange foliage.",
+    "dialogue": "Guide (Voiceover): 'Incredible. This place is ancient, {{CHARACTER_NAME}}. The answers you seek are getting closer...'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 7,
+    "shot_number": 62,
+    "shot_type": "CLOSE UP - DISCOVERING THE CLUE",
+    "shot_description": "{{CHARACTER_NAME}} runs a hand over an ancient carving on a stone wall. As they touch it, the carving glows, projecting a faint, holographic map or symbol into the air. This is the clue to the {{MAIN_OBJECTIVE}}.",
+    "sound_design": "A low, magical 'hum' as the carving is touched, followed by a 'shimmer' as the hologram appears. A soft, revelatory musical chord plays.",
+    "dialogue": "Guide (Voiceover): 'What's this? You've found it! This is a clue that will lead you to the {{MAIN_OBJECTIVE}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 7,
+    "shot_number": 63,
+    "shot_type": "WIDE SHOT - THE PUZZLE REVEALED",
+    "shot_description": "The holographic clue fades, but its activation triggers the chapter's main obstacle. A massive stone gate with a complex pattern, {{OBSTACLE_3}}, grinds into place, blocking the path forward. Or, a series of floating platforms begins to shift into a confusing, impassable maze.",
+    "sound_design": "The deep, grinding 'rumble' of stone on stone. A low, challenging musical note underscores the appearance of the puzzle.",
+    "dialogue": "Guide (Voiceover): 'It's a trial of the ancients! To pass, you'll need lightning reflexes and a sharp mind. Let's get you ready!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 64,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} studies the complex puzzle of {{OBSTACLE_3}} with a focused, analytical expression. They take a deep, centering breath.",
+    "sound_design": "An upbeat, synth-heavy musical track with a fast tempo begins. The sound of a sharp, focused inhale.",
+    "dialogue": "Guide (Voiceover): 'This puzzle is all about speed! Let's charge up your reflexes with {{EXERCISE_7_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 65,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The holographic demonstrator appears, showcasing the quick, repetitive, and precise movements of {{EXERCISE_7_NAME}} (e.g., fast feet, agility ladder drills).",
+    "sound_design": "Hologram activation sound. The fast-paced electronic music kicks into high gear, driving the action.",
+    "dialogue": "Guide (Voiceover): 'Quick feet, quick mind! {{EXERCISE_7_DESCRIPTION}}. Ready, set, go!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 66,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} begins {{EXERCISE_7_NAME}}. The low angle focuses on their feet, which are moving so fast they almost blur. Yellow, lightning-like energy begins to crackle around their legs.",
+    "sound_design": "The sound of rapid footsteps on the terrain (e.g., quick taps on stone). The sharp 'crackle' of static electricity with every movement.",
+    "dialogue": "Guide (Voiceover): 'That's the speed! Faster! Faster!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 67,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "A steady shot of {{CHARACTER_NAME}} from the waist up. They are a blur of controlled motion, face set in concentration as they master the high-speed exercise.",
+    "sound_design": "The driving beat of the music. We can hear their rhythmic, fast-paced breathing, perfectly in time with their movements.",
+    "dialogue": "Guide (Voiceover): 'Incredible pace! Keep it up!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 68,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera struggles to keep up, zipping side-to-side to track {{CHARACTER_NAME}}'s rapid movements, enhancing the feeling of immense speed.",
+    "sound_design": "Quick 'whoosh' sounds as the camera pans. The music adds an urgent, pulsing synth line.",
+    "dialogue": "Guide (Voiceover): 'You're just a blur! Halfway there!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 69,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "Extreme close up on their feet, which are kicking up dust and small pebbles. The lightning-like energy arcs between their shoes with each step.",
+    "sound_design": "The sound is focused on the rapid 'thump-thump-thump' of their feet and the loud 'crackle' and 'zap' of the electrical energy.",
+    "dialogue": "Guide (Voiceover): 'Feel that electricity building!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 70,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "Looking down, {{CHARACTER_NAME}} is the epicenter of a contained electrical storm. The yellow energy forms a crackling circle around them on the ground.",
+    "sound_design": "The music reaches a fever pitch. The sound of a powerful electrical generator humming and buzzing.",
+    "dialogue": "Guide (Voiceover): 'Almost there! Ten seconds left!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 71,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "The exercise ends. {{CHARACTER_NAME}} stops in a ready stance, perfectly still after the blur of motion. The yellow energy surges up from their legs and forms into glowing bracers of speed on their ankles.",
+    "sound_design": "Music ends with a sudden, sharp 'stop' effect. A final, powerful 'ZAP' as the bracers form, followed by their constant, low hum.",
+    "dialogue": "Guide (Voiceover): '3, 2, 1... and stop! Awesome! You've unlocked the Bracers of Speed!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 72,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} looks down at their glowing ankle bracers, then takes a practice step, moving with a quick 'zip'. They smile, feeling the new power.",
+    "sound_design": "A futuristic 'whoosh' or 'zip' sound for the quick step. A curious and energetic musical bridge.",
+    "dialogue": "Guide (Voiceover): 'Speed is good, but you need focus, too. Let's sharpen your senses with {{EXERCISE_8_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 73,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates {{EXERCISE_8_NAME}}, a routine that requires concentration and deliberate, targeted movements (e.g., shadow boxing with specific targets, yoga balance poses).",
+    "sound_design": "Hologram sound. The music shifts to a more focused, intense, and hypnotic electronic track.",
+    "dialogue": "Guide (Voiceover): 'Every movement must have a purpose. {{EXERCISE_8_DESCRIPTION}}. Concentrate!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 74,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} performs the exercise. The energy this time is a cool, cerebral cyan, and it swirls around their head and arms. Their eyes begin to glow faintly with the same color.",
+    "sound_design": "The music is a steady, pulsing beat. The sound effects are precise and sharp, like the 'hiss' of air as a fist cuts through it.",
+    "dialogue": "Guide (Voiceover): 'Perfect form! Your focus is unbreakable!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 75,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "A tight profile shot, focusing on their calm but intense facial expression. We can clearly see their eyes glowing with cyan light, tracking invisible targets in the air.",
+    "sound_design": "The hypnotic music continues. The sound of their calm, controlled breathing is the most prominent sound effect.",
+    "dialogue": "Guide (Voiceover): 'You see everything. Nothing escapes your notice!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 76,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera executes a slow, smooth arc around {{CHARACTER_NAME}}, emphasizing the grace and precision of their movements, a stark contrast to the last exercise.",
+    "sound_design": "A soft 'whoosh' accompanies the camera move. The music adds a serene, melodic layer over the hypnotic beat.",
+    "dialogue": "Guide (Voiceover): 'Grace and power in perfect harmony!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 77,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "Extreme close up of their hands as they move through the air with perfect control. The cyan energy leaves faint, glowing trails behind their fingertips.",
+    "sound_design": "Soft 'chime' or 'bell' sounds are triggered by their hand movements, turning the exercise into a form of music. The track is momentarily quiet.",
+    "dialogue": "Guide (Voiceover): 'Every detail, every motion... perfect.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 78,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "Looking down, the cyan energy trails form a complex, beautiful geometric pattern on the ground around {{CHARACTER_NAME}}, like a mandala of pure thought.",
+    "sound_design": "The music swells, bringing all the melodic and rhythmic elements together. The pattern on the ground hums with a low, psychic frequency.",
+    "dialogue": "Guide (Voiceover): 'You're almost there! Hold that focus!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 79,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} holds a final, perfectly still pose. The cyan energy flows from their head to their hands, which now glow with a soft light. Their eyes are bright and focused.",
+    "sound_design": "Music ends with a clear, resonant bell-like tone. A 'mind-power' sound effect, like a low-frequency hum, is heard.",
+    "dialogue": "Guide (Voiceover): 'Incredible focus! You've gained the Hands of Precision!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 80,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "With glowing ankles and hands, {{CHARACTER_NAME}} looks at the puzzle of {{OBSTACLE_3}}. As they focus, key parts of the puzzle briefly flash with cyan light, as if their new perception is showing them the solution.",
+    "sound_design": "A 'psychic perception' sound effect, like a soft chime or whisper, when the puzzle pieces flash.",
+    "dialogue": "Guide (Voiceover): 'You can see the path! Now let's combine speed and focus for the final power-up! Get ready for {{EXERCISE_9_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 81,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates {{EXERCISE_9_NAME}}, an exercise that combines the rapid movements of the first exercise with the precision of the second.",
+    "sound_design": "Hologram sound. An epic, synth-wave track begins, combining fast beats with complex melodies to represent the synergy of speed and thought.",
+    "dialogue": "Guide (Voiceover): 'Time to bring it all together! {{EXERCISE_9_DESCRIPTION}}. Let's see it!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 82,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "As {{CHARACTER_NAME}} begins, the yellow energy from their bracers and the cyan energy from their hands begin to merge, swirling around them in a brilliant green vortex.",
+    "sound_design": "The synth-wave track kicks in. Sounds of electrical 'zaps' are mixed with melodic 'chimes'.",
+    "dialogue": "Guide (Voiceover): 'Yes! The perfect combination!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 83,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "We see their face, a perfect blend of high-speed motion and intense focus. They are moving incredibly fast, but their eyes are calm and locked onto their goal.",
+    "sound_design": "The music is complex and layered. The sound of rapid movement is underscored by a steady, focused hum.",
+    "dialogue": "Guide (Voiceover): 'Fast and focused! You are in total control!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 84,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera moves in a wild but smooth pattern, tracking their hands and feet simultaneously, showcasing how the two different skill sets are now working as one.",
+    "sound_design": "A complex mix of 'whooshes' and 'zips', all perfectly synced to the epic music.",
+    "dialogue": "Guide (Voiceover): 'There's no move you can't make!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 85,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "An insert shot showing the ankle bracers and glowing hands in the same frame. A visible arc of green energy connects them, symbolizing their unity.",
+    "sound_design": "The sound of the green energy is a powerful, stable hum, a perfect fusion of the crackling electricity and the psychic hum from before.",
+    "dialogue": "Guide (Voiceover): 'Body and mind, united!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 86,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From above, the swirling green energy is no longer a simple circle or pattern, but a complex, beautiful vortex of controlled power, resembling a galaxy.",
+    "sound_design": "The music reaches its ultimate crescendo, a soaring anthem of success and power.",
+    "dialogue": "Guide (Voiceover): 'One last push! You've got this!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 8,
+    "shot_number": 87,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "The exercise ends. {{CHARACTER_NAME}} is a blur of motion that stops on a dime. The green energy condenses and forms a faint aura of pure focus around their entire body. Their eyes glow brightly.",
+    "sound_design": "Music hits a final, epic crescendo. A 'total-focus' power-up sound, combining the 'zap' and the 'hum' into one powerful, sustained note.",
+    "dialogue": "Guide (Voiceover): 'You've done it! You've achieved a state of Super-Focus!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 9,
+    "shot_number": 88,
+    "shot_type": "POV SHOT - THE PUZZLE SOLVED",
+    "shot_description": "From {{CHARACTER_NAME}}'s point of view. The world seems to slow down. The path through the puzzle of {{OBSTACLE_3}} is illuminated with a clear, glowing green line. They see the sequence perfectly.",
+    "sound_design": "The outside world sounds are muffled and slow. A clear, high-frequency tone indicates focus. A heroic, determined musical theme begins to build.",
+    "dialogue": "Guide (Voiceover): 'You see the way. Now, run!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 9,
+    "shot_number": 89,
+    "shot_type": "MONTAGE - SOLVING THE PUZZLE",
+    "shot_description": "A rapid series of shots: {{CHARACTER_NAME}} zips across platforms with their speed bracers, hits glowing runes with their precision hands, and moves through the complex puzzle in a blur of green light. They are a force of pure focus and agility.",
+    "sound_design": "A fast-paced, exciting montage of sound. Quick 'zips', precise 'pings' as runes are hit, and the triumphant, fast-paced score.",
+    "dialogue": "",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 9,
+    "shot_number": 90,
+    "shot_type": "WIDE SHOT - SUCCESS",
+    "shot_description": "{{CHARACTER_NAME}} makes the final leap and lands perfectly on the other side of the now-solved puzzle. The gate of {{OBSTACLE_3}} fully opens, revealing the path to the climactic final location, {{LOCATION_4}}.",
+    "sound_design": "A massive, satisfying 'CLICK' and 'GRIND' as the ancient puzzle unlocks and the gate opens. The music swells triumphantly, then transitions to the traveling theme.",
+    "dialogue": "Guide (Voiceover): 'You did it! Your mind and body working as one! The final challenge awaits you in {{LOCATION_4}}! Let's go!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 10,
+    "shot_number": 91,
+    "shot_type": "EXT. {{LOCATION_4}} - DAY",
+    "shot_description": "A breathtaking establishing shot of {{LOCATION_4}}, the final destination (e.g., the summit of a volcano, the core of a crystalline planet, the throne room of an underwater castle). It is awe-inspiring and intimidating. In the center, the {{MAIN_OBJECTIVE}} is visible, glowing with immense power.",
+    "sound_design": "A powerful, epic, and dramatic orchestral theme begins. The sound of the environment is overwhelming: the roar of lava, the deep hum of a planet's core, the immense pressure of the deep ocean.",
+    "dialogue": "Guide (Voiceover): 'This is it, {{CHARACTER_NAME}}. You've reached the end of your journey. The {{MAIN_OBJECTIVE}} is just ahead!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 10,
+    "shot_number": 92,
+    "shot_type": "WIDE SHOT - THE GUARDIAN AWAKENS",
+    "shot_description": "As {{CHARACTER_NAME}} takes a step forward, the ground shakes violently. The final obstacle, {{FINAL_OBSTACLE}}, a massive guardian golem made of the surrounding elements, rises from the ground, blocking the path. It is huge and imposing.",
+    "sound_design": "A violent, ground-shaking 'RUMBLE'. The music shifts to a tense, dramatic battle theme. The golem lets out a deep, reverberating 'GROAN' as it awakens.",
+    "dialogue": "Guide (Voiceover): 'Watch out! The ultimate guardian stands in your way! This is {{FINAL_OBSTACLE}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 10,
+    "shot_number": 93,
+    "shot_type": "MEDIUM SHOT - A FRIEND'S RETURN",
+    "shot_description": "{{CHARACTER_NAME}} looks up at the massive guardian, a flicker of doubt on their face. Suddenly, a familiar sound is heard. {{FRIENDLY_CHARACTER}} zips into the frame, landing beside them and making a brave, encouraging sound. They are not alone.",
+    "sound_design": "The friendly character's signature sound effect (a chirp, a whir). A hopeful, uplifting musical sting plays, weaving the 'friendship' theme into the battle music.",
+    "dialogue": "Guide (Voiceover): 'Look! {{FRIENDLY_CHARACTER}} is here to help! Together, you can do this!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 94,
+    "shot_type": "TWO SHOT - HEROES PREPARE",
+    "shot_description": "{{CHARACTER_NAME}} and {{FRIENDLY_CHARACTER}} exchange a determined look and nod. They are ready to fight together. {{CHARACTER_NAME}} clenches their fists.",
+    "sound_design": "The battle music swells with determination. A sharp 'thump' as {{CHARACTER_NAME}} clenches their fists.",
+    "dialogue": "Guide (Voiceover): 'To break its defenses, you'll need explosive power! Let's start with {{EXERCISE_10_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 95,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates {{EXERCISE_10_NAME}}, a series of powerful, explosive movements like burpees or plyometric jumps, designed for maximum force.",
+    "sound_design": "Hologram sound. The music becomes a driving, hard-rock or electronic track, perfect for a boss battle.",
+    "dialogue": "Guide (Voiceover): 'Let's shake the very ground! {{EXERCISE_10_DESCRIPTION}}. Give it all you've got!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 96,
+    "shot_type": "LOW-ANGLE ACTION SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "{{CHARACTER_NAME}} explodes into motion. The low angle makes each jump look like they are flying, and each landing seems to crack the ground. A fiery, powerful red energy erupts around their fists and feet.",
+    "sound_design": "Loud, percussive 'BOOM' or 'CRASH' sounds for each movement. The crackle of fire and raw energy.",
+    "dialogue": "Guide (Voiceover): 'YES! That's the power! Feel your strength grow!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 97,
+    "shot_type": "MEDIUM SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "A shot of pure, unadulterated effort. {{CHARACTER_NAME}}'s face is a mask of determination, sweat flying with every powerful exertion. In the background, {{FRIENDLY_CHARACTER}} cheers wildly.",
+    "sound_design": "The driving rock music is at full blast. The sound of powerful grunts and exertion.",
+    "dialogue": "Guide (Voiceover): 'Every bit of effort is making you stronger!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 98,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera shakes and jolts with the impact of each of {{CHARACTER_NAME}}'s movements, immersing the viewer in the earth-shattering power of the exercise.",
+    "sound_design": "A camera 'shake' effect with a low-frequency rumble. The music feels visceral and intense.",
+    "dialogue": "Guide (Voiceover): 'You're a force of nature! Unstoppable!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 99,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "Extreme close up on their fists as they touch the ground, sending out visible shockwaves of red energy through the earth.",
+    "sound_design": "A massive, bass-heavy 'BOOM' that muffles all other sound for a second, followed by the sound of cracking rock.",
+    "dialogue": "Guide (Voiceover): 'More! One final burst of power!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 100,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From above, we see the shockwaves from {{CHARACTER_NAME}}'s power spreading out in a huge radius, forcing the giant {{FINAL_OBSTACLE}} to take a step back.",
+    "sound_design": "The music soars. The sound of the golem groaning and the grinding of its feet as it's pushed back.",
+    "dialogue": "Guide (Voiceover): 'Look! You're making it move! Almost there!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 101,
+    "shot_type": "HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "The exercise ends. {{CHARACTER_NAME}} rises, breathing heavily. The red energy solidifies into powerful, glowing 'Gauntlets of Power' on their hands.",
+    "sound_design": "Music ends with a huge rock-and-roll sting, like a final guitar chord and cymbal crash. A 'POWER-UP' sound of forging metal and fire.",
+    "dialogue": "Guide (Voiceover): '3, 2, 1... YES! You've forged the Gauntlets of Power!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 102,
+    "shot_type": "WIDE SHOT - THE GOLEM ATTACKS",
+    "shot_description": "The {{FINAL_OBSTACLE}}, angered, swings a massive stone arm. {{CHARACTER_NAME}} and {{FRIENDLY_CHARACTER}} leap out of the way just in time.",
+    "sound_design": "A huge 'WHOOSH' as the arm swings, ending in a 'CRASH' as it hits the ground. A tense musical bridge.",
+    "dialogue": "Guide (Voiceover): 'It's fighting back! You need to be too fast to hit! Let's power up your speed with {{EXERCISE_11_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 110,
+    "shot_type": "TWO SHOT - REGROUP",
+    "shot_description": "Now equipped with power gauntlets and speed boots, {{CHARACTER_NAME}} stands back-to-back with {{FRIENDLY_CHARACTER}}. They are ready for the final phase.",
+    "sound_design": "A heroic, synth-heavy musical theme begins, representing synergy and teamwork.",
+    "dialogue": "Guide (Voiceover): 'Power and speed are great, but teamwork is your ultimate weapon! It's time for {{EXERCISE_12_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 111,
+    "shot_type": "WIDE SHOT - TEAMWORK DEMONSTRATION",
+    "shot_description": "The holographic demonstrator splits into two figures. They perform {{EXERCISE_12_NAME}} (e.g., 'Mirror Moves' or partner squats) in perfect, synchronized harmony.",
+    "sound_design": "Hologram sound. The music is an uplifting, rhythmic track that makes you want to move with someone.",
+    "dialogue": "Guide (Voiceover): 'Watch the holograms, and get in sync with your friend! {{EXERCISE_12_DESCRIPTION}}. Let's work together!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 112,
+    "shot_type": "WIDE ACTION SHOT - {{CHARACTER_NAME}} & FRIEND",
+    "shot_description": "{{CHARACTER_NAME}} and {{FRIENDLY_CHARACTER}} begin the exercise, facing each other. They move in sync, their movements mirroring each other. A rainbow-colored energy begins to flow between them.",
+    "sound_design": "The sound of two sets of movements in perfect time. A beautiful, shimmering sound effect for the rainbow energy.",
+    "dialogue": "Guide (Voiceover): 'That's it! You're perfectly in sync!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 11,
+    "shot_number": 117,
+    "shot_type": "HERO SHOT - TEAM POSE",
+    "shot_description": "The exercise ends with {{CHARACTER_NAME}} and {{FRIENDLY_CHARACTER}} striking a final, cool back-to-back pose. The rainbow energy erupts, forming a massive, shared 'Synergy Aura' that envelops them both.",
+    "sound_design": "Music hits a triumphant, emotional crescendo. A final, ultimate 'TEAM POWER-UP' sound that is both powerful and beautiful.",
+    "dialogue": "Guide (Voiceover): 'POWER-UP COMPLETE! You've unlocked the Synergy Aura!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 12,
+    "shot_number": 118,
+    "shot_type": "TWO SHOT - THE FINAL CHARGE",
+    "shot_description": "Glowing within their shared aura, the two heroes look at the {{FINAL_OBSTACLE}}, then at each other, and share a final, confident nod. They charge forward together.",
+    "sound_design": "The main heroic adventure theme crashes in, bigger and more epic than ever. The powerful thrum of the Synergy Aura.",
+    "dialogue": "Guide (Voiceover): 'This is it! For the {{MAIN_OBJECTIVE}}! GO!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 6
+  },
+  {
+    "scene_number": 12,
+    "shot_number": 119,
+    "shot_type": "MONTAGE - THE FINAL BATTLE",
+    "shot_description": "A rapid montage: {{CHARACTER_NAME}} uses the speed boots to dodge a blow, then uses the power gauntlets to punch the golem's leg, creating a crack. {{FRIENDLY_CHARACTER}} zips in and places something in the crack, which glows brightly. Their Synergy Aura protects them from all damage.",
+    "sound_design": "An epic montage of battle sounds: dodges, impacts, magical zaps, and the soaring orchestral score.",
+    "dialogue": "",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 12,
+    "shot_number": 120,
+    "shot_type": "WIDE SHOT - VICTORY",
+    "shot_description": "The golem stops moving. The light from the crack spreads through its body, not destroying it, but pacifying it. It kneels respectfully, the threat neutralized. The path to the {{MAIN_OBJECTIVE}} is finally clear.",
+    "sound_design": "A deep, calming 'HUM' replaces the battle music. The sound of the golem's stone joints grinding to a halt. The music shifts to a victorious, awe-filled theme.",
+    "dialogue": "Guide (Voiceover): 'You did it! Together, you saved the day! Now, claim your prize!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 13,
+    "shot_number": 121,
+    "shot_type": "WIDE SHOT - CLAIMING THE PRIZE",
+    "shot_description": "{{CHARACTER_NAME}} and {{FRIENDLY_CHARACTER}} approach the {{MAIN_OBJECTIVE}}. As {{CHARACTER_NAME}} gently touches it, a wave of brilliant, warm light washes over the entire location, transforming it into a peaceful, beautiful paradise. The pacified guardian golem now tends to a garden.",
+    "sound_design": "A magnificent, awe-inspiring musical crescendo. The sound is a beautiful, resonant 'CHIME' of pure energy, followed by the sounds of nature returning to life (birds singing, water flowing).",
+    "dialogue": "Guide (Voiceover): 'You've done it, {{CHARACTER_NAME}}! You've achieved the {{MAIN_OBJECTIVE}} and restored balance to this world!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 13,
+    "shot_number": 122,
+    "shot_type": "TWO SHOT - VICTORY!",
+    "shot_description": "{{CHARACTER_NAME}} and {{FRIENDLY_CHARACTER}} turn to each other and celebrate! They jump for joy, share a high-five, and laugh. Pure, unfiltered happiness.",
+    "sound_design": "The music is joyous, celebratory, and fun. The sound of their happy laughter and a perfect high-five 'SMACK'.",
+    "dialogue": "Guide (Voiceover): 'An amazing victory! You should be so proud of everything you've accomplished!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 13,
+    "shot_number": 123,
+    "shot_type": "MEDIUM SHOT - TIME TO COOL DOWN",
+    "shot_description": "The celebration winds down. {{CHARACTER_NAME}} takes a deep, happy breath, looking at their own hands, realizing the strength they had all along. The world around them is calm and serene.",
+    "sound_design": "The celebratory music gently fades into a calm, soothing, ambient track. The sound of a peaceful breeze.",
+    "dialogue": "Guide (Voiceover): 'Every great hero knows that after a big adventure, it's important to cool down. Let's thank our bodies for being so awesome.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 124,
+    "shot_type": "WIDE SHOT - PREPARING TO BREATHE",
+    "shot_description": "In the beautiful, restored landscape, {{CHARACTER_NAME}} stands tall, feet shoulder-width apart, ready for the first cool-down.",
+    "sound_design": "The soothing music is soft and gentle. The ambient sounds of nature are clear and relaxing.",
+    "dialogue": "Guide (Voiceover): 'First, let's calm our hearts with some Hero's Breaths. This is {{EXERCISE_13_NAME}}!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 125,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The holographic demonstrator appears, performing the breathing exercise. It slowly raises its arms while inhaling and lowers them while exhaling. The movements are fluid and peaceful.",
+    "sound_design": "Hologram sound. The sound of a slow, deep inhale and a long, calming exhale is exaggerated to guide the user.",
+    "dialogue": "Guide (Voiceover): 'Breathe in deep as you reach for the sky, and breathe out slowly as you bring your arms down. {{EXERCISE_13_DESCRIPTION}}.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 126,
+    "shot_type": "MEDIUM SHOT - INHALE",
+    "shot_description": "{{CHARACTER_NAME}} closes their eyes and inhales deeply, raising their arms. A soft, gentle white light gathers in their chest, looking warm and comforting.",
+    "sound_design": "The sound of a deep inhale. A soft, shimmering musical chord swells gently.",
+    "dialogue": "Guide (Voiceover): 'Breathe in all that wonderful success...'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 127,
+    "shot_type": "MEDIUM SHOT - EXHALE",
+    "shot_description": "{{CHARACTER_NAME}} exhales slowly, lowering their arms. The white light gently radiates outwards from them, making the flowers around them glow a little brighter.",
+    "sound_design": "The sound of a long, peaceful exhale. The shimmering musical chord slowly fades.",
+    "dialogue": "Guide (Voiceover): '...and breathe out, sharing your good energy with the world.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 128,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera very slowly and smoothly pushes in towards {{CHARACTER_NAME}}'s calm face as they continue to breathe, creating a feeling of peace and introspection.",
+    "sound_design": "The gentle music and the rhythmic sounds of breathing are the only sounds.",
+    "dialogue": "Guide (Voiceover): 'Feel your heartbeat slowing down. You are calm and strong.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 129,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "A close up on their hands as they slowly come to rest. They are relaxed, no longer clenched in fists of power, but open and peaceful.",
+    "sound_design": "The music is almost silent, leaving only the soft whisper of the breeze.",
+    "dialogue": "Guide (Voiceover): 'Let all the tension melt away.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 130,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From above, each exhale from {{CHARACTER_NAME}} sends out a gentle, calming ripple of white light across the beautiful landscape.",
+    "sound_design": "A soft, resonant 'ripple' sound effect accompanies the light. The music is ethereal and dream-like.",
+    "dialogue": "Guide (Voiceover): 'You've earned this peace. One more deep breath.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 131,
+    "shot_type": "HERO SHOT - CALM",
+    "shot_description": "The exercise ends. {{CHARACTER_NAME}} stands with their eyes closed and a gentle smile on their face, looking completely at peace. {{FRIENDLY_CHARACTER}} is curled up and resting nearby.",
+    "sound_design": "A final, soothing musical chord hangs in the air and fades to silence.",
+    "dialogue": "Guide (Voiceover): 'Wonderful. Now, let's gently stretch our heroic muscles.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 132,
+    "shot_type": "WIDE SHOT - PREPARING TO STRETCH",
+    "shot_description": "{{CHARACTER_NAME}} opens their eyes, looking refreshed, and prepares for the next cool-down movement.",
+    "sound_design": "A new, gentle melody begins on a soft piano or acoustic guitar.",
+    "dialogue": "Guide (Voiceover): 'Time for some Starlight Stretches. This is {{EXERCISE_14_NAME}}.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 133,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates a gentle, full-body stretch, like reaching high for the sky and then slowly bending to touch the toes. The movements are slow and deliberate.",
+    "sound_design": "Hologram sound. The sound of a gentle 'stretch' is accompanied by soft, glistening chimes.",
+    "dialogue": "Guide (Voiceover): 'Reach up as high as you can, then slowly reach down to the ground. {{EXERCISE_14_DESCRIPTION}}.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 134,
+    "shot_type": "LOW-ANGLE ACTION SHOT",
+    "shot_description": "From a low angle, {{CHARACTER_NAME}} reaches their arms high into the sky. Their body is one long, powerful line. Soft, starry particles of light trail from their fingertips.",
+    "sound_design": "A gentle 'whoosh' as they stretch upwards. The soft piano music swells with an inspiring chord.",
+    "dialogue": "Guide (Voiceover): 'Reach for the stars! You've earned your place among them.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 135,
+    "shot_type": "MEDIUM SHOT",
+    "shot_description": "As {{CHARACTER_NAME}} slowly bends forward, the camera holds on their peaceful face, showing release and relaxation.",
+    "sound_design": "A descending piano melody plays. A soft 'sigh' of release.",
+    "dialogue": "Guide (Voiceover): 'Let all that hard work go. Feel the wonderful stretch.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 136,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera slowly tilts down, following the line of their body as they reach for their toes, emphasizing the length of the stretch.",
+    "sound_design": "A long, soft 'swoosh' sound follows the camera's movement. The music is simple and spacious.",
+    "dialogue": "Guide (Voiceover): 'Great job. Don't push too hard, just relax into it.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 137,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "A close up on their hands, fingers gently brushing the ground or their shoes. The starry particles they gathered fall from their fingertips and make tiny flowers sprout on the ground.",
+    "sound_design": "A magical, soft 'tinkling' or 'chime' sound as the flowers appear.",
+    "dialogue": "Guide (Voiceover): 'Giving back to the world you helped save.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 138,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From above, we watch as {{CHARACTER_NAME}} slowly and gracefully rises back up to a standing position.",
+    "sound_design": "A rising, hopeful piano arpeggio. The sound of a satisfied, happy sigh.",
+    "dialogue": "Guide (Voiceover): 'Slowly come back up... excellent.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 139,
+    "shot_type": "HERO SHOT - REFRESHED",
+    "shot_description": "The exercise is complete. {{CHARACTER_NAME}} rolls their shoulders back, looking loose, refreshed, and proud.",
+    "sound_design": "A final, positive piano chord resolves the melody.",
+    "dialogue": "Guide (Voiceover): 'Doesn't that feel great? One final pose to finish our adventure.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 140,
+    "shot_type": "WIDE SHOT - FINAL POSE",
+    "shot_description": "Having stretched their body, {{CHARACTER_NAME}} prepares for one final, triumphant pose of accomplishment.",
+    "sound_design": "The gentle music swells slightly with a sense of pride.",
+    "dialogue": "Guide (Voiceover): 'And now, for one final pose to celebrate our victory. Let's strike the Victory Pose! This is {{EXERCISE_15_NAME}}.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 141,
+    "shot_type": "WIDE SHOT - EXERCISE DEMONSTRATION",
+    "shot_description": "The hologram demonstrates a strong, balanced, and sustained pose, like Warrior II or Tree Pose, holding it with perfect stillness.",
+    "sound_design": "Hologram sound. A low, resonant, and calming musical drone begins to play, symbolizing balance.",
+    "dialogue": "Guide (Voiceover): 'Find your balance and hold it. You are strong and centered. {{EXERCISE_15_DESCRIPTION}}.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 142,
+    "shot_type": "LOW-ANGLE ACTION SHOT",
+    "shot_description": "{{CHARACTER_NAME}} moves gracefully into the Victory Pose. From the low angle, they look like a magnificent statue, a monument to their own success.",
+    "sound_design": "The calming drone is joined by the soft, emotional melody of the main adventure theme.",
+    "dialogue": "Guide (Voiceover): 'Hold it. Feel your strength, from your feet to your fingertips.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 143,
+    "shot_type": "MEDIUM SHOT",
+    "shot_description": "A profile shot showing their strong form and the focused, yet peaceful, expression on their face. They are the picture of calm confidence.",
+    "sound_design": "The music is simple and beautiful. Their breathing is slow and steady.",
+    "dialogue": "Guide (Voiceover): 'You are balanced. You are powerful. You are a hero.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 144,
+    "shot_type": "DYNAMIC TRACKING SHOT",
+    "shot_description": "The camera performs a very slow, dramatic arc around the hero, holding their static pose, showcasing their stillness and strength from all sides.",
+    "sound_design": "The emotional music swells, adding soft strings.",
+    "dialogue": "Guide (Voiceover): 'Remember this feeling of accomplishment.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 145,
+    "shot_type": "CLOSE UP - DETAIL OF ACTION",
+    "shot_description": "A close up on their feet, planted firmly on the ground. Roots of gentle, white light grow from their feet into the earth, showing they are grounded and connected.",
+    "sound_design": "A low, earthy humming sound. The sound of deep roots growing.",
+    "dialogue": "Guide (Voiceover): 'Strong and grounded.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 146,
+    "shot_type": "HIGH-ANGLE SHOT",
+    "shot_description": "From high above, {{CHARACTER_NAME}} holds their pose of perfect balance in the center of the beautiful, serene world they helped create.",
+    "sound_design": "The music reaches a gentle, emotional peak.",
+    "dialogue": "Guide (Voiceover): 'Hold for three... two... one...'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 14,
+    "shot_number": 147,
+    "shot_type": "HERO SHOT - CENTERED",
+    "shot_description": "The exercise ends as {{CHARACTER_NAME}} slowly and gracefully releases the pose, returning to a neutral stance. They look serene, fulfilled, and stronger than ever.",
+    "sound_design": "The music resolves in a final, beautiful chord.",
+    "dialogue": "Guide (Voiceover): '...and release. You did it. The adventure is complete.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 7
+  },
+  {
+    "scene_number": 15,
+    "shot_number": 148,
+    "shot_type": "TWO SHOT - A FINAL FAREWELL",
+    "shot_description": "{{CHARACTER_NAME}}, fully cooled down, turns to {{FRIENDLY_CHARACTER}}. They share a hug or a final, meaningful high-five. A promise of future adventures.",
+    "sound_design": "The main adventure theme returns, but played softly and emotionally on a piano. The sound of a friendly hug.",
+    "dialogue": "Guide (Voiceover): 'It's time to go, but you'll never forget the friend you made today.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 15,
+    "shot_number": 149,
+    "shot_type": "WIDE SHOT - LEAVING A BETTER WORLD",
+    "shot_description": "{{FRIENDLY_CHARACTER}} waves goodbye as {{CHARACTER_NAME}} is enveloped in a gentle shimmer of light, ready to return home. The world they are leaving is vibrant, peaceful, and happy.",
+    "sound_design": "The emotional music swells. A gentle 'teleport' sound effect begins to build.",
+    "dialogue": "Guide (Voiceover): 'You left this world better than you found it, hero.'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  },
+  {
+    "scene_number": 15,
+    "shot_number": 150,
+    "shot_type": "FINAL HERO SHOT - {{CHARACTER_NAME}}",
+    "shot_description": "In the final moment before they disappear, {{CHARACTER_NAME}} turns, looking directly at the camera with a proud, happy, and confident smile. They've done it. They are a true hero.",
+    "sound_design": "The main adventure theme soars to a final, magnificent crescendo, then gently fades out, leaving a feeling of warmth and inspiration.",
+    "dialogue": "Guide (Voiceover): 'Remember this feeling, {{CHARACTER_NAME}}. You are strong, you are kind, and you are a hero. Until the next adventure!'",
+    "reference_image": "{{USER_AVATAR_URL}}",
+    "desired_duration_seconds": 8
+  }
+]
