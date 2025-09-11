@@ -1,0 +1,217 @@
+:root {
+  /* Colors */
+  --primary-blue: #3498db;
+  --primary-purple: #9b59b6;
+  --success-green: #2ecc71;
+  --warning-orange: #f39c12;
+  --danger-red: #e74c3c;
+  --light-gray: #ecf0f1;
+  --dark-gray: #34495e;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-success: linear-gradient(135deg, #2ecc71, #27ae60);
+  --gradient-fun: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 15px;
+  --radius-lg: 20px;
+  --radius-xl: 30px;
+  --radius-full: 50%;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 8px rgba(0,0,0,0.15);
+  --shadow-lg: 0 8px 20px rgba(0,0,0,0.2);
+  --shadow-xl: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+/* 🖼️ Base Avatar Container */
+.avatar-container {
+  position: relative;
+  display: inline-block;
+  margin: 10px;
+}
+
+/* 🎨 Avatar Border Styles */
+.avatar-border {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 3px solid #ddd;
+  cursor: default;
+  transition: all 0.3s ease;
+  background: var(--light-gray);
+  box-shadow: var(--shadow-md);
+}
+
+.avatar-border.avatar-clickable {
+  cursor: pointer;
+}
+
+.avatar-border.avatar-clickable:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+  border-color: #4ecdc4;
+}
+
+/* ✨ Special Avatar Effects */
+.avatar-border.achievement-glow {
+  border-color: #ffd93d;
+  box-shadow: 0 0 20px rgba(255, 217, 61, 0.6);
+  animation: achievement-glow 2s ease-in-out infinite;
+}
+
+@keyframes achievement-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(255, 217, 61, 0.6);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 30px rgba(255, 217, 61, 0.9);
+    transform: scale(1.02);
+  }
+}
+
+/* 🏅 Level Badge */
+.level-badge {
+  position: absolute;
+  bottom: -8px;
+  left: -8px;
+  min-width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid white;
+  z-index: 2;
+  box-shadow: var(--shadow-md);
+}
+
+/* ⚙️ Customize Button */
+.customize-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  color: white;
+  border: 2px solid white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  z-index: 2;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
+}
+
+.customize-btn:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 🆕 Unlock Badge */
+.style-unlock-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(45deg, #ffd93d, #f39c12);
+  color: #2c3e50;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 3;
+  animation: bounce 1s ease-in-out infinite;
+  box-shadow: var(--shadow-md);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 🖼️ Avatar Gallery Styles */
+.avatar-gallery {
+  width: 100%;
+}
+
+.avatar-gallery-item {
+  transition: all 0.3s ease;
+  padding: 10px;
+  border-radius: var(--radius-md);
+}
+
+.avatar-gallery-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* 📋 Gallery Header */
+.gallery-header {
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 2px solid #e9ecef;
+}
+
+/* 🔍 Search and Filter Controls */
+.gallery-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #4ecdc4;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+}
+
+.filter-select {
+  padding: 10px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: var(--radius-md);
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #4ecdc4;
+}
+
+/* 📊 Avatar Grid */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.avatar-grid.list {
+  grid-template-columns: 1fr

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createAvatar } from '@dicebear/core';
 import { adventurer, personas, lorelei, miniavs } from '@dicebear/collection';
+import './styles/AvatarEditor.css';
 
 const AvatarEditor = () => {
     // 🎮 Avatar Settings - Like character customization in a video game!
