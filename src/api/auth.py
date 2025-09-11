@@ -344,6 +344,7 @@ def change_password():
         return jsonify({"error": str(e)}), 500
 
 
+
 @auth.route('/me', methods=['GET'])
 @jwt_required()
 def get_current_user():
@@ -366,6 +367,7 @@ def get_current_user():
         return jsonify({"error": str(e)}), 500
 
 
+=
 @auth.route('/verify-token', methods=['GET'])
 @jwt_required()
 def verify_token():
