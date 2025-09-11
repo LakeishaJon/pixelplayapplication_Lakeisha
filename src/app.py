@@ -2,16 +2,16 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
+from datetime import timedelta
 from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_migrate import Migrate
-from flask_swagger import swagger
+from flask_jwt_extended import JWTManager
 from api.utils import APIException, generate_sitemap
 from api.models import db
 from api.routes import api
+from api.auth import auth, init_oauth, jwt
 from api.admin import setup_admin
 from api.commands import setup_commands
-
-# from models import Person
 
 ENV = "development" if os.getenv("FLASK_DEBUG") == "1" else "production"
 static_file_dir = os.path.join(os.path.dirname(
@@ -19,7 +19,7 @@ static_file_dir = os.path.join(os.path.dirname(
 app = Flask(__name__)
 app.url_map.strict_slashes = False
 
-# database condiguration
+# Database configuration
 db_url = os.getenv("DATABASE_URL")
 if db_url is not None:
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace(
@@ -28,17 +28,41 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# JWT Configuration (Flask-JWT-Extended 4.x)
+app.config['JWT_SECRET_KEY'] = os.getenv(
+    'JWT_SECRET_KEY', 'super-secret-change-in-production')
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
+
+# OAuth Configuration
+app.config['SECRET_KEY'] = os.getenv(
+    'SECRET_KEY', 'another-secret-change-in-production')
+app.config['GOOGLE_CLIENT_ID'] = os.getenv('GOOGLE_CLIENT_ID')
+app.config['GOOGLE_CLIENT_SECRET'] = os.getenv('GOOGLE_CLIENT_SECRET')
+
+# Initialize extensions
 MIGRATE = Migrate(app, db, compare_type=True)
 db.init_app(app)
+jwt.init_app(app)
 
-# add the admin
+# Initialize OAuth
+try:
+    google = init_oauth(app)
+    print("OAuth initialized successfully")
+except Exception as e:
+    print(f"OAuth initialization failed: {e}")
+    print("Google login will not be available")
+
+# Setup admin interface
 setup_admin(app)
 
-# add the admin
+# Setup CLI commands
 setup_commands(app)
 
-# Add all endpoints form the API with a "api" prefix
+# Register blueprints
 app.register_blueprint(api, url_prefix='/api')
+app.register_blueprint(auth, url_prefix='/api/auth')
 
 # Handle/serialize errors like a JSON object
 
@@ -47,7 +71,7 @@ app.register_blueprint(api, url_prefix='/api')
 def handle_invalid_usage(error):
     return jsonify(error.to_dict()), error.status_code
 
-# generate sitemap with all your endpoints
+# Generate sitemap with all endpoints in development
 
 
 @app.route('/')
@@ -56,17 +80,19 @@ def sitemap():
         return generate_sitemap(app)
     return send_from_directory(static_file_dir, 'index.html')
 
-# any other endpoint will try to serve it like a static file
+# Serve static files (React frontend)
+
+
 @app.route('/<path:path>', methods=['GET'])
 def serve_any_other_file(path):
     if not os.path.isfile(os.path.join(static_file_dir, path)):
         path = 'index.html'
     response = send_from_directory(static_file_dir, path)
-    response.cache_control.max_age = 0  # avoid cache memory
+    response.cache_control.max_age = 0  # Avoid cache memory
     return response
 
 
-# this only runs if `$ python src/main.py` is executed
+# Run the application
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3001))
     app.run(host='0.0.0.0', port=PORT, debug=True)

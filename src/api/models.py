@@ -5,6 +5,12 @@ from datetime import datetime
 db = SQLAlchemy()
 
 class User(db.Model):
+feature/Google-OAuth-JWT-with-Flask
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+
 
     # also known as the child model
   
