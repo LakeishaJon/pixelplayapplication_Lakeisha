@@ -1,52 +1,39 @@
-import React, { useEffect } from "react"
-import rigoImageUrl from "../assets/img/rigo-baby.jpg";
-import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
+// src/front/pages/Home.jsx
+import React, { useState } from 'react';
+import { AvatarProvider } from '../Contexts/AvatarContext.jsx';
+import Navigation from '../components/Navigation.jsx';
+import Dashboard from './Dashboard.jsx';
+import AvatarEditorPage from './AvatarEditorPage.jsx';
+import AvatarInventory from './AvatarInventory.jsx';
+import '../styles/global.css';
+import '../styles/variables.css';
 
-export const Home = () => {
+const Home = () => {
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
-	const { store, dispatch } = useGlobalReducer()
+  const handleNavigate = (page) => {
+    setCurrentPage(page);
+  };
 
-	const loadMessage = async () => {
-		try {
-			const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case 'editor':
+        return <AvatarEditorPage onNavigate={handleNavigate} />;
+      case 'inventory':
+        return <InventoryPage onNavigate={handleNavigate} />;
+      default:
+        return <Dashboard onNavigate={handleNavigate} />;
+    }
+  };
 
-			if (!backendUrl) throw new Error("VITE_BACKEND_URL is not defined in .env file")
+  return (
+    <AvatarProvider>
+      <div className="app">
+        <Navigation currentPage={currentPage} onNavigate={handleNavigate} />
+        <main className="main-content">{renderCurrentPage()}</main>
+      </div>
+    </AvatarProvider>
+  );
+};
 
-			const response = await fetch(backendUrl + "/api/hello")
-			const data = await response.json()
-
-			if (response.ok) dispatch({ type: "set_hello", payload: data.message })
-
-			return data
-
-		} catch (error) {
-			if (error.message) throw new Error(
-				`Could not fetch the message from the backend.
-				Please check if the backend is running and the backend port is public.`
-			);
-		}
-
-	}
-
-	useEffect(() => {
-		loadMessage()
-	}, [])
-
-	return (
-		<div className="text-center mt-5">
-			<h1 className="display-4">Hello Rigo!!</h1>
-			<p className="lead">
-				<img src={rigoImageUrl} className="img-fluid rounded-circle mb-3" alt="Rigo Baby" />
-			</p>
-			<div className="alert alert-info">
-				{store.message ? (
-					<span>{store.message}</span>
-				) : (
-					<span className="text-danger">
-						Loading message from the backend (make sure your python 🐍 backend is running)...
-					</span>
-				)}
-			</div>
-		</div>
-	);
-}; 
+export default Home;
