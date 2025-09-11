@@ -344,6 +344,30 @@ def change_password():
         return jsonify({"error": str(e)}), 500
 
 
+
+@auth.route('/me', methods=['GET'])
+@jwt_required()
+def get_current_user():
+    """Get current authenticated user's information"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        if not user.is_active:
+            return jsonify({"error": "Account is disabled"}), 401
+
+        return jsonify({
+            "user": user.serialize()
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+=
 @auth.route('/verify-token', methods=['GET'])
 @jwt_required()
 def verify_token():
