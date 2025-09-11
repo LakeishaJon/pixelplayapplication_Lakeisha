@@ -17,6 +17,7 @@ export default function Navbar() {
         <NavLink to="/story-generator" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Workouts</NavLink>
         <NavLink to="/avatar-editor" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>My Avatar</NavLink>
         <NavLink to="/habits" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Progress</NavLink>
+        <NavLink to="/rewards" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>Rewards</NavLink>
       </div>
       <div className="nav-right">
         <div className="points-display">
