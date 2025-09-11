@@ -39,6 +39,9 @@ const Dashboard = () => {
           <h3>Today's Challenge</h3>
           <p>Complete a 5-minute workout to earn bonus points!</p>
         </div>
+        <Link to="/rewards" className="card card-my-reward">
+          <h3>Reward Store</h3>
+        </Link>
       </div>
     </div>
   );

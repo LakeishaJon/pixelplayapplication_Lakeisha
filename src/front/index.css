@@ -123,6 +123,7 @@ main {
 .card-start-workout h2 { font-size: 2.5rem; }
 .card-my-avatar { background: linear-gradient(135deg, #a78bfa, #8b5cf6); }
 .card-my-progress { background: linear-gradient(135deg, #34d399, #10b981); }
+.card-my-reward { background: linear-gradient(135deg, #f5e341, #ccc92c); }
 .card-daily-streak, .card-todays-challenge { background: var(--card-background); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); color: var(--text-dark); }
 
 
