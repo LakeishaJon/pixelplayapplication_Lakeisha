@@ -1,0 +1,964 @@
+/* 🎨 AvatarEditor.css - Making Everything Look AWESOME! */
+/* Fun animations, colors, and styles for the PixelPlay Avatar Editor */
+
+/* 🌟 Main Container Styles */
+.avatar-editor-container {
+  font-family: "Comic Sans MS", cursive, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+/* 🎮 Game-Style Headers */
+.avatar-editor-title {
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+  animation: titleGlow 2s ease-in-out infinite alternate;
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+@keyframes titleGlow {
+  from {
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3),
+      0 0 20px rgba(255, 255, 255, 0.3);
+  }
+  to {
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3),
+      0 0 30px rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* 🖼️ Avatar Preview Area */
+.avatar-preview-container {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-radius: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1),
+    inset 0 2px 4px rgba(255, 255, 255, 0.8);
+  border: 5px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-preview-container::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  background: linear-gradient(
+    45deg,
+    #ff6b6b,
+    #4ecdc4,
+    #45b7d1,
+    #96ceb4,
+    #feca57
+  );
+  border-radius: 35px;
+  z-index: -1;
+  animation: borderAnimation 3s linear infinite;
+}
+
+@keyframes borderAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.avatar-display-area {
+  width: 280px;
+  height: 280px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+  border: 3px dashed #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-display-area:hover {
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.avatar-display-area.has-avatar {
+  border-style: solid;
+  border-color: #4ecdc4;
+  background: linear-gradient(135deg, #b6e3f4, #a8e6cf);
+}
+
+/* 🎛️ Control Panel Styles */
+.controls-panel {
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 3px solid #ffd93d;
+  position: relative;
+  overflow: hidden;
+}
+
+.controls-panel::before {
+  content: "✨";
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.2) rotate(180deg);
+  }
+}
+
+.control-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-radius: 20px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.control-section:hover {
+  border-color: #4ecdc4;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.control-section-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+  text-align: center;
+  position: relative;
+}
+
+.control-section-title::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+  border-radius: 3px;
+}
+
+/* 🎨 Style Selection Buttons */
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.style-button {
+  padding: 20px;
+  border: none;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.style-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.6s ease;
+}
+
+.style-button:hover::before {
+  left: 100%;
+}
+
+.style-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.style-button.selected {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 4px #ffd93d, 0 15px 30px rgba(0, 0, 0, 0.3);
+  animation: selectedPulse 2s ease-in-out infinite;
+}
+
+@keyframes selectedPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px #ffd93d, 0 15px 30px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px #ffd93d, 0 20px 40px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* 🌈 Option Grid Buttons */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.option-button {
+  padding: 15px 10px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.option-button:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.option-button.selected {
+  background: linear-gradient(135deg, #4ecdc4, #44a08d);
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px #ffd93d, 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.option-button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.option-button:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* 🎨 Color Palette Buttons */
+.color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.color-button {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.color-button:hover {
+  transform: scale(1.15);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+}
+
+.color-button.selected {
+  border-color: #ffd93d;
+  border-width: 4px;
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 6px #ffd93d, 0 8px 20px rgba(0, 0, 0, 0.3);
+  animation: colorSelected 1s ease-out;
+}
+
+@keyframes colorSelected {
+  0% {
+    transform: scale(1.2);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1.2);
+  }
+}
+
+.color-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.color-button:hover::before {
+  opacity: 1;
+}
+
+/* 💾 Save Button Styles */
+.save-button {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: white;
+  border: none;
+  padding: 20px 40px;
+  border-radius: 25px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(46, 204, 113, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.save-button::before {
+  content: "✨";
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  animation: saveButtonSparkle 1s ease-in-out infinite;
+}
+
+@keyframes saveButtonSparkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.save-button:hover {
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 30px rgba(46, 204, 113, 0.4);
+}
+
+.save-button:active {
+  transform: translateY(0) scale(1.02);
+  box-shadow: 0 6px 15px rgba(46, 204, 113, 0.3);
+}
+
+/* 🏆 Saved Avatars Gallery */
+.saved-avatars-gallery {
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  border-radius: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 3px solid #9b59b6;
+  position: relative;
+}
+
+.saved-avatars-gallery::before {
+  content: "🏆";
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 28px;
+  animation: trophy 2s ease-in-out infinite;
+}
+
+@keyframes trophy {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+.avatar-card {
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border: 2px solid #e9ecef;
+  border-radius: 20px;
+  padding: 15px;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-card:hover {
+  border-color: #4ecdc4;
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: rotate(45deg);
+  transition: all 0.6s ease;
+  opacity: 0;
+}
+
+.avatar-card:hover::before {
+  opacity: 1;
+  top: -60%;
+  left: -60%;
+}
+
+.avatar-thumbnail {
+  width: 80px;
+  height: 80px;
+  border-radius: 15px;
+  border: 2px solid #ddd;
+  margin: 0 auto 15px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.avatar-thumbnail:hover {
+  transform: scale(1.1);
+  border-color: #4ecdc4;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.avatar-card-name {
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.avatar-card-date {
+  color: #7f8c8d;
+  font-size: 0.75rem;
+  margin-bottom: 15px;
+}
+
+/* 🎮 Action Buttons */
+.action-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin: 0 2px;
+}
+
+.action-button.load-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+}
+
+.action-button.load-button:hover {
+  background: linear-gradient(135deg, #2980b9, #3498db);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+}
+
+.action-button.delete-button {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+.action-button.delete-button:hover {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+}
+
+/* ✨ Special Effects */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4ecdc4;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.success-message {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 15px;
+  margin: 15px 0;
+  text-align: center;
+  font-weight: 600;
+  animation: successSlide 0.5s ease-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.success-message::before {
+  content: "🎉";
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  animation: celebrate 1s ease-in-out infinite;
+}
+
+@keyframes successSlide {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes celebrate {
+  0%,
+  100% {
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.2);
+  }
+}
+
+.error-message {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 15px;
+  margin: 15px 0;
+  text-align: center;
+  font-weight: 600;
+  animation: errorShake 0.5s ease-out;
+}
+
+@keyframes errorShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* 🌟 Floating Particles Background Effect */
+.floating-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: float 6s ease-in-out infinite;
+}
+
+.particle:nth-child(1) {
+  width: 6px;
+  height: 6px;
+  left: 10%;
+  animation-delay: 0s;
+  animation-duration: 8s;
+}
+
+.particle:nth-child(2) {
+  width: 8px;
+  height: 8px;
+  left: 20%;
+  animation-delay: 1s;
+  animation-duration: 10s;
+}
+
+.particle:nth-child(3) {
+  width: 4px;
+  height: 4px;
+  left: 60%;
+  animation-delay: 2s;
+  animation-duration: 6s;
+}
+
+.particle:nth-child(4) {
+  width: 10px;
+  height: 10px;
+  left: 80%;
+  animation-delay: 3s;
+  animation-duration: 12s;
+}
+
+.particle:nth-child(5) {
+  width: 5px;
+  height: 5px;
+  left: 90%;
+  animation-delay: 4s;
+  animation-duration: 9s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 📱 Responsive Design for Mobile */
+@media (max-width: 768px) {
+  .avatar-editor-title {
+    font-size: 2rem;
+  }
+
+  .avatar-display-area {
+    width: 200px;
+    height: 200px;
+  }
+
+  .style-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .options-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .color-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .control-section {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .save-button {
+    width: 100%;
+    padding: 18px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .avatar-editor-container {
+    padding: 10px;
+  }
+
+  .avatar-editor-title {
+    font-size: 1.5rem;
+  }
+
+  .avatar-display-area {
+    width: 160px;
+    height: 160px;
+  }
+
+  .options-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .color-palette {
+    gap: 6px;
+  }
+
+  .color-button {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* 🎨 Theme Variations */
+.theme-summer {
+  background: linear-gradient(135deg, #ffeaa7, #fab1a0, #fd79a8);
+}
+
+.theme-winter {
+  background: linear-gradient(135deg, #74b9ff, #a29bfe, #6c5ce7);
+}
+
+.theme-spring {
+  background: linear-gradient(135deg, #00b894, #55a3ff, #a8e6cf);
+}
+
+.theme-autumn {
+  background: linear-gradient(135deg, #e17055, #fdcb6e, #e84393);
+}
+
+/* 🏆 Achievement Unlock Animation */
+.achievement-unlock {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: white;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: achievementPop 2s ease-out forwards;
+}
+
+@keyframes achievementPop {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.achievement-unlock h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.achievement-unlock p {
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.achievement-unlock .achievement-emoji {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* 🎮 Game-Style Progress Bars */
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #ecf0f1;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  margin: 10px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ecdc4, #44a08d);
+  border-radius: 6px;
+  transition: width 0.8s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: progressShine 1.5s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 🌈 Rainbow Text Effect */
+.rainbow-text {
+  background: linear-gradient(
+    45deg,
+    #ff6b6b,
+    #4ecdc4,
+    #45b7d1,
+    #96ceb4,
+    #feca57,
+    #ff9ff3
+  );
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rainbowFlow 3s ease-in-out infinite;
+}
+
+@keyframes rainbowFlow {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 🎯 Accessibility Improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.focus-visible {
+  outline: 3px solid #4ecdc4;
+  outline-offset: 2px;
+}
+
+/* 🎨 High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .avatar-editor-container {
+    background: #000;
+    color: #fff;
+  }
+
+  .control-section {
+    background: #222;
+    border-color: #fff;
+  }
+
+  .option-button {
+    background: #444;
+    color: #fff;
+    border: 2px solid #fff;
+  }
+}
+
+/* 🌙 Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .avatar-editor-container {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+  }
+
+  .avatar-preview-container,
+  .controls-panel,
+  .saved-avatars-gallery {
+    background: linear-gradient(145deg, #34495e, #2c3e50);
+    color: #ecf0f1;
+  }
+
+  .control-section {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-color: #4ecdc4;
+  }
+
+  .avatar-card {
+    background: linear-gradient(135deg, #34495e, #2c3e50);
+    border-color: #4ecdc4;
+  }
+}
