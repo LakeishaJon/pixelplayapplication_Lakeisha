@@ -6,7 +6,53 @@ import { avataaars, miniavs, personas } from '@dicebear/collection';
  * Avatar Utilities for PixelPlay Fitness App
  * Handles avatar generation, validation, and utility functions
  */
+// Generate theme configuration for UI theming
+export const generateThemeConfig = (theme = 'default') => {
+  const themeConfigs = {
+    default: {
+      primary: '#4CAF50',
+      secondary: '#2196F3',
+      accent: '#FF9800',
+      background: '#F5F5F5',
+      surface: '#FFFFFF',
+      text: '#212121',
+      textSecondary: '#757575',
+      border: '#E0E0E0'
+    },
+    dark: {
+      primary: '#66BB6A',
+      secondary: '#42A5F5',
+      accent: '#FFB74D',
+      background: '#121212',
+      surface: '#1E1E1E',
+      text: '#FFFFFF',
+      textSecondary: '#B0B0B0',
+      border: '#333333'
+    },
+    fitness: {
+      primary: '#FF5722',
+      secondary: '#4CAF50',
+      accent: '#FFC107',
+      background: '#FAFAFA',
+      surface: '#FFFFFF',
+      text: '#212121',
+      textSecondary: '#666666',
+      border: '#DDDDDD'
+    },
+    ocean: {
+      primary: '#00BCD4',
+      secondary: '#0097A7',
+      accent: '#4DD0E1',
+      background: '#E0F2F1',
+      surface: '#B2DFDB',
+      text: '#006064',
+      textSecondary: '#00838F',
+      border: '#80CBC4'
+    }
+  };
 
+  return themeConfigs[theme] || themeConfigs.default;
+};
 // Helper function to generate random seeds for unique avatars
 export const generateRandomSeed = () => {
   const seeds = [
@@ -26,7 +72,7 @@ export const getAvatarStyle = (styleName) => {
     'miniavs': miniavs,
     'personas': personas
   };
-  
+
   return styles[styleName] || avataaars; // Default to avataaars if style not found
 };
 
@@ -40,21 +86,21 @@ export const generateAvatarDataUri = (avatarSettings) => {
 
     const style = getAvatarStyle(avatarSettings.style || 'avataaars');
     const seed = avatarSettings.seed || generateRandomSeed();
-    
+
     // Create avatar with provided settings
     const avatar = createAvatar(style, {
       seed,
       ...avatarSettings
     });
-    
+
     return avatar.toDataUri();
   } catch (error) {
     console.error('Error generating avatar:', error);
-    
+
     // Return fallback avatar
     try {
-      const fallbackAvatar = createAvatar(avataaars, { 
-        seed: 'fallback-' + Date.now() 
+      const fallbackAvatar = createAvatar(avataaars, {
+        seed: 'fallback-' + Date.now()
       });
       return fallbackAvatar.toDataUri();
     } catch (fallbackError) {
@@ -158,54 +204,54 @@ export const getUnlockableItems = () => ({
 // Check what items should be unlocked for a specific level
 export const getItemsForLevel = (level) => {
   const unlockables = getUnlockableItems();
-  const items = { 
-    hair: [], 
-    clothing: [], 
-    accessories: [], 
-    colors: [] 
+  const items = {
+    hair: [],
+    clothing: [],
+    accessories: [],
+    colors: []
   };
-  
+
   // Add items for each category based on level
   Object.keys(unlockables).forEach(category => {
     Object.keys(unlockables[category]).forEach(unlockLevel => {
       const requiredLevel = parseInt(unlockLevel);
       if (level >= requiredLevel) {
         items[category] = [
-          ...items[category], 
+          ...items[category],
           ...unlockables[category][unlockLevel]
         ];
       }
     });
   });
-  
+
   return items;
 };
 
 // Get newly unlocked items when leveling up
 export const getNewlyUnlockedItems = (oldLevel, newLevel) => {
   if (newLevel <= oldLevel) return { hair: [], clothing: [], accessories: [], colors: [] };
-  
+
   const unlockables = getUnlockableItems();
-  const newItems = { 
-    hair: [], 
-    clothing: [], 
-    accessories: [], 
-    colors: [] 
+  const newItems = {
+    hair: [],
+    clothing: [],
+    accessories: [],
+    colors: []
   };
-  
+
   // Find items unlocked between old and new level
   Object.keys(unlockables).forEach(category => {
     Object.keys(unlockables[category]).forEach(unlockLevel => {
       const requiredLevel = parseInt(unlockLevel);
       if (requiredLevel > oldLevel && requiredLevel <= newLevel) {
         newItems[category] = [
-          ...newItems[category], 
+          ...newItems[category],
           ...unlockables[category][unlockLevel]
         ];
       }
     });
   });
-  
+
   return newItems;
 };
 
@@ -214,7 +260,7 @@ export const validateAvatarSettings = (settings) => {
   if (!settings || typeof settings !== 'object') {
     return false;
   }
-  
+
   // Check required fields
   const requiredFields = ['style', 'seed'];
   for (const field of requiredFields) {
@@ -222,13 +268,13 @@ export const validateAvatarSettings = (settings) => {
       return false;
     }
   }
-  
+
   // Validate style
   const validStyles = ['avataaars', 'miniavs', 'personas'];
   if (!validStyles.includes(settings.style)) {
     return false;
   }
-  
+
   return true;
 };
 
@@ -236,7 +282,7 @@ export const validateAvatarSettings = (settings) => {
 export const createRandomAvatar = (style = 'avataaars') => {
   const defaultAvatar = getDefaultAvatar(style);
   const unlockableItems = getUnlockableItems();
-  
+
   // Randomize some features
   if (style === 'avataaars') {
     const randomHair = unlockableItems.hair[1][Math.floor(Math.random() * unlockableItems.hair[1].length)];
@@ -244,7 +290,7 @@ export const createRandomAvatar = (style = 'avataaars') => {
     const randomColors = unlockableItems.colors[1];
     const randomHairColor = randomColors[Math.floor(Math.random() * randomColors.length)];
     const randomClothingColor = randomColors[Math.floor(Math.random() * randomColors.length)];
-    
+
     return {
       ...defaultAvatar,
       hair: randomHair,
@@ -254,7 +300,7 @@ export const createRandomAvatar = (style = 'avataaars') => {
       seed: generateRandomSeed()
     };
   }
-  
+
   return {
     ...defaultAvatar,
     seed: generateRandomSeed()
@@ -294,7 +340,7 @@ export const generateAvatarThumbnail = (avatarSettings, size = 64) => {
       ...avatarSettings,
       size: size
     });
-    
+
     return avatar.toDataUri();
   } catch (error) {
     console.error('Error generating avatar thumbnail:', error);
@@ -311,12 +357,12 @@ export const getWorkoutRewards = (workoutType, userLevel) => {
     'running': { points: 50, category: 'accessories', items: ['running-cap', 'athletic-shoes'] },
     'dancing': { points: 35, category: 'clothing', items: ['dance-outfit', 'colorful-shirt'] }
   };
-  
+
   const reward = baseRewards[workoutType] || { points: 20, category: 'accessories', items: ['basic-item'] };
-  
+
   // Level bonus
   const levelBonus = Math.floor(userLevel / 5) * 5;
-  
+
   return {
     ...reward,
     points: reward.points + levelBonus,
@@ -327,58 +373,58 @@ export const getWorkoutRewards = (workoutType, userLevel) => {
 // Achievement system helpers
 export const checkAchievements = (userStats) => {
   const achievements = [];
-  
+
   // Workout achievements
   if (userStats.workoutsCompleted === 1) {
     achievements.push({ id: 'first-workout', name: 'First Steps', reward: 'medal' });
   }
-  
+
   if (userStats.workoutsCompleted === 10) {
     achievements.push({ id: 'workout-warrior', name: 'Workout Warrior', reward: 'trophy' });
   }
-  
+
   // Level achievements
   if (userStats.level === 5) {
     achievements.push({ id: 'level-5', name: 'Rising Star', reward: 'star-crown' });
   }
-  
+
   if (userStats.level === 10) {
     achievements.push({ id: 'level-10', name: 'Fitness Master', reward: 'master-badge' });
   }
-  
+
   // Point achievements
   if (userStats.points >= 1000) {
     achievements.push({ id: 'point-master', name: 'Point Collector', reward: 'golden-accessory' });
   }
-  
+
   // Streak achievements
   if (userStats.streak >= 7) {
     achievements.push({ id: 'week-streak', name: 'Week Warrior', reward: 'consistency-badge' });
   }
-  
+
   return achievements;
 };
 
 // Generate multiple random avatars for gallery/selection
 export const generateAvatarCollection = (count = 6, style = 'avataaars') => {
   const collection = [];
-  
+
   for (let i = 0; i < count; i++) {
     const avatar = createRandomAvatar(style);
     avatar.name = `Avatar ${i + 1}`;
     avatar.id = `random-${Date.now()}-${i}`;
     collection.push(avatar);
   }
-  
+
   return collection;
 };
 
 // Avatar comparison utility
 export const compareAvatars = (avatar1, avatar2) => {
   const differences = [];
-  
+
   const compareFields = ['hair', 'clothing', 'accessories', 'hairColor', 'clothingColor', 'skin'];
-  
+
   compareFields.forEach(field => {
     if (JSON.stringify(avatar1[field]) !== JSON.stringify(avatar2[field])) {
       differences.push({
@@ -388,7 +434,7 @@ export const compareAvatars = (avatar1, avatar2) => {
       });
     }
   });
-  
+
   return {
     identical: differences.length === 0,
     differences
@@ -399,14 +445,14 @@ export const compareAvatars = (avatar1, avatar2) => {
 export const createAvatarVariations = (baseAvatar, count = 3) => {
   const variations = [];
   const unlockableItems = getUnlockableItems();
-  
+
   for (let i = 0; i < count; i++) {
     const variation = { ...baseAvatar };
-    
+
     // Randomly change one aspect
     const aspects = ['hair', 'clothing', 'hairColor', 'clothingColor'];
     const randomAspect = aspects[Math.floor(Math.random() * aspects.length)];
-    
+
     if (randomAspect === 'hair' && unlockableItems.hair[1]) {
       variation.hair = unlockableItems.hair[1][Math.floor(Math.random() * unlockableItems.hair[1].length)];
     } else if (randomAspect === 'clothing' && unlockableItems.clothing[1]) {
@@ -416,14 +462,14 @@ export const createAvatarVariations = (baseAvatar, count = 3) => {
     } else if (randomAspect === 'clothingColor' && unlockableItems.colors[1]) {
       variation.clothingColor = [unlockableItems.colors[1][Math.floor(Math.random() * unlockableItems.colors[1].length)]];
     }
-    
+
     variation.seed = generateRandomSeed();
     variation.name = `Variation ${i + 1}`;
     variation.id = `variation-${Date.now()}-${i}`;
-    
+
     variations.push(variation);
   }
-  
+
   return variations;
 };
 
@@ -432,11 +478,11 @@ export const calculateAvatarFitnessStats = (userStats) => {
   const level = calculateLevel(userStats.points);
   const progress = calculateProgress(userStats.points);
   const nextLevelPoints = pointsToNextLevel(userStats.points);
-  
+
   // Calculate fitness metrics
   const avgWorkoutLength = userStats.totalMinutesExercised / Math.max(userStats.workoutsCompleted, 1);
   const pointsPerWorkout = userStats.points / Math.max(userStats.workoutsCompleted, 1);
-  
+
   return {
     level,
     progress: Math.round(progress * 100),
@@ -451,7 +497,7 @@ export const calculateAvatarFitnessStats = (userStats) => {
 // Motivational messages based on progress
 export const getMotivationalMessage = (userStats) => {
   const fitnessStats = calculateAvatarFitnessStats(userStats);
-  
+
   const messages = {
     'Beginner': [
       'Great start! Every journey begins with a single step! 🌟',
@@ -474,7 +520,7 @@ export const getMotivationalMessage = (userStats) => {
       'Your commitment is absolutely amazing! 🌟'
     ]
   };
-  
+
   const rankMessages = messages[fitnessStats.rank] || messages['Beginner'];
   return rankMessages[Math.floor(Math.random() * rankMessages.length)];
 };
@@ -483,7 +529,7 @@ export const getMotivationalMessage = (userStats) => {
 export const generateFitnessAvatarPreview = (avatarSettings, userStats) => {
   const fitnessStats = calculateAvatarFitnessStats(userStats);
   const motivationalMessage = getMotivationalMessage(userStats);
-  
+
   return {
     avatarUri: generateAvatarDataUri(avatarSettings),
     fitnessStats,

@@ -1,7 +1,7 @@
 // src/front/components/Navigation.jsx
 import React from 'react';
-import { useAvatar } from '../Contexts/AvatarContext.jsx';
-import AvatarDisplay from './AvatarDisplay.jsx';
+import { useAvatar } from '../Contexts/AvatarContext';
+import AvatarDisplay from './AvatarDisplay';
 import '../styles/Navigation.css';
 
 const Navigation = ({ currentPage, onNavigate }) => {

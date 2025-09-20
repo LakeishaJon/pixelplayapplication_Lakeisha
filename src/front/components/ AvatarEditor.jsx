@@ -1,12 +1,12 @@
 // src/front/pages/AvatarEditor.jsx
 import React, { useState, useEffect } from 'react';
-import { useAvatar } from '../Contexts/AvatarContext.jsx'; // fixed path
-import AvatarDisplay from '../components/AvatarDisplay.jsx';
-import ColorPalette from '../components/ColorPalette.jsx';
-import StyleSelector from '../components/StyleSelector.jsx';
-import ItemSelector from '../components/ItemSelector.jsx';
-import { getItemsForLevel, generateThemeConfig } from '../utils/avatarUtils.jsx';
-import { FITNESS_THEMES } from '../utils/dicebearConfig.jsx';
+import { useAvatar } from '../Contexts/AvatarContext';
+import AvatarDisplay from '../components/AvatarDisplay';
+import ColorPalette from '../components/ColorPalette';
+import StyleSelector from '../components/StyleSelector';
+import ItemSelector from '../components/ItemSelector';
+import { getItemsForLevel, generateThemeConfig } from '../utils/avatarUtils';
+import { FITNESS_THEMES } from '../utils/dicebearConfig';
 
 const AvatarEditor = () => {
   const { currentAvatar, updateAvatar, saveAvatar, inventory, userStats } = useAvatar();

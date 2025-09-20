@@ -12,7 +12,7 @@
 .workout-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  border-color: #4CAF50;
+  border-color: #4caf50;
 }
 
 .workout-icon {
@@ -62,7 +62,7 @@
 
 .workout-button {
   padding: 10px 20px;
-  background: #4CAF50;
+  background: #4caf50;
   color: white;
   border: none;
   border-radius: 8px;

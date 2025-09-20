@@ -1,51 +1,259 @@
-// src/front/pages/Dashboard.jsx
-import React, { useEffect } from 'react';
-import { useAvatar } from '../Contexts/AvatarContext.jsx';
-import AvatarDisplay from '../components/AvatarDisplay.jsx';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/Dashboard.css';
 
-const Dashboard = ({ onNavigate }) => {
-  const {
-    userStats,
-    currentAvatar,
-    notifications,
-    addPoints,
-    completeWorkout,
-    unlockItem,
-    clearNotification
-  } = useAvatar();
-
-  // Simulate completing a workout (for demo)
-  const handleWorkout = (minutes, points) => {
-    completeWorkout(minutes);
-    addPoints(points);
-  };
+const Dashboard = () => {
+  const navigate = useNavigate();
+  
+  const [userStats, setUserStats] = useState({
+    level: 1,
+    points: 0,
+    streakDays: 0
+  });
+  
+  const [todayStats, setTodayStats] = useState({
+    workoutsCompleted: 0,
+    minutesExercised: 0,
+    pointsEarned: 0
+  });
+  
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (notifications.length > 0) {
-      console.log('New notification:', notifications[0]);
+    setLoading(false);
+  }, []);
+
+  const handleNavigation = (route) => {
+    switch(route) {
+      case 'games':
+        navigate('/games');
+        break;
+      case 'editor':
+        navigate('/avatar-editor');
+        break;
+      case 'inventory':
+        navigate('/inventory');
+        break;
+      default:
+        console.log(`Navigation to ${route} not implemented`);
     }
-  }, [notifications]);
+  };
+
+  const quickActions = [
+    {
+      id: 'workout',
+      title: 'Start Workout',
+      description: 'Begin your fitness journey',
+      icon: '💪',
+      gradient: 'from-orange-400 to-red-500',
+      action: () => handleNavigation('games')
+    },
+    {
+      id: 'games',
+      title: 'Play Games',
+      description: 'Fun fitness games',
+      icon: '🎮',
+      gradient: 'from-purple-400 to-blue-500',
+      action: () => handleNavigation('games')
+    },
+    {
+      id: 'avatar',
+      title: 'Customize Avatar',
+      description: 'Edit your character',
+      icon: '🎨',
+      gradient: 'from-pink-400 to-purple-500',
+      action: () => handleNavigation('editor')
+    },
+    {
+      id: 'collection',
+      title: 'View Collection',
+      description: 'See your gear',
+      icon: '📦',
+      gradient: 'from-green-400 to-blue-500',
+      action: () => handleNavigation('inventory')
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="dashboard">
-      <h1>Dashboard</h1>
+    <div className="dashboard-container">
+      {/* Navigation Bar - Matching your existing design */}
+      <nav className="dashboard-nav">
+        <div className="nav-content">
+          <div className="nav-left">
+            <div className="logo">
+              <span className="logo-icon">🎮</span>
+              <span className="logo-text">PixelPlay</span>
+            </div>
+          </div>
+          <div className="nav-center">
+            <button className="nav-btn nav-btn-active">
+              <span className="nav-btn-icon">🏠</span>
+              Home
+            </button>
+            <button 
+              className="nav-btn"
+              onClick={() => handleNavigation('editor')}
+            >
+              <span className="nav-btn-icon">🎨</span>
+              Editor
+            </button>
+            <button 
+              className="nav-btn"
+              onClick={() => handleNavigation('inventory')}
+            >
+              <span className="nav-btn-icon">👜</span>
+              Collection
+            </button>
+          </div>
+          <div className="nav-right">
+            <div className="user-level">
+              <span className="level-label">Level {userStats.level}</span>
+              <span className="points-label">{userStats.points} pts</span>
+            </div>
+            <div className="avatar-badge">
+              <span>Avatar</span>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-      <div className="avatar-section">
-        <AvatarDisplay avatar={currentAvatar} size={150} showLevel={true} level={userStats.level} />
-      </div>
+      {/* Main Dashboard Content */}
+      <main className="dashboard-main">
+        {/* Header Section */}
+        <section className="dashboard-header">
+          <div className="header-content">
+            <div className="welcome-text">
+              <h1>Welcome Back!</h1>
+              <p>Ready to continue your fitness journey?</p>
+            </div>
+            <div className="level-display">
+              <div className="level-badge">
+                <span className="level-title">Level {userStats.level}</span>
+                <span className="xp-amount">⭐ {userStats.points} XP</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <div className="stats">
-        <p>Level: {userStats.level}</p>
-        <p>Points: {userStats.points}</p>
-        <p>Workouts Completed: {userStats.workoutsCompleted}</p>
-        <p>Total Minutes Exercised: {userStats.totalMinutesExercised}</p>
-      </div>
+        {/* Stats and Avatar Section */}
+        <section className="stats-avatar-section">
+          <div className="section-grid">
+            
+            {/* Avatar Card */}
+            <div className="avatar-section">
+              <div className="avatar-card">
+                <h2>Your Avatar</h2>
+                <div className="avatar-display">
+                  <div className="avatar-circle">
+                    <img src="/api/placeholder/80/80" alt="Avatar" className="avatar-image" />
+                    <div className="avatar-edit-badge">
+                      <span>✏️</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <div className="dashboard-actions">
-        <button onClick={() => handleWorkout(30, 50)}>🏃 Complete 30-min Workout (+50 points)</button>
-        <button onClick={() => onNavigate('editor')}>🎨 Customize Avatar</button>
-        <button onClick={() => onNavigate('inventory')}>🎒 View Collection</button>
-      </div>
+            {/* Stats Grid */}
+            <div className="stats-section">
+              <div className="stats-grid-container">
+                
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-icon">🏋️</span>
+                    <span className="stat-label">WORKOUTS</span>
+                  </div>
+                  <div className="stat-value">{todayStats.workoutsCompleted}</div>
+                  <div className="stat-subtitle">Completed</div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-icon">⏱️</span>
+                    <span className="stat-label">ACTIVE TIME</span>
+                  </div>
+                  <div className="stat-value">{todayStats.minutesExercised}</div>
+                  <div className="stat-subtitle">Minutes</div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-icon">⭐</span>
+                    <span className="stat-label">XP EARNED</span>
+                  </div>
+                  <div className="stat-value">{todayStats.pointsEarned}</div>
+                  <div className="stat-subtitle">Total Points</div>
+                </div>
+
+                <div className="stat-card">
+                  <div className="stat-header">
+                    <span className="stat-icon">🔥</span>
+                    <span className="stat-label">STREAK</span>
+                  </div>
+                  <div className="stat-value">{userStats.streakDays}</div>
+                  <div className="stat-subtitle">Days</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Quick Actions Section */}
+        <section className="quick-actions-section">
+          <h2 className="section-title">Quick Actions</h2>
+          <div className="actions-grid">
+            {quickActions.map(action => (
+              <button 
+                key={action.id}
+                className={`action-card bg-gradient-to-br ${action.gradient}`}
+                onClick={action.action}
+              >
+                <div className="action-content">
+                  <div className="action-icon">{action.icon}</div>
+                  <h3 className="action-title">{action.title}</h3>
+                  <p className="action-description">{action.description}</p>
+                </div>
+                <div className="action-arrow">→</div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Progress Section */}
+        <section className="progress-section">
+          <h2 className="section-title">Your Progress</h2>
+          <div className="progress-card">
+            <div className="progress-info">
+              <div className="progress-level">
+                <span>Level {userStats.level}</span>
+                <span>{userStats.points} XP</span>
+              </div>
+              <div className="progress-bar-container">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill"
+                    style={{ width: `${(userStats.points % 100)}%` }}
+                  ></div>
+                </div>
+                <span className="progress-text">
+                  Next Level: {100 - (userStats.points % 100)} XP to go
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
     </div>
   );
 };

@@ -1,21 +1,16 @@
-// src/front/pages/AvatarEditorPage.jsx
 import React, { useState } from "react";
-
-// Context
-import { useAvatar } from "../Contexts/AvatarContext.jsx";
-
-// Components
-import AvatarDisplay from "../components/AvatarDisplay.jsx";
-import ColorPalette from "../components/ColorPalette.jsx";
-import StyleSelector from "../components/StyleSelector.jsx";
-import ItemSelector from "../components/ItemSelector.jsx";
-
-// Utilities
+import { useNavigate } from "react-router-dom"; // ✅ Add this import
+import { useAvatar } from "../Contexts/AvatarContext";
+import AvatarDisplay from "../components/AvatarDisplay";
+import ColorPalette from "../components/ColorPalette";
+import StyleSelector from "../components/StyleSelector";
+import ItemSelector from "../components/ItemSelector";
 import { getItemsForLevel, generateThemeConfig } from "../utils/avatarUtils.jsx";
-import { FITNESS_THEMES } from "../utils/dicebearConfig.jsx";
+import "../styles/AvatarEditorPage.css";
 
-const AvatarEditorPage = ({ onNavigate }) => {
-  const { currentAvatar, updateAvatar, saveAvatar, inventory } = useAvatar();
+const AvatarEditorPage = () => { // ✅ Remove onNavigate prop
+  const navigate = useNavigate(); // ✅ Add useNavigate hook
+  const { currentAvatar, updateAvatar, saveAvatar, inventory, userStats } = useAvatar();
   const [previewAvatar, setPreviewAvatar] = useState({ ...currentAvatar });
   const [activeTab, setActiveTab] = useState("hair");
   const [avatarName, setAvatarName] = useState("");
@@ -32,38 +27,71 @@ const AvatarEditorPage = ({ onNavigate }) => {
     saveAvatar(avatarName, previewAvatar);
     updateAvatar(previewAvatar);
     setAvatarName("");
-    alert("Avatar saved! 🎉");
+    alert("Avatar saved!");
   };
 
   const handleSetAsCurrent = () => {
     updateAvatar(previewAvatar);
-    alert("Avatar updated! 👍");
+    alert("Avatar updated!");
   };
 
   const handleReset = () => setPreviewAvatar({ ...currentAvatar });
 
+  // ✅ Add navigation handlers
+  const handleNavigateToDashboard = () => {
+    navigate("/dashboard");
+  };
+
+  const handleNavigateToInventory = () => {
+    navigate("/inventory");
+  };
+
+  const handleNavigateToHome = () => {
+    navigate("/");
+  };
+
   const tabs = [
-    { id: "hair", label: "💇 Hair", icon: "💇" },
-    { id: "clothing", label: "👕 Clothes", icon: "👕" },
-    { id: "accessories", label: "👓 Accessories", icon: "👓" },
-    { id: "colors", label: "🎨 Colors", icon: "🎨" },
-    { id: "style", label: "✨ Style", icon: "✨" },
+    { id: "hair", label: "Hair", icon: "💇" },
+    { id: "clothing", label: "Clothes", icon: "👕" },
+    { id: "accessories", label: "Accessories", icon: "👓" },
+    { id: "colors", label: "Colors", icon: "🎨" },
+    { id: "style", label: "Style", icon: "✨" },
   ];
 
   return (
     <div className="avatar-editor-page">
-      <div className="editor-container">
-        <header className="editor-header">
-          <h2>🎨 Avatar Art Studio</h2>
-          <p>Create and customize your perfect fitness character</p>
-        </header>
+      {/* Header */}
+      <div className="editor-header">
+        <div className="header-content">
+          <div className="header-left">
+            <div className="cube-icon">🎨</div>
+            <div className="header-text">
+              <h1>Avatar Art Studio</h1>
+              <p>Create and customize your perfect fitness character</p>
+            </div>
+          </div>
+          <div className="header-right">
+            <div className="level-display">
+              <div className="level-text">Level {userStats?.level || 1}</div>
+              <div className="xp-text">⭐ {userStats?.points || 0} XP</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div className="editor-content">
-          {/* Left side - Preview */}
-          <div className="preview-section">
-            <div className="preview-card">
-              <h3>Your Avatar Preview</h3>
-              <AvatarDisplay avatar={previewAvatar} size={150} showLevel={true} level={1} />
+      {/* Main Content */}
+      <div className="editor-content">
+        {/* Preview Section */}
+        <div className="preview-section">
+          <div className="preview-card">
+            <h2>Your Avatar Preview</h2>
+            <div className="avatar-display-container">
+              <AvatarDisplay
+                avatar={previewAvatar}
+                size={180}
+                showLevel={true}
+                level={userStats?.level || 1}
+              />
             </div>
 
             <div className="save-controls">
@@ -88,9 +116,14 @@ const AvatarEditorPage = ({ onNavigate }) => {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right side - Customization */}
-          <div className="customization-section">
+        {/* Customization Section */}
+        <div className="customization-section">
+          <div className="customization-card">
+            <h2>Choose Avatar Style</h2>
+
+            {/* Tabs */}
             <div className="editor-tabs">
               {tabs.map((tab) => (
                 <button
@@ -98,56 +131,103 @@ const AvatarEditorPage = ({ onNavigate }) => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`editor-tab ${activeTab === tab.id ? "active" : ""}`}
                 >
-                  {tab.icon}
+                  <span className="tab-icon">{tab.icon}</span>
+                  <span className="tab-label">{tab.label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="tab-content-editor">
+            {/* Tab Content */}
+            <div className="tab-content">
               {activeTab === "hair" && (
-                <ItemSelector
-                  title="Choose Hair Style"
-                  category="hair"
-                  currentValue={previewAvatar.hair}
-                  availableItems={inventory.hair}
-                  onChange={(value) => handleAvatarChange({ hair: value })}
-                />
+                <div className="tab-panel">
+                  <h3>Hair Styles</h3>
+                  <p>Choose from available hair options</p>
+                  <ItemSelector
+                    title="Hair Style"
+                    category="hair"
+                    currentValue={previewAvatar.hair}
+                    availableItems={inventory.hair || ['shortWaved', 'longHair', 'curly']}
+                    onChange={(value) => handleAvatarChange({ hair: value })}
+                  />
+                </div>
               )}
+
               {activeTab === "clothing" && (
-                <ItemSelector
-                  title="Choose Clothing"
-                  category="clothing"
-                  currentValue={previewAvatar.clothing}
-                  availableItems={inventory.clothing}
-                  onChange={(value) => handleAvatarChange({ clothing: value })}
-                />
+                <div className="tab-panel">
+                  <h3>Clothing Options</h3>
+                  <p>Select your outfit</p>
+                  <ItemSelector
+                    title="Clothing"
+                    category="clothing"
+                    currentValue={previewAvatar.clothing}
+                    availableItems={inventory.clothing || ['blazerShirt', 'hoodie', 'tshirt']}
+                    onChange={(value) => handleAvatarChange({ clothing: value })}
+                  />
+                </div>
               )}
+
               {activeTab === "accessories" && (
-                <ItemSelector
-                  title="Choose Accessories"
-                  category="accessories"
-                  currentValue={previewAvatar.accessories}
-                  availableItems={inventory.accessories}
-                  onChange={(value) => handleAvatarChange({ accessories: [value] })}
-                />
+                <div className="tab-panel">
+                  <h3>Accessories</h3>
+                  <p>Add some flair to your look</p>
+                  <ItemSelector
+                    title="Accessories"
+                    category="accessories"
+                    currentValue={previewAvatar.accessories?.[0] || ''}
+                    availableItems={inventory.accessories || ['glasses', 'sunglasses']}
+                    onChange={(value) => handleAvatarChange({ accessories: [value] })}
+                  />
+                </div>
               )}
+
               {activeTab === "colors" && (
-                <ColorPalette avatar={previewAvatar} availableColors={inventory.colors} onChange={handleAvatarChange} />
+                <div className="tab-panel">
+                  <h3>Color Palette</h3>
+                  <p>Customize your colors</p>
+                  <ColorPalette
+                    avatar={previewAvatar}
+                    availableColors={inventory.colors || ['blue', 'red', 'green', 'purple']}
+                    onChange={handleAvatarChange}
+                  />
+                </div>
               )}
+
               {activeTab === "style" && (
-                <StyleSelector currentStyle={previewAvatar.style} onChange={(style) => handleAvatarChange({ style })} />
+                <div className="tab-panel">
+                  <h3>Avatar Style</h3>
+                  <p>Choose your avatar's overall style</p>
+                  <StyleSelector
+                    currentStyle={previewAvatar.style}
+                    onChange={(style) => handleAvatarChange({ style })}
+                  />
+                </div>
               )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Navigation */}
-        <div className="editor-navigation">
-          <button onClick={() => onNavigate("dashboard")} className="nav-button back-button">
+      {/* ✅ FIXED NAVIGATION - Using proper React Router navigation */}
+      <div className="editor-navigation">
+        <div className="nav-buttons">
+          <button
+            onClick={handleNavigateToDashboard}
+            className="nav-btn secondary"
+          >
             🏠 Back to Dashboard
           </button>
-          <button onClick={() => onNavigate("inventory")} className="nav-button inventory-button">
-            🎒 View Collection
+          <button
+            onClick={handleNavigateToInventory}
+            className="nav-btn primary"
+          >
+            📦 View Collection
+          </button>
+          <button
+            onClick={handleNavigateToHome}
+            className="nav-btn tertiary"
+          >
+            🏡 Home
           </button>
         </div>
       </div>
