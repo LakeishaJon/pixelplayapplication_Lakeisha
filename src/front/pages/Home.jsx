@@ -50,7 +50,7 @@ const Home = () => {
   ];
 
   const stats = [
-    { number: '12+', label: 'Fun Games' },
+    { number: '8+', label: 'Fun Games' },
     { number: '50+', label: 'Achievements' },
     { number: '1000+', label: 'Happy Users' },
     { number: '∞', label: 'Fun Levels' }

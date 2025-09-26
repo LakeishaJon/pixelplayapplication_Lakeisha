@@ -18,12 +18,7 @@ import {
     ArrowLeft,
     Volume2,
     VolumeX,
-    UserCircle,
-    BookOpen,
-    Palette,
-    Award,
-    BarChart3,
-    Calendar
+    Filter
 } from 'lucide-react';
 
 const PixelPlayGameHub = () => {
@@ -39,16 +34,24 @@ const PixelPlayGameHub = () => {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedDifficulty, setSelectedDifficulty] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
-    const [showStoryCreator, setShowStoryCreator] = useState(false);
-    const [showAvatarCustomizer, setShowAvatarCustomizer] = useState(false);
     const [audioEnabled, setAudioEnabled] = useState(true);
-    const [motionDetection, setMotionDetection] = useState(true);
+    const [currentAudio, setCurrentAudio] = useState(null);
     
-    // Motion and audio
-    const [motionData, setMotionData] = useState({ x: 0, y: 0, z: 0 });
-    const [isListening, setIsListening] = useState(false);
+    // Game music configuration
+    const gameMusic = {
+        'dance': '/audio/upbeat-dance.mp3',
+        'ninja': '/audio/action-theme.mp3',
+        'yoga': '/audio/calm-ambient.mp3',
+        'rhythm': '/audio/electronic-beat.mp3',
+        'lightning-ladders': '/audio/energetic-workout.mp3',
+        'shadow-punch': '/audio/combat-music.mp3',
+        'adventure': '/audio/adventure-theme.mp3',
+        'superhero': '/audio/heroic-theme.mp3',
+        'magic': '/audio/mystical-ambient.mp3',
+        'sports': '/audio/sports-theme.mp3'
+    };
     
-    // Enhanced user state
+    // User state
     const [user] = useState({
         id: 'user123',
         name: 'Alex',
@@ -57,16 +60,12 @@ const PixelPlayGameHub = () => {
         xp: 850,
         totalGamesPlayed: 23,
         weeklyStreak: 3,
-        favoriteCategory: 'adventure',
         unlockedGames: ['dance', 'ninja', 'yoga', 'adventure', 'sports', 'superhero', 'lightning-ladders', 'shadow-punch', 'magic', 'rhythm'],
         completedGames: ['dance', 'yoga', 'lightning-ladders'],
-        favoriteGames: ['dance', 'ninja', 'adventure'],
-        achievements: ['first_game', 'week_streak', 'adventure_master'],
-        customAvatars: ['🧑‍🚀', '🧙‍♂️', '🦸‍♀️'],
-        stories: ['My Space Adventure', 'Ninja Training Day']
+        favoriteGames: ['dance', 'ninja', 'adventure']
     });
 
-    // Enhanced games database combining both game selection and actual gameplay
+    // Complete games database with proper exercise durations
     const games = [
         {
             id: 'dance',
@@ -78,72 +77,18 @@ const PixelPlayGameHub = () => {
             duration: '5-10 min',
             xpReward: 50,
             energyRequired: 20,
-            color: 'from-pink-400 to-purple-500',
             unlockLevel: 1,
-            instructions: 'Follow the dancing character on screen and copy their moves!',
-            features: ['Music rhythm', 'Dance moves', 'Fun choreography'],
             playerCount: '1-4 players',
-            // Gameplay data
-            gameDuration: 300, // 5 minutes in seconds
             exercises: [
-                { name: 'Dance Moves', duration: 30, instruction: 'Follow the beat and dance!' },
-                { name: 'Spin Move', duration: 20, instruction: 'Spin around with the music!' },
-                { name: 'Jump Dance', duration: 25, instruction: 'Jump to the rhythm!' }
+                { name: 'Warm-up Dance', duration: 45, instruction: 'Start with gentle dance moves!' },
+                { name: 'Groove Time', duration: 60, instruction: 'Find your rhythm and groove!' },
+                { name: 'Spin Moves', duration: 40, instruction: 'Add some spins to your dance!' },
+                { name: 'Jump Dance', duration: 50, instruction: 'Jump to the beat!' },
+                { name: 'Freestyle', duration: 60, instruction: 'Dance however you want!' },
+                { name: 'Cool Down', duration: 45, instruction: 'Slow dance to cool down!' }
             ],
-            visualStyle: 'dance',
-            motionDetection: true,
-            audioSync: true,
+            hasMusic: true,
             safetyFeatures: ['warm-up', 'cool-down', 'hydration-reminders']
-        },
-        {
-            id: 'lightning-ladders',
-            name: 'Lightning Ladders',
-            emoji: '⚡',
-            description: 'Sprint in place to climb the lightning ladder and reach the sky!',
-            category: 'cardio',
-            difficulty: 'Medium',
-            duration: '6-8 min',
-            xpReward: 75,
-            energyRequired: 30,
-            color: 'from-yellow-400 to-orange-500',
-            unlockLevel: 3,
-            instructions: 'Sprint as fast as you can to climb each lightning bolt!',
-            features: ['Speed training', 'Interval bursts', 'Lightning effects'],
-            playerCount: '1-6 players',
-            // Gameplay data
-            gameDuration: 420, // 7 minutes
-            exercises: [
-                { name: 'Sprint in Place', duration: 20, rest: 10, reps: 10, instruction: 'Sprint as fast as you can!' }
-            ],
-            visualStyle: 'ladder',
-            motionDetection: true,
-            safetyFeatures: ['intensity-monitoring', 'automatic-rest']
-        },
-        {
-            id: 'shadow-punch',
-            name: 'Shadow Boxing',
-            emoji: '👊',
-            description: 'Punch targets in rhythm to defeat shadow opponents!',
-            category: 'strength',
-            difficulty: 'Medium',
-            duration: '7-10 min',
-            xpReward: 60,
-            energyRequired: 35,
-            color: 'from-red-500 to-pink-500',
-            unlockLevel: 4,
-            instructions: 'Punch left and right targets to the beat of the music!',
-            features: ['Rhythm boxing', 'Target practice', 'Shadow opponents'],
-            playerCount: '1-4 players',
-            // Gameplay data
-            gameDuration: 480,
-            exercises: [
-                { name: 'Left Punch', duration: 2, instruction: 'Punch left target!' },
-                { name: 'Right Punch', duration: 2, instruction: 'Punch right target!' }
-            ],
-            visualStyle: 'targets',
-            motionDetection: true,
-            audioSync: true,
-            safetyFeatures: ['proper-form-tips', 'wrist-safety']
         },
         {
             id: 'ninja',
@@ -155,21 +100,20 @@ const PixelPlayGameHub = () => {
             duration: '8-12 min',
             xpReward: 75,
             energyRequired: 30,
-            color: 'from-gray-600 to-blue-600',
             unlockLevel: 3,
-            instructions: 'Do ninja moves when you see the symbols: Jump for ⬆️, Duck for ⬇️, Punch for 👊',
-            features: ['Reaction training', 'Combat moves', 'Stealth exercises'],
             playerCount: '1-2 players',
-            // Gameplay data
-            gameDuration: 600,
             exercises: [
-                { name: 'Jump', duration: 1, instruction: 'Jump high!' },
-                { name: 'Duck', duration: 1, instruction: 'Duck low!' },
-                { name: 'Punch', duration: 1, instruction: 'Punch forward!' }
+                { name: 'Ninja Preparation', duration: 40, instruction: 'Prepare your ninja stance!' },
+                { name: 'Jump Training', duration: 60, instruction: 'Practice high ninja jumps!' },
+                { name: 'Duck Training', duration: 50, instruction: 'Master the art of ducking!' },
+                { name: 'Punch Power', duration: 55, instruction: 'Develop ninja punch strength!' },
+                { name: 'Combo Moves', duration: 70, instruction: 'Combine jump, duck, and punch!' },
+                { name: 'Speed Challenge', duration: 60, instruction: 'Fast ninja movements!' },
+                { name: 'Stealth Mode', duration: 45, instruction: 'Silent ninja techniques!' },
+                { name: 'Advanced Combat', duration: 80, instruction: 'Master ninja warrior moves!' },
+                { name: 'Meditation Cool Down', duration: 60, instruction: 'Find your inner ninja peace!' }
             ],
-            visualStyle: 'ninja',
-            motionDetection: true,
-            reactionBased: true,
+            hasMusic: true,
             safetyFeatures: ['form-guidance', 'rest-periods']
         },
         {
@@ -182,21 +126,98 @@ const PixelPlayGameHub = () => {
             duration: '10-15 min',
             xpReward: 60,
             energyRequired: 15,
-            color: 'from-green-400 to-teal-500',
             unlockLevel: 1,
-            instructions: 'Copy the animal poses: Cat stretch, Dog pose, Frog jumps!',
-            features: ['Animal poses', 'Breathing exercises', 'Mindfulness'],
             playerCount: '1+ players',
-            // Gameplay data
-            gameDuration: 900,
             exercises: [
-                { name: 'Cat Stretch', duration: 30, instruction: 'Arch your back like a cat' },
-                { name: 'Dog Stretch', duration: 30, instruction: 'Downward dog pose' },
-                { name: 'Frog Stretch', duration: 30, instruction: 'Squat low like a frog' }
+                { name: 'Mountain Pose', duration: 45, instruction: 'Stand tall like a mountain!' },
+                { name: 'Cat Stretch', duration: 60, instruction: 'Arch your back like a cat!' },
+                { name: 'Downward Dog', duration: 70, instruction: 'Stretch like a happy dog!' },
+                { name: 'Cobra Pose', duration: 50, instruction: 'Rise up like a cobra!' },
+                { name: 'Frog Jumps', duration: 40, instruction: 'Hop like a playful frog!' },
+                { name: 'Eagle Balance', duration: 60, instruction: 'Balance with eagle focus!' },
+                { name: 'Child Pose Rest', duration: 45, instruction: 'Rest like a sleepy child!' },
+                { name: 'Tree Pose', duration: 55, instruction: 'Stand strong like a tree!' },
+                { name: 'Butterfly Stretch', duration: 50, instruction: 'Flutter like a butterfly!' },
+                { name: 'Final Relaxation', duration: 75, instruction: 'Deep relaxation and breathing!' }
             ],
-            visualStyle: 'animals',
-            mindfulness: true,
+            hasMusic: true,
             safetyFeatures: ['breathing-guidance', 'relaxation-focus']
+        },
+        {
+            id: 'rhythm',
+            name: 'Rhythm Master',
+            emoji: '🥁',
+            description: 'Create beats with your body! Musical fitness that gets your heart pumping.',
+            category: 'cardio',
+            difficulty: 'Medium',
+            duration: '5-12 min',
+            xpReward: 75,
+            energyRequired: 30,
+            unlockLevel: 4,
+            playerCount: '1-8 players',
+            exercises: [
+                { name: 'Beat Basics', duration: 50, instruction: 'Learn the basic beat patterns!' },
+                { name: 'Clap Rhythm', duration: 45, instruction: 'Clap to create rhythms!' },
+                { name: 'Stomp Beats', duration: 55, instruction: 'Stomp your feet to the beat!' },
+                { name: 'Body Percussion', duration: 60, instruction: 'Use your whole body as drums!' },
+                { name: 'Dance Beats', duration: 70, instruction: 'Combine dance with rhythm!' },
+                { name: 'Speed Challenge', duration: 50, instruction: 'Keep up with fast rhythms!' },
+                { name: 'Freestyle Jam', duration: 90, instruction: 'Create your own rhythm masterpiece!' }
+            ],
+            hasMusic: true,
+            safetyFeatures: ['tempo-guidance', 'rhythm-safety']
+        },
+        {
+            id: 'lightning-ladders',
+            name: 'Lightning Ladders',
+            emoji: '⚡',
+            description: 'Sprint in place to climb the lightning ladder and reach the sky!',
+            category: 'cardio',
+            difficulty: 'Medium',
+            duration: '6-8 min',
+            xpReward: 75,
+            energyRequired: 30,
+            unlockLevel: 3,
+            playerCount: '1-6 players',
+            exercises: [
+                { name: 'Sprint Warm-up', duration: 30, instruction: 'Light jogging to warm up!' },
+                { name: 'Lightning Sprint 1', duration: 20, instruction: 'Sprint as fast as you can!' },
+                { name: 'Recovery Jog', duration: 15, instruction: 'Slow jog to recover!' },
+                { name: 'Lightning Sprint 2', duration: 20, instruction: 'Another fast sprint!' },
+                { name: 'Active Rest', duration: 15, instruction: 'Walk in place to rest!' },
+                { name: 'Lightning Sprint 3', duration: 20, instruction: 'Keep up the pace!' },
+                { name: 'Recovery Walk', duration: 15, instruction: 'Walk to catch your breath!' },
+                { name: 'Final Sprint', duration: 25, instruction: 'Last lightning climb!' },
+                { name: 'Cool Down', duration: 30, instruction: 'Slow walk to cool down!' }
+            ],
+            hasMusic: true,
+            safetyFeatures: ['intensity-monitoring', 'automatic-rest']
+        },
+        {
+            id: 'shadow-punch',
+            name: 'Shadow Boxing',
+            emoji: '👊',
+            description: 'Punch targets in rhythm to defeat shadow opponents!',
+            category: 'strength',
+            difficulty: 'Medium',
+            duration: '7-10 min',
+            xpReward: 60,
+            energyRequired: 35,
+            unlockLevel: 4,
+            playerCount: '1-4 players',
+            exercises: [
+                { name: 'Arm Warm-up', duration: 30, instruction: 'Gentle arm circles and stretches!' },
+                { name: 'Left Jab Practice', duration: 45, instruction: 'Practice your left jab!' },
+                { name: 'Right Cross Practice', duration: 45, instruction: 'Work on your right cross!' },
+                { name: 'Combo Training', duration: 60, instruction: 'Combine left and right punches!' },
+                { name: 'Speed Round', duration: 50, instruction: 'Fast punching combinations!' },
+                { name: 'Power Punches', duration: 55, instruction: 'Strong, powerful punches!' },
+                { name: 'Duck & Punch', duration: 40, instruction: 'Duck low then punch!' },
+                { name: 'Final Combination', duration: 75, instruction: 'Ultimate boxing workout!' },
+                { name: 'Cool Down Stretch', duration: 30, instruction: 'Stretch your arms and shoulders!' }
+            ],
+            hasMusic: true,
+            safetyFeatures: ['proper-form-tips', 'wrist-safety']
         },
         {
             id: 'adventure',
@@ -208,20 +229,20 @@ const PixelPlayGameHub = () => {
             duration: '15-20 min',
             xpReward: 100,
             energyRequired: 40,
-            color: 'from-orange-400 to-red-500',
             unlockLevel: 4,
-            instructions: 'Complete physical challenges to progress through the adventure map!',
-            features: ['Story mode', 'Multiple levels', 'Treasure rewards'],
             playerCount: '1-6 players',
-            // Gameplay data
-            gameDuration: 1200,
             exercises: [
-                { name: 'Quest Challenge 1', duration: 60, instruction: 'Complete the first quest!' },
-                { name: 'Quest Challenge 2', duration: 60, instruction: 'Discover hidden treasure!' },
-                { name: 'Final Boss', duration: 90, instruction: 'Defeat the final boss!' }
+                { name: 'Journey Begins', duration: 60, instruction: 'Start your epic adventure!' },
+                { name: 'Mountain Climb', duration: 90, instruction: 'Climb the steep mountain!' },
+                { name: 'River Crossing', duration: 75, instruction: 'Jump across the rushing river!' },
+                { name: 'Forest Path', duration: 80, instruction: 'Navigate through the forest!' },
+                { name: 'Cave Exploration', duration: 70, instruction: 'Crawl through the mysterious cave!' },
+                { name: 'Dragon Battle', duration: 120, instruction: 'Face the mighty dragon!' },
+                { name: 'Treasure Hunt', duration: 85, instruction: 'Search for hidden treasure!' },
+                { name: 'Castle Climb', duration: 100, instruction: 'Scale the castle walls!' },
+                { name: 'Final Challenge', duration: 110, instruction: 'Complete your heroic quest!' }
             ],
-            visualStyle: 'quest',
-            storyMode: true,
+            hasMusic: true,
             safetyFeatures: ['adventure-briefing', 'progress-pacing']
         },
         {
@@ -234,20 +255,20 @@ const PixelPlayGameHub = () => {
             duration: '12-18 min',
             xpReward: 120,
             energyRequired: 50,
-            color: 'from-red-500 to-yellow-500',
             unlockLevel: 6,
-            instructions: 'Complete superhero training exercises to unlock your powers!',
-            features: ['Hero workouts', 'Power challenges', 'Cape physics'],
             playerCount: '1-4 players',
-            // Gameplay data
-            gameDuration: 900,
             exercises: [
-                { name: 'Super Strength', duration: 45, instruction: 'Build your super strength!' },
-                { name: 'Super Speed', duration: 30, instruction: 'Run like the wind!' },
-                { name: 'Flying Practice', duration: 60, instruction: 'Practice your flying moves!' }
+                { name: 'Hero Warm-up', duration: 60, instruction: 'Activate your super powers!' },
+                { name: 'Super Strength', duration: 90, instruction: 'Build incredible strength!' },
+                { name: 'Lightning Speed', duration: 75, instruction: 'Run faster than lightning!' },
+                { name: 'Flying Practice', duration: 80, instruction: 'Learn to soar through the sky!' },
+                { name: 'Laser Vision', duration: 45, instruction: 'Focus your laser vision!' },
+                { name: 'Shield Defense', duration: 70, instruction: 'Master defensive moves!' },
+                { name: 'Team Up Moves', duration: 85, instruction: 'Practice team superhero moves!' },
+                { name: 'Villain Battle', duration: 120, instruction: 'Defeat the evil villain!' },
+                { name: 'Hero Recovery', duration: 55, instruction: 'Superhero cool-down routine!' }
             ],
-            visualStyle: 'superhero',
-            motionDetection: true,
+            hasMusic: true,
             safetyFeatures: ['power-control', 'safety-first']
         },
         {
@@ -260,47 +281,21 @@ const PixelPlayGameHub = () => {
             duration: '8-12 min',
             xpReward: 70,
             energyRequired: 25,
-            color: 'from-violet-500 to-purple-700',
             unlockLevel: 5,
-            instructions: 'Use gestures and movements to cast magical fitness spells!',
-            features: ['Spell casting', 'Potion brewing', 'Magic duels'],
             playerCount: '1-4 players',
-            // Gameplay data
-            gameDuration: 600,
             exercises: [
-                { name: 'Spell Casting', duration: 45, instruction: 'Cast your magical spells!' },
-                { name: 'Potion Mixing', duration: 30, instruction: 'Mix the magical potion!' },
-                { name: 'Magic Duel', duration: 60, instruction: 'Defeat the dark wizard!' }
+                { name: 'Magic Circle', duration: 45, instruction: 'Cast the opening magic circle!' },
+                { name: 'Fire Spell', duration: 60, instruction: 'Wave your arms to cast fire!' },
+                { name: 'Water Flow', duration: 55, instruction: 'Flow like magical water!' },
+                { name: 'Earth Power', duration: 50, instruction: 'Connect with earth magic!' },
+                { name: 'Air Swirls', duration: 45, instruction: 'Swirl like magical wind!' },
+                { name: 'Potion Brewing', duration: 70, instruction: 'Mix a magical fitness potion!' },
+                { name: 'Transformation', duration: 65, instruction: 'Transform into magical creatures!' },
+                { name: 'Magic Duel', duration: 80, instruction: 'Friendly magical battle!' },
+                { name: 'Spell Completion', duration: 50, instruction: 'Complete your magical training!' }
             ],
-            visualStyle: 'magic',
-            motionDetection: true,
+            hasMusic: true,
             safetyFeatures: ['gentle-movements', 'imagination-focus']
-        },
-        {
-            id: 'rhythm',
-            name: 'Rhythm Master',
-            emoji: '🥁',
-            description: 'Create beats with your body! Musical fitness that gets your heart pumping.',
-            category: 'cardio',
-            difficulty: 'Medium',
-            duration: '5-12 min',
-            xpReward: 75,
-            energyRequired: 30,
-            color: 'from-cyan-400 to-blue-500',
-            unlockLevel: 4,
-            instructions: 'Use your body to create rhythm and beats in time with the music!',
-            features: ['Beat creation', 'Musical timing', 'Rhythm challenges'],
-            playerCount: '1-8 players',
-            // Gameplay data
-            gameDuration: 420,
-            exercises: [
-                { name: 'Beat Creation', duration: 60, instruction: 'Create the perfect beat!' },
-                { name: 'Rhythm Challenge', duration: 45, instruction: 'Match the rhythm!' }
-            ],
-            visualStyle: 'rhythm',
-            motionDetection: true,
-            audioSync: true,
-            safetyFeatures: ['tempo-guidance', 'rhythm-safety']
         },
         {
             id: 'sports',
@@ -312,32 +307,31 @@ const PixelPlayGameHub = () => {
             duration: '8-15 min',
             xpReward: 80,
             energyRequired: 35,
-            color: 'from-blue-400 to-green-500',
             unlockLevel: 2,
-            instructions: 'Use your whole body to play different sports games!',
-            features: ['Multiple sports', 'Team play', 'Tournaments'],
             playerCount: '2-8 players',
-            // Gameplay data
-            gameDuration: 780,
             exercises: [
-                { name: 'Soccer Kicks', duration: 60, instruction: 'Score the winning goal!' },
-                { name: 'Basketball Shots', duration: 45, instruction: 'Make the perfect shot!' },
-                { name: 'Tennis Swings', duration: 60, instruction: 'Return the serve!' }
+                { name: 'Sports Warm-up', duration: 60, instruction: 'Prepare for athletic competition!' },
+                { name: 'Soccer Skills', duration: 90, instruction: 'Practice soccer kicks and moves!' },
+                { name: 'Basketball Shots', duration: 75, instruction: 'Shoot hoops and dribble!' },
+                { name: 'Tennis Swings', duration: 80, instruction: 'Perfect your tennis technique!' },
+                { name: 'Baseball Batting', duration: 70, instruction: 'Swing for the home run!' },
+                { name: 'Track & Field', duration: 85, instruction: 'Run, jump, and throw!' },
+                { name: 'Team Sports', duration: 100, instruction: 'Play various team sports!' },
+                { name: 'Sports Medley', duration: 120, instruction: 'Mix of all sports activities!' },
+                { name: 'Victory Celebration', duration: 50, instruction: 'Celebrate your athletic achievements!' }
             ],
-            visualStyle: 'sports',
-            motionDetection: true,
+            hasMusic: true,
             safetyFeatures: ['sport-safety', 'team-coordination']
         }
     ];
 
     const categories = [
-        { id: 'all', name: 'All Games', icon: Gamepad2 },
-        { id: 'cardio', name: 'Cardio Fun', icon: Heart },
-        { id: 'strength', name: 'Get Strong', icon: Zap },
-        { id: 'flexibility', name: 'Stretch Time', icon: Sparkles },
-        { id: 'sports', name: 'Sports Zone', icon: Trophy },
-        { id: 'adventure', name: 'Adventures', icon: Target },
-        { id: 'mixed', name: 'Mix It Up', icon: Star }
+        { id: 'all', name: 'All Games', emoji: '🎮' },
+        { id: 'cardio', name: 'Cardio Fun', emoji: '💓' },
+        { id: 'strength', name: 'Get Strong', emoji: '💪' },
+        { id: 'flexibility', name: 'Stretch Time', emoji: '🤸' },
+        { id: 'sports', name: 'Sports Zone', emoji: '⚽' },
+        { id: 'adventure', name: 'Adventures', emoji: '🗺️' },
     ];
 
     const difficulties = [
@@ -347,38 +341,54 @@ const PixelPlayGameHub = () => {
         { id: 'Hard', name: 'Challenge Me!' }
     ];
 
-    // Load user stats from localStorage
-    useEffect(() => {
-        const savedStats = localStorage.getItem('pixelplay-fitness-stats');
-        if (savedStats) {
-            const stats = JSON.parse(savedStats);
-            // Merge with current user state if needed
-        }
-    }, []);
-
-    // Motion detection setup
-    useEffect(() => {
-        const handleMotion = (event) => {
-            if (isListening && event.accelerationIncludingGravity) {
-                setMotionData({
-                    x: event.accelerationIncludingGravity.x || 0,
-                    y: event.accelerationIncludingGravity.y || 0,
-                    z: event.accelerationIncludingGravity.z || 0
-                });
+    // Audio management functions
+    const playBackgroundMusic = useCallback((gameId) => {
+        if (!audioEnabled || !gameMusic[gameId]) return;
+        
+        try {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
             }
-        };
-
-        if (selectedGame?.motionDetection && gameState === 'playing') {
-            setIsListening(true);
-            window.addEventListener('devicemotion', handleMotion);
-        } else {
-            setIsListening(false);
+            
+            const audio = new Audio(gameMusic[gameId]);
+            audio.loop = true;
+            audio.volume = 0.3;
+            
+            audio.play().then(() => {
+                console.log(`🎶 Background music started for: ${gameId}`);
+                setCurrentAudio(audio);
+            }).catch((error) => {
+                console.log(`🔇 Music file not found, continuing without background music: ${gameMusic[gameId]}`);
+            });
+            
+        } catch (error) {
+            console.log('Audio error:', error);
         }
+    }, [audioEnabled, gameMusic, currentAudio]);
 
-        return () => {
-            window.removeEventListener('devicemotion', handleMotion);
-        };
-    }, [selectedGame, gameState, isListening]);
+    const stopBackgroundMusic = useCallback(() => {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            setCurrentAudio(null);
+            console.log('🔇 Background music stopped');
+        }
+    }, [currentAudio]);
+
+    const pauseBackgroundMusic = useCallback(() => {
+        if (currentAudio) {
+            currentAudio.pause();
+        }
+    }, [currentAudio]);
+
+    const resumeBackgroundMusic = useCallback(() => {
+        if (currentAudio) {
+            currentAudio.play().catch(error => {
+                console.log('Could not resume background music:', error.message);
+            });
+        }
+    }, [currentAudio]);
 
     // Timer logic
     useEffect(() => {
@@ -397,51 +407,9 @@ const PixelPlayGameHub = () => {
         };
     }, [gameState, timeRemaining]);
 
-    // Audio feedback
-    const playAudioFeedback = useCallback((type) => {
-        if (!audioEnabled) return;
-        
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            switch(type) {
-                case 'success':
-                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                    oscillator.frequency.setValueAtTime(1200, audioContext.currentTime + 0.1);
-                    break;
-                case 'countdown':
-                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
-                    break;
-                case 'complete':
-                    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.1);
-                    oscillator.frequency.setValueAtTime(1200, audioContext.currentTime + 0.2);
-                    break;
-                default:
-                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-            }
-            
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
-        } catch (error) {
-            console.log('Audio not available');
-        }
-    }, [audioEnabled]);
-
     // Game logic functions
     const handleExerciseComplete = () => {
         if (!selectedGame || !selectedGame.exercises) return;
-        
-        const currentExercise = selectedGame.exercises[currentExerciseIndex];
-        playAudioFeedback('success');
         
         setScore(prev => prev + 10);
         setStreakCount(prev => prev + 1);
@@ -450,31 +418,17 @@ const PixelPlayGameHub = () => {
             setCurrentExerciseIndex(prev => prev + 1);
             setTimeRemaining(selectedGame.exercises[currentExerciseIndex + 1].duration);
         } else {
-            // Game completed
-            const newXP = user.xp + selectedGame.xpReward + (streakCount * 5);
-            
-            const updatedStats = {
-                ...user,
-                xp: newXP,
-                level: Math.floor(newXP / 100) + 1,
-                totalGamesPlayed: user.totalGamesPlayed + 1
-            };
-            
-            localStorage.setItem('pixelplay-fitness-stats', JSON.stringify(updatedStats));
+            stopBackgroundMusic();
             setGameState('completed');
-            playAudioFeedback('complete');
         }
     };
 
     const startGame = (game) => {
-        console.log('Starting game:', game.name, game);
+        console.log('Starting game:', game.name);
         
-        // Ensure the game has exercises
         if (!game.exercises || game.exercises.length === 0) {
-            console.warn('Game has no exercises, adding default exercise');
-            game.exercises = [
-                { name: 'Workout', duration: 30, instruction: 'Follow along with the workout!' }
-            ];
+            console.warn('Game has no exercises');
+            return;
         }
         
         setSelectedGame(game);
@@ -484,11 +438,20 @@ const PixelPlayGameHub = () => {
         setScore(0);
         setStreakCount(0);
         
-        console.log('Game state changed to playing, timer set to:', game.exercises[0].duration || 30);
+        if (game.hasMusic) {
+            playBackgroundMusic(game.id);
+        }
     };
 
-    const pauseGame = () => setGameState('paused');
-    const resumeGame = () => setGameState('playing');
+    const pauseGame = () => {
+        setGameState('paused');
+        pauseBackgroundMusic();
+    };
+    
+    const resumeGame = () => {
+        setGameState('playing');
+        resumeBackgroundMusic();
+    };
     
     const resetGame = () => {
         setGameState('menu');
@@ -497,10 +460,10 @@ const PixelPlayGameHub = () => {
         setTimeRemaining(0);
         setScore(0);
         setStreakCount(0);
+        stopBackgroundMusic();
     };
 
     const handleBackToDashboard = () => {
-        console.log('Navigating back to dashboard');
         window.history.back();
     };
 
@@ -512,135 +475,6 @@ const PixelPlayGameHub = () => {
             game.description.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesCategory && matchesDifficulty && matchesSearch;
     });
-
-    const isGameUnlocked = (game) => {
-        const unlocked = user.level >= game.unlockLevel;
-        console.log(`Game ${game.name}: user level ${user.level}, unlock level ${game.unlockLevel}, unlocked: ${unlocked}`);
-        return unlocked;
-    };
-    const isGameCompleted = (game) => user.completedGames.includes(game.id);
-    const isGameFavorite = (game) => user.favoriteGames.includes(game.id);
-
-    // Visual game renderers
-    const renderGameVisuals = () => {
-        if (!selectedGame || !selectedGame.exercises) return null;
-
-        const currentExercise = selectedGame.exercises[currentExerciseIndex];
-        
-        switch(selectedGame.visualStyle) {
-            case 'ladder':
-                return (
-                    <div style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        padding: '2rem',
-                        borderRadius: '16px',
-                        minHeight: '300px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'column'
-                    }}>
-                        <div style={{ display: 'flex', flexDirection: 'column-reverse', gap: '1rem' }}>
-                            {[...Array(5)].map((_, i) => (
-                                <div 
-                                    key={i} 
-                                    style={{
-                                        fontSize: '2rem',
-                                        opacity: i < (5 - timeRemaining/20) ? '1' : '0.3',
-                                        transition: 'all 0.3s ease',
-                                        transform: i < (5 - timeRemaining/20) ? 'scale(1.2)' : 'scale(1)'
-                                    }}
-                                >
-                                    ⚡
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-                
-            case 'targets':
-                return (
-                    <div style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        padding: '2rem',
-                        borderRadius: '16px',
-                        minHeight: '300px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-around',
-                        flexDirection: 'row'
-                    }}>
-                        <div style={{
-                            fontSize: '3rem',
-                            opacity: currentExercise?.name === 'Left Punch' ? '1' : '0.3',
-                            transition: 'all 0.3s ease',
-                            transform: currentExercise?.name === 'Left Punch' ? 'scale(1.3)' : 'scale(1)',
-                            animation: currentExercise?.name === 'Left Punch' ? 'pulse 0.5s infinite' : 'none'
-                        }}>👊</div>
-                        <div style={{
-                            fontSize: '3rem',
-                            opacity: currentExercise?.name === 'Right Punch' ? '1' : '0.3',
-                            transition: 'all 0.3s ease',
-                            transform: currentExercise?.name === 'Right Punch' ? 'scale(1.3)' : 'scale(1)',
-                            animation: currentExercise?.name === 'Right Punch' ? 'pulse 0.5s infinite' : 'none'
-                        }}>👊</div>
-                    </div>
-                );
-                
-            case 'ninja':
-                return (
-                    <div style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        padding: '2rem',
-                        borderRadius: '16px',
-                        minHeight: '300px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'column'
-                    }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '2rem' }}>🥷</div>
-                        <div style={{ display: 'flex', gap: '2rem' }}>
-                            <div style={{
-                                fontSize: '2rem',
-                                opacity: currentExercise?.name === 'Jump' ? '1' : '0.3',
-                                transition: 'all 0.3s ease',
-                                transform: currentExercise?.name === 'Jump' ? 'scale(1.5)' : 'scale(1)'
-                            }}>⬆️</div>
-                            <div style={{
-                                fontSize: '2rem',
-                                opacity: currentExercise?.name === 'Duck' ? '1' : '0.3',
-                                transition: 'all 0.3s ease',
-                                transform: currentExercise?.name === 'Duck' ? 'scale(1.5)' : 'scale(1)'
-                            }}>⬇️</div>
-                            <div style={{
-                                fontSize: '2rem',
-                                opacity: currentExercise?.name === 'Punch' ? '1' : '0.3',
-                                transition: 'all 0.3s ease',
-                                transform: currentExercise?.name === 'Punch' ? 'scale(1.5)' : 'scale(1)'
-                            }}>👊</div>
-                        </div>
-                    </div>
-                );
-                
-            default:
-                return (
-                    <div style={{
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        padding: '2rem',
-                        borderRadius: '16px',
-                        minHeight: '300px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'column'
-                    }}>
-                        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{selectedGame.emoji}</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: '600' }}>{currentExercise?.name}</div>
-                    </div>
-                );
-        }
-    };
 
     // Main menu view
     if (gameState === 'menu') {
@@ -684,14 +518,6 @@ const PixelPlayGameHub = () => {
                                     transition: 'all 0.2s ease'
                                 }}
                                 onClick={handleBackToDashboard}
-                                onMouseOver={(e) => {
-                                    e.target.style.background = 'rgba(139, 92, 246, 0.2)';
-                                    e.target.style.transform = 'translateX(-2px)';
-                                }}
-                                onMouseOut={(e) => {
-                                    e.target.style.background = 'rgba(139, 92, 246, 0.1)';
-                                    e.target.style.transform = 'translateX(0px)';
-                                }}
                             >
                                 <ArrowLeft size={20} />
                                 <span>Back to Dashboard</span>
@@ -713,65 +539,25 @@ const PixelPlayGameHub = () => {
                             alignItems: 'center',
                             gap: '1rem'
                         }}>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button 
-                                    style={{
-                                        width: '2.5rem',
-                                        height: '2.5rem',
-                                        borderRadius: '50%',
-                                        border: 'none',
-                                        background: 'rgba(139, 92, 246, 0.1)',
-                                        color: '#8B5CF6',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                    onClick={() => setAudioEnabled(!audioEnabled)}
-                                    title={audioEnabled ? 'Mute Sound' : 'Enable Sound'}
-                                >
-                                    {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-                                </button>
-                                <button 
-                                    style={{
-                                        width: '2.5rem',
-                                        height: '2.5rem',
-                                        borderRadius: '50%',
-                                        border: 'none',
-                                        background: 'rgba(139, 92, 246, 0.1)',
-                                        color: '#8B5CF6',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                    onClick={() => setShowAvatarCustomizer(true)}
-                                    title="Customize Avatar"
-                                >
-                                    <UserCircle size={20} />
-                                </button>
-                                <button 
-                                    style={{
-                                        width: '2.5rem',
-                                        height: '2.5rem',
-                                        borderRadius: '50%',
-                                        border: 'none',
-                                        background: 'rgba(139, 92, 246, 0.1)',
-                                        color: '#8B5CF6',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center'
-                                    }}
-                                    onClick={() => setShowStoryCreator(true)}
-                                    title="Story Creator"
-                                >
-                                    <BookOpen size={20} />
-                                </button>
-                            </div>
+                            <button 
+                                style={{
+                                    width: '2.5rem',
+                                    height: '2.5rem',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: 'rgba(139, 92, 246, 0.1)',
+                                    color: '#8B5CF6',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                onClick={() => setAudioEnabled(!audioEnabled)}
+                                title={audioEnabled ? 'Mute Sound' : 'Enable Sound'}
+                            >
+                                {audioEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                            </button>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -810,140 +596,192 @@ const PixelPlayGameHub = () => {
                             borderRadius: '24px',
                             padding: '2rem',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                            textAlign: 'center'
                         }}>
+                            <h1 style={{
+                                fontSize: '2.5rem',
+                                fontWeight: '800',
+                                color: '#1F2937',
+                                margin: '0 0 0.5rem 0'
+                            }}>Hey {user.name}! Choose Your Adventure!</h1>
+                            <p style={{
+                                fontSize: '1.125rem',
+                                color: '#6B7280',
+                                margin: '0 0 1rem 0'
+                            }}>Pick a fun fitness game to play and start your workout journey</p>
                             <div style={{
                                 display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                gap: '2rem'
+                                justifyContent: 'center',
+                                gap: '1rem',
+                                flexWrap: 'wrap'
                             }}>
-                                <div>
-                                    <h1 style={{
-                                        fontSize: '2.5rem',
-                                        fontWeight: '800',
-                                        color: '#1F2937',
-                                        margin: '0 0 0.5rem 0'
-                                    }}>Hey {user.name}! Choose Your Adventure!</h1>
-                                    <p style={{
-                                        fontSize: '1.125rem',
-                                        color: '#6B7280',
-                                        margin: '0 0 1rem 0'
-                                    }}>Pick a fun fitness game to play and start your workout journey</p>
-                                    <div style={{
-                                        display: 'flex',
-                                        gap: '1rem',
-                                        flexWrap: 'wrap'
-                                    }}>
-                                        <span style={{
-                                            padding: '0.5rem 1rem',
-                                            background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-                                            color: 'white',
-                                            borderRadius: '20px',
-                                            fontSize: '0.875rem',
-                                            fontWeight: '600'
-                                        }}>🔥 {user.weeklyStreak} Day Streak!</span>
-                                        <span style={{
-                                            padding: '0.5rem 1rem',
-                                            background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-                                            color: 'white',
-                                            borderRadius: '20px',
-                                            fontSize: '0.875rem',
-                                            fontWeight: '600'
-                                        }}>🎯 {user.totalGamesPlayed} Games Played</span>
-                                        <span style={{
-                                            padding: '0.5rem 1rem',
-                                            background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-                                            color: 'white',
-                                            borderRadius: '20px',
-                                            fontSize: '0.875rem',
-                                            fontWeight: '600'
-                                        }}>🏆 {user.achievements.length} Achievements</span>
-                                    </div>
+                                <span style={{
+                                    padding: '0.5rem 1rem',
+                                    background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                                    color: 'white',
+                                    borderRadius: '20px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600'
+                                }}>🔥 {user.weeklyStreak} Day Streak!</span>
+                                <span style={{
+                                    padding: '0.5rem 1rem',
+                                    background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                                    color: 'white',
+                                    borderRadius: '20px',
+                                    fontSize: '0.875rem',
+                                    fontWeight: '600'
+                                }}>🎯 {user.totalGamesPlayed} Games Played</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Search and Filters Section */}
+                    <section style={{ marginBottom: '2rem' }}>
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            backdropFilter: 'blur(10px)',
+                            borderRadius: '24px',
+                            padding: '2rem',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+                        }}>
+                            {/* Search Bar */}
+                            <div style={{ marginBottom: '2rem' }}>
+                                <div style={{
+                                    position: 'relative',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <Search style={{
+                                        position: 'absolute',
+                                        left: '1rem',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        color: '#9CA3AF',
+                                        width: '1.25rem',
+                                        height: '1.25rem'
+                                    }} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search for awesome games..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            paddingLeft: '3rem',
+                                            paddingRight: '1rem',
+                                            paddingTop: '0.875rem',
+                                            paddingBottom: '0.875rem',
+                                            border: '2px solid #E5E7EB',
+                                            borderRadius: '16px',
+                                            fontSize: '1.125rem',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
+                                            outline: 'none'
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = '#8B5CF6';
+                                            e.target.style.boxShadow = '0 0 0 3px rgba(139, 92, 246, 0.1)';
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = '#E5E7EB';
+                                            e.target.style.boxShadow = 'none';
+                                        }}
+                                    />
                                 </div>
-                                
-                                {/* User Stats */}
-                                <div style={{ display: 'flex', gap: '1.5rem' }}>
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '1rem 1.5rem',
-                                        background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-                                        color: 'white',
-                                        borderRadius: '16px',
-                                        minWidth: '80px'
-                                    }}>
-                                        <span style={{
-                                            display: 'block',
-                                            fontSize: '1.75rem',
-                                            fontWeight: '800',
-                                            marginBottom: '0.25rem'
-                                        }}>{user.level}</span>
-                                        <span style={{
-                                            fontSize: '0.875rem',
-                                            fontWeight: '600',
-                                            color: 'rgba(255, 255, 255, 0.9)'
-                                        }}>Level</span>
-                                    </div>
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '1rem 1.5rem',
-                                        background: 'rgba(139, 92, 246, 0.1)',
-                                        borderRadius: '16px',
-                                        minWidth: '80px'
-                                    }}>
-                                        <span style={{
-                                            display: 'block',
-                                            fontSize: '1.75rem',
-                                            fontWeight: '800',
-                                            color: '#8B5CF6',
-                                            marginBottom: '0.25rem'
-                                        }}>{user.xp}</span>
-                                        <span style={{
-                                            fontSize: '0.875rem',
-                                            color: '#6B7280',
-                                            fontWeight: '600'
-                                        }}>Total XP</span>
-                                    </div>
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '1rem 1.5rem',
-                                        background: 'rgba(139, 92, 246, 0.1)',
-                                        borderRadius: '16px',
-                                        minWidth: '80px'
-                                    }}>
-                                        <span style={{
-                                            display: 'block',
-                                            fontSize: '1.75rem',
-                                            fontWeight: '800',
-                                            color: '#8B5CF6',
-                                            marginBottom: '0.25rem'
-                                        }}>{user.unlockedGames.length}</span>
-                                        <span style={{
-                                            fontSize: '0.875rem',
-                                            color: '#6B7280',
-                                            fontWeight: '600'
-                                        }}>Games Unlocked</span>
-                                    </div>
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '1rem 1.5rem',
-                                        background: 'rgba(139, 92, 246, 0.1)',
-                                        borderRadius: '16px',
-                                        minWidth: '80px'
-                                    }}>
-                                        <span style={{
-                                            display: 'block',
-                                            fontSize: '1.75rem',
-                                            fontWeight: '800',
-                                            color: '#8B5CF6',
-                                            marginBottom: '0.25rem'
-                                        }}>{user.weeklyStreak}</span>
-                                        <span style={{
-                                            fontSize: '0.875rem',
-                                            color: '#6B7280',
-                                            fontWeight: '600'
-                                        }}>Day Streak</span>
-                                    </div>
+                            </div>
+
+                            {/* Category Filters */}
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <h3 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '700',
+                                    color: '#1F2937',
+                                    marginBottom: '1rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}>
+                                    <Filter size={20} />
+                                    Game Categories
+                                </h3>
+                                <div style={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: '0.75rem'
+                                }}>
+                                    {categories.map(category => (
+                                        <button
+                                            key={category.id}
+                                            onClick={() => setSelectedCategory(category.id)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                padding: '0.75rem 1rem',
+                                                borderRadius: '16px',
+                                                border: 'none',
+                                                fontWeight: '600',
+                                                fontSize: '0.875rem',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                background: selectedCategory === category.id 
+                                                    ? 'linear-gradient(135deg, #8B5CF6, #EC4899)'
+                                                    : 'rgba(139, 92, 246, 0.1)',
+                                                color: selectedCategory === category.id ? 'white' : '#8B5CF6',
+                                                transform: selectedCategory === category.id ? 'scale(1.05)' : 'scale(1)',
+                                                boxShadow: selectedCategory === category.id 
+                                                    ? '0 4px 12px rgba(139, 92, 246, 0.3)' 
+                                                    : 'none'
+                                            }}
+                                        >
+                                            <span style={{ fontSize: '1rem' }}>{category.emoji}</span>
+                                            <span>{category.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Difficulty Filters */}
+                            <div>
+                                <h3 style={{
+                                    fontSize: '1.125rem',
+                                    fontWeight: '700',
+                                    color: '#1F2937',
+                                    marginBottom: '1rem'
+                                }}>
+                                    Difficulty Level
+                                </h3>
+                                <div style={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: '0.75rem'
+                                }}>
+                                    {difficulties.map(diff => (
+                                        <button
+                                            key={diff.id}
+                                            onClick={() => setSelectedDifficulty(diff.id)}
+                                            style={{
+                                                padding: '0.75rem 1.25rem',
+                                                borderRadius: '16px',
+                                                border: 'none',
+                                                fontWeight: '600',
+                                                fontSize: '0.875rem',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                                background: selectedDifficulty === diff.id 
+                                                    ? 'linear-gradient(135deg, #EC4899, #F59E0B)'
+                                                    : 'rgba(236, 72, 153, 0.1)',
+                                                color: selectedDifficulty === diff.id ? 'white' : '#EC4899',
+                                                transform: selectedDifficulty === diff.id ? 'scale(1.05)' : 'scale(1)',
+                                                boxShadow: selectedDifficulty === diff.id 
+                                                    ? '0 4px 12px rgba(236, 72, 153, 0.3)' 
+                                                    : 'none'
+                                            }}
+                                        >
+                                            {diff.name}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -955,20 +793,230 @@ const PixelPlayGameHub = () => {
                             <div style={{
                                 display: 'grid',
                                 gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                                gap: '1.5rem'
+                                gap: '1.5rem',
+                                width: '100%',
+                                maxWidth: '1400px',
+                                margin: '0 auto'
                             }}>
-                                {filteredGames.map(game => (
-                                    <GameCard 
-                                        key={game.id} 
-                                        game={game} 
-                                        isUnlocked={isGameUnlocked(game)}
-                                        isCompleted={isGameCompleted(game)}
-                                        isFavorite={isGameFavorite(game)}
-                                        onPlay={startGame}
-                                        motionEnabled={motionDetection}
-                                        audioEnabled={audioEnabled}
-                                    />
-                                ))}
+                                {filteredGames.map(game => {
+                                    const isUnlocked = user.level >= game.unlockLevel;
+                                    const isCompleted = user.completedGames.includes(game.id);
+                                    const isFavorite = user.favoriteGames.includes(game.id);
+                                    
+                                    return (
+                                        <div
+                                            key={game.id}
+                                            style={{
+                                                position: 'relative',
+                                                background: 'rgba(255, 255, 255, 0.95)',
+                                                backdropFilter: 'blur(10px)',
+                                                borderRadius: '20px',
+                                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                                                transition: 'all 0.3s ease',
+                                                overflow: 'hidden',
+                                                cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                                                opacity: isUnlocked ? '1' : '0.7'
+                                            }}
+                                        >
+                                            {/* Game Card Content */}
+                                            <div style={{ padding: '2rem', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{game.emoji}</div>
+                                                <h3 style={{
+                                                    fontSize: '1.5rem',
+                                                    fontWeight: '700',
+                                                    color: '#1F2937',
+                                                    margin: '0 0 0.75rem 0'
+                                                }}>{game.name}</h3>
+                                                <p style={{
+                                                    color: '#6B7280',
+                                                    margin: '0 0 1rem 0',
+                                                    lineHeight: '1.5',
+                                                    fontSize: '0.9rem'
+                                                }}>{game.description}</p>
+                                                
+                                                {/* Game Stats */}
+                                                <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: '1fr 1fr',
+                                                    gap: '0.75rem',
+                                                    marginBottom: '1rem'
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        fontSize: '0.875rem',
+                                                        color: '#6B7280',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        <Timer size={16} />
+                                                        <span>{game.duration}</span>
+                                                    </div>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        fontSize: '0.875rem',
+                                                        color: '#6B7280',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        <Zap size={16} />
+                                                        <span>{game.xpReward} XP</span>
+                                                    </div>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        fontSize: '0.875rem',
+                                                        color: '#6B7280',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        <Target size={16} />
+                                                        <span>{game.difficulty}</span>
+                                                    </div>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        fontSize: '0.875rem',
+                                                        color: '#6B7280',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        <Users size={16} />
+                                                        <span>{game.playerCount}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Music Badge */}
+                                                {game.hasMusic && audioEnabled && (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'center',
+                                                        marginBottom: '1rem'
+                                                    }}>
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            padding: '0.25rem 0.5rem',
+                                                            background: 'rgba(139, 92, 246, 0.1)',
+                                                            color: '#8B5CF6',
+                                                            borderRadius: '12px',
+                                                            fontWeight: '500'
+                                                        }}>🎶 Background Music</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Unlock Requirement */}
+                                                {!isUnlocked && (
+                                                    <div style={{
+                                                        background: '#6B7280',
+                                                        color: 'white',
+                                                        padding: '0.5rem 1rem',
+                                                        borderRadius: '12px',
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: '600',
+                                                        marginBottom: '1.5rem',
+                                                        display: 'inline-block'
+                                                    }}>
+                                                        🔒 Unlock at Level {game.unlockLevel}
+                                                    </div>
+                                                )}
+
+                                                {/* Play Button */}
+                                                <button
+                                                    onClick={() => isUnlocked && startGame(game)}
+                                                    disabled={!isUnlocked}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.75rem 1.5rem',
+                                                        borderRadius: '16px',
+                                                        fontWeight: '700',
+                                                        fontSize: '1rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        border: 'none',
+                                                        cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                                                        transition: 'all 0.2s ease',
+                                                        background: isUnlocked 
+                                                            ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
+                                                            : '#E5E7EB',
+                                                        color: isUnlocked ? 'white' : '#9CA3AF'
+                                                    }}
+                                                >
+                                                    {isUnlocked ? (
+                                                        <>
+                                                            <Play size={20} />
+                                                            <span>Play Now!</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Lock size={20} />
+                                                            <span>Locked</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            {/* Status Badges */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '1rem',
+                                                right: '1rem',
+                                                display: 'flex',
+                                                gap: '0.5rem'
+                                            }}>
+                                                {!isUnlocked && (
+                                                    <div style={{
+                                                        width: '2rem',
+                                                        height: '2rem',
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: 'white',
+                                                        background: '#6B7280'
+                                                    }}>
+                                                        <Lock size={16} />
+                                                    </div>
+                                                )}
+                                                {isFavorite && isUnlocked && (
+                                                    <div style={{
+                                                        width: '2rem',
+                                                        height: '2rem',
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: 'white',
+                                                        background: '#F59E0B'
+                                                    }}>
+                                                        <Heart size={16} />
+                                                    </div>
+                                                )}
+                                                {isCompleted && (
+                                                    <div style={{
+                                                        width: '2rem',
+                                                        height: '2rem',
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: 'white',
+                                                        background: '#10B981'
+                                                    }}>
+                                                        <CheckCircle size={16} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div style={{
@@ -980,7 +1028,7 @@ const PixelPlayGameHub = () => {
                                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                                 textAlign: 'center'
                             }}>
-                                <Gamepad2 style={{ width: '4rem', height: '4rem', color: '#9CA3AF', marginBottom: '1rem' }} />
+                                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎮</div>
                                 <h3 style={{
                                     fontSize: '1.5rem',
                                     fontWeight: '700',
@@ -992,50 +1040,7 @@ const PixelPlayGameHub = () => {
                         )}
                     </section>
 
-                    {/* Motivation Footer */}
-                    <section style={{ marginTop: '3rem' }}>
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '24px',
-                            padding: '2rem',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎮✨</div>
-                            <h3 style={{
-                                fontSize: '1.75rem',
-                                fontWeight: '700',
-                                color: '#1F2937',
-                                margin: '0 0 0.75rem 0'
-                            }}>You're Doing Amazing, {user.name}!</h3>
-                            <p style={{
-                                fontSize: '1.125rem',
-                                color: '#6B7280',
-                                margin: '0 0 1.5rem 0',
-                                lineHeight: '1.6'
-                            }}>Every game makes you stronger, faster, and healthier. Your {user.weeklyStreak} day streak shows you're becoming a true fitness champion!</p>
-                        </div>
-                    </section>
-
                 </main>
-
-                {/* Story Creator Modal */}
-                {showStoryCreator && (
-                    <StoryCreatorModal 
-                        onClose={() => setShowStoryCreator(false)}
-                        user={user}
-                    />
-                )}
-
-                {/* Avatar Customizer Modal */}
-                {showAvatarCustomizer && (
-                    <AvatarCustomizerModal 
-                        onClose={() => setShowAvatarCustomizer(false)}
-                        user={user}
-                    />
-                )}
             </div>
         );
     }
@@ -1050,8 +1055,7 @@ const PixelPlayGameHub = () => {
                 background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
                 color: 'white',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                padding: '1rem',
-                position: 'relative'
+                padding: '1rem'
             }}>
                 <div style={{
                     display: 'flex',
@@ -1076,10 +1080,7 @@ const PixelPlayGameHub = () => {
                                 border: 'none',
                                 padding: '0.75rem',
                                 borderRadius: '8px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
+                                cursor: 'pointer'
                             }}
                             onClick={gameState === 'playing' ? pauseGame : resumeGame}
                         >
@@ -1092,10 +1093,7 @@ const PixelPlayGameHub = () => {
                                 border: 'none',
                                 padding: '0.75rem',
                                 borderRadius: '8px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
+                                cursor: 'pointer'
                             }}
                             onClick={resetGame}
                         >
@@ -1104,73 +1102,52 @@ const PixelPlayGameHub = () => {
                     </div>
                 </div>
 
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '2rem',
-                    maxWidth: '1000px',
-                    margin: '0 auto',
-                    alignItems: 'center'
-                }}>
-                    {renderGameVisuals()}
+                <div style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{selectedGame.emoji}</div>
+                    <h3 style={{
+                        fontSize: '2rem',
+                        fontWeight: '700',
+                        margin: '0 0 1rem 0'
+                    }}>{currentExercise?.name || 'Get Ready!'}</h3>
+                    <p style={{
+                        fontSize: '1.1rem',
+                        opacity: '0.9',
+                        margin: '0 0 2rem 0'
+                    }}>{currentExercise?.instruction || 'Prepare for your workout!'}</p>
                     
-                    <div style={{ textAlign: 'center' }}>
-                        <h3 style={{
-                            fontSize: '2rem',
-                            fontWeight: '700',
-                            margin: '0 0 1rem 0'
-                        }}>{currentExercise?.name || 'Get Ready!'}</h3>
-                        <p style={{
-                            fontSize: '1.1rem',
-                            opacity: '0.9',
-                            margin: '0 0 2rem 0',
-                            lineHeight: '1.4'
-                        }}>{currentExercise?.instruction || 'Prepare for your workout!'}</p>
-                        
+                    <div style={{
+                        width: '150px',
+                        height: '150px',
+                        border: '6px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 2rem auto',
+                        background: 'rgba(255, 255, 255, 0.1)'
+                    }}>
                         <div style={{
-                            width: '150px',
-                            height: '150px',
-                            border: '6px solid rgba(255, 255, 255, 0.3)',
-                            borderRadius: '50%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            margin: '0 auto 2rem auto',
-                            background: 'rgba(255, 255, 255, 0.1)'
-                        }}>
-                            <div style={{
-                                fontSize: '2.5rem',
-                                fontWeight: '800',
-                                color: '#fbbf24'
-                            }}>{timeRemaining}</div>
-                            <div style={{
-                                fontSize: '0.8rem',
-                                opacity: '0.8'
-                            }}>seconds</div>
-                        </div>
+                            fontSize: '2.5rem',
+                            fontWeight: '800',
+                            color: '#fbbf24'
+                        }}>{timeRemaining}</div>
+                        <div style={{
+                            fontSize: '0.8rem',
+                            opacity: '0.8'
+                        }}>seconds</div>
+                    </div>
 
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            gap: '2rem',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            padding: '1rem',
-                            borderRadius: '8px'
-                        }}>
-                            <div style={{ fontWeight: '600' }}>Score: {score}</div>
-                            <div style={{ fontWeight: '600' }}>Streak: {streakCount}</div>
-                            {selectedGame.motionDetection && (
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    fontWeight: '600'
-                                }}>
-                                    Motion: {isListening ? '🟢' : '🔴'}
-                                </div>
-                            )}
-                        </div>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '2rem',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        padding: '1rem',
+                        borderRadius: '8px'
+                    }}>
+                        <div style={{ fontWeight: '600' }}>Score: {score}</div>
+                        <div style={{ fontWeight: '600' }}>Streak: {streakCount}</div>
                     </div>
                 </div>
 
@@ -1187,23 +1164,22 @@ const PixelPlayGameHub = () => {
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '2rem',
                             borderRadius: '16px',
-                            textAlign: 'center',
-                            backdropFilter: 'blur(10px)'
+                            textAlign: 'center'
                         }}>
                             <h3 style={{ margin: '0 0 1rem 0' }}>Game Paused</h3>
-                            <p style={{ margin: '0 0 1.5rem 0', opacity: '0.9' }}>Take a breath and resume when ready!</p>
+                            <p style={{ margin: '0 0 1.5rem 0' }}>Take a breath and resume when ready!</p>
                             <button 
                                 style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
                                     background: '#10b981',
                                     color: 'white',
                                     border: 'none',
                                     padding: '0.75rem 1.5rem',
                                     borderRadius: '8px',
                                     cursor: 'pointer',
-                                    fontWeight: '600'
+                                    fontWeight: '600',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
                                 }}
                                 onClick={resumeGame}
                             >
@@ -1231,23 +1207,17 @@ const PixelPlayGameHub = () => {
                 justifyContent: 'center'
             }}>
                 <div style={{ maxWidth: '500px', textAlign: 'center' }}>
-                    <div style={{ marginBottom: '2rem' }}>
-                        <div style={{
-                            fontSize: '4rem',
-                            marginBottom: '1rem',
-                            animation: 'bounce 2s infinite'
-                        }}>🏆</div>
-                        <h1 style={{
-                            fontSize: '2.5rem',
-                            fontWeight: '800',
-                            margin: '0 0 1rem 0'
-                        }}>Workout Complete!</h1>
-                        <p style={{
-                            fontSize: '1.1rem',
-                            opacity: '0.9',
-                            margin: '0'
-                        }}>You've successfully completed {selectedGame.name}!</p>
-                    </div>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🏆</div>
+                    <h1 style={{
+                        fontSize: '2.5rem',
+                        fontWeight: '800',
+                        margin: '0 0 1rem 0'
+                    }}>Workout Complete!</h1>
+                    <p style={{
+                        fontSize: '1.1rem',
+                        opacity: '0.9',
+                        margin: '0 0 2rem 0'
+                    }}>You've successfully completed {selectedGame.name}!</p>
 
                     <div style={{
                         display: 'flex',
@@ -1256,77 +1226,40 @@ const PixelPlayGameHub = () => {
                         marginBottom: '2rem'
                     }}>
                         <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1rem',
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '1rem',
-                            borderRadius: '12px'
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem'
                         }}>
                             <Star style={{ color: '#fbbf24', width: '2rem', height: '2rem' }} />
                             <div>
-                                <div style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '700'
-                                }}>+{selectedGame.xpReward + (streakCount * 5)} XP</div>
-                                <div style={{
-                                    fontSize: '0.9rem',
-                                    opacity: '0.8'
-                                }}>Experience Gained</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+                                    +{selectedGame.xpReward + (streakCount * 5)} XP
+                                </div>
+                                <div style={{ fontSize: '0.9rem', opacity: '0.8' }}>Experience Gained</div>
                             </div>
                         </div>
                         <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1rem',
                             background: 'rgba(255, 255, 255, 0.1)',
                             padding: '1rem',
-                            borderRadius: '12px'
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem'
                         }}>
                             <Trophy style={{ color: '#fbbf24', width: '2rem', height: '2rem' }} />
                             <div>
-                                <div style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '700'
-                                }}>Level {user.level}</div>
-                                <div style={{
-                                    fontSize: '0.9rem',
-                                    opacity: '0.8'
-                                }}>Current Level</div>
-                            </div>
-                        </div>
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1rem',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            padding: '1rem',
-                            borderRadius: '12px'
-                        }}>
-                            <div>
-                                <div style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: '700'
-                                }}>{score}</div>
-                                <div style={{
-                                    fontSize: '0.9rem',
-                                    opacity: '0.8'
-                                }}>Final Score</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>Final Score: {score}</div>
+                                <div style={{ fontSize: '0.9rem', opacity: '0.8' }}>Great job!</div>
                             </div>
                         </div>
                     </div>
 
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '1rem'
-                    }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <button 
                             style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem',
                                 background: '#10b981',
                                 color: 'white',
                                 border: 'none',
@@ -1334,7 +1267,11 @@ const PixelPlayGameHub = () => {
                                 borderRadius: '12px',
                                 fontSize: '1.1rem',
                                 fontWeight: '600',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
                             }}
                             onClick={() => startGame(selectedGame)}
                         >
@@ -1362,415 +1299,6 @@ const PixelPlayGameHub = () => {
     }
 
     return null;
-};
-
-// Game Card Component (matches your current design)
-const GameCard = ({ game, isUnlocked, isCompleted, isFavorite, onPlay, motionEnabled, audioEnabled }) => {
-    const getGameFeatureBadges = () => {
-        const badges = [];
-        if (game.motionDetection && motionEnabled) badges.push('📱 Motion');
-        if (game.audioSync && audioEnabled) badges.push('🎵 Audio');
-        if (game.storyMode) badges.push('📖 Story');
-        if (game.mindfulness) badges.push('🧘 Mindful');
-        return badges;
-    };
-
-    return (
-        <div style={{
-            position: 'relative',
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '20px',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-            transition: 'all 0.3s ease',
-            overflow: 'hidden',
-            cursor: isUnlocked ? 'pointer' : 'not-allowed',
-            opacity: isUnlocked ? '1' : '0.7'
-        }}>
-            
-            {/* Card Header with Badges */}
-            <div style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                zIndex: 10,
-                display: 'flex',
-                gap: '0.5rem'
-            }}>
-                {!isUnlocked && (
-                    <div style={{
-                        width: '2rem',
-                        height: '2rem',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        background: '#6B7280'
-                    }}>
-                        <Lock size={16} />
-                    </div>
-                )}
-                {isFavorite && isUnlocked && (
-                    <div style={{
-                        width: '2rem',
-                        height: '2rem',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        background: '#F59E0B'
-                    }}>
-                        <Star size={16} />
-                    </div>
-                )}
-                {isCompleted && (
-                    <div style={{
-                        width: '2rem',
-                        height: '2rem',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        background: '#10B981'
-                    }}>
-                        <CheckCircle size={16} />
-                    </div>
-                )}
-            </div>
-
-            {/* Game Content */}
-            <div style={{ padding: '2rem', textAlign: 'center' }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{game.emoji}</div>
-                <h3 style={{
-                    fontSize: '1.5rem',
-                    fontWeight: '700',
-                    color: '#1F2937',
-                    margin: '0 0 0.75rem 0'
-                }}>{game.name}</h3>
-                <p style={{
-                    color: '#6B7280',
-                    margin: '0 0 1rem 0',
-                    lineHeight: '1.5',
-                    fontSize: '0.9rem'
-                }}>{game.description}</p>
-                
-                {/* Feature Badges */}
-                <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem',
-                    justifyContent: 'center',
-                    marginBottom: '1rem'
-                }}>
-                    {getGameFeatureBadges().map((badge, index) => (
-                        <span key={index} style={{
-                            fontSize: '0.75rem',
-                            padding: '0.25rem 0.5rem',
-                            background: 'rgba(139, 92, 246, 0.1)',
-                            color: '#8B5CF6',
-                            borderRadius: '12px',
-                            fontWeight: '500'
-                        }}>{badge}</span>
-                    ))}
-                </div>
-                
-                {/* Game Stats */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '0.75rem',
-                    marginBottom: '1rem'
-                }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.875rem',
-                        color: '#6B7280',
-                        fontWeight: '500'
-                    }}>
-                        <Timer size={16} />
-                        <span>{game.duration}</span>
-                    </div>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.875rem',
-                        color: '#6B7280',
-                        fontWeight: '500'
-                    }}>
-                        <Zap size={16} />
-                        <span>{game.xpReward} XP</span>
-                    </div>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.875rem',
-                        color: '#6B7280',
-                        fontWeight: '500'
-                    }}>
-                        <Target size={16} />
-                        <span>{game.difficulty}</span>
-                    </div>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.875rem',
-                        color: '#6B7280',
-                        fontWeight: '500'
-                    }}>
-                        <Users size={16} />
-                        <span>{game.playerCount}</span>
-                    </div>
-                </div>
-
-                {/* Safety Features */}
-                {game.safetyFeatures && (
-                    <div style={{ marginBottom: '1rem', textAlign: 'left' }}>
-                        <span style={{
-                            fontSize: '0.875rem',
-                            fontWeight: '600',
-                            color: '#059669',
-                            display: 'block',
-                            marginBottom: '0.5rem'
-                        }}>🛡️ Safety First:</span>
-                        <div style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.5rem'
-                        }}>
-                            {game.safetyFeatures.map((feature, index) => (
-                                <span key={index} style={{
-                                    fontSize: '0.75rem',
-                                    padding: '0.25rem 0.5rem',
-                                    background: 'rgba(5, 150, 105, 0.1)',
-                                    color: '#059669',
-                                    borderRadius: '8px',
-                                    textTransform: 'capitalize'
-                                }}>
-                                    {feature.replace('-', ' ')}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Unlock Requirement */}
-                {!isUnlocked && (
-                    <div style={{
-                        background: '#6B7280',
-                        color: 'white',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '12px',
-                        fontSize: '0.875rem',
-                        fontWeight: '600',
-                        marginBottom: '1.5rem',
-                        display: 'inline-block'
-                    }}>
-                        🔒 Unlock at Level {game.unlockLevel}
-                    </div>
-                )}
-
-                {/* Play Button */}
-                <button
-                    onClick={() => {
-                        console.log('Play button clicked for game:', game.name);
-                        console.log('Is unlocked:', isUnlocked);
-                        if (isUnlocked) {
-                            console.log('Starting game...');
-                            onPlay(game);
-                        } else {
-                            console.log('Game is locked, cannot start');
-                        }
-                    }}
-                    disabled={!isUnlocked}
-                    style={{
-                        width: '100%',
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '16px',
-                        fontWeight: '700',
-                        fontSize: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        border: 'none',
-                        cursor: isUnlocked ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.2s ease',
-                        background: isUnlocked ? '#8B5CF6' : '#E5E7EB',
-                        color: isUnlocked ? 'white' : '#9CA3AF'
-                    }}
-                    onMouseOver={(e) => {
-                        if (isUnlocked) {
-                            e.target.style.background = '#7C3AED';
-                            e.target.style.transform = 'translateY(-2px)';
-                            e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-                        }
-                    }}
-                    onMouseOut={(e) => {
-                        if (isUnlocked) {
-                            e.target.style.background = '#8B5CF6';
-                            e.target.style.transform = 'translateY(0px)';
-                            e.target.style.boxShadow = 'none';
-                        }
-                    }}
-                >
-                    {isUnlocked ? (
-                        <>
-                            <Play size={20} />
-                            <span>Play Now!</span>
-                        </>
-                    ) : (
-                        <>
-                            <Lock size={20} />
-                            <span>Locked</span>
-                        </>
-                    )}
-                </button>
-            </div>
-        </div>
-    );
-};
-
-// Story Creator Modal Component (simplified for this demo)
-const StoryCreatorModal = ({ onClose, user }) => {
-    return (
-        <div style={{
-            position: 'fixed',
-            inset: '0',
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '2rem'
-        }}>
-            <div style={{
-                background: 'white',
-                borderRadius: '24px',
-                width: '100%',
-                maxWidth: '500px',
-                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '2rem 2rem 1rem'
-                }}>
-                    <h2 style={{
-                        fontSize: '1.5rem',
-                        fontWeight: '700',
-                        color: '#1F2937',
-                        margin: '0'
-                    }}>🎨 Create Your Fitness Story!</h2>
-                    <button 
-                        style={{
-                            width: '2rem',
-                            height: '2rem',
-                            borderRadius: '50%',
-                            border: 'none',
-                            background: '#E5E7EB',
-                            cursor: 'pointer',
-                            fontSize: '1.2rem'
-                        }}
-                        onClick={onClose}
-                    >×</button>
-                </div>
-                <div style={{ padding: '0 2rem 2rem', textAlign: 'center' }}>
-                    <p>Story creator coming soon! This will let you create your own fitness adventures.</p>
-                    <button 
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            background: '#8B5CF6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            marginTop: '1rem'
-                        }}
-                        onClick={onClose}
-                    >Close</button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Avatar Customizer Modal Component (simplified for this demo)
-const AvatarCustomizerModal = ({ onClose, user }) => {
-    return (
-        <div style={{
-            position: 'fixed',
-            inset: '0',
-            background: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '2rem'
-        }}>
-            <div style={{
-                background: 'white',
-                borderRadius: '24px',
-                width: '100%',
-                maxWidth: '500px',
-                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '2rem 2rem 1rem'
-                }}>
-                    <h2 style={{
-                        fontSize: '1.5rem',
-                        fontWeight: '700',
-                        color: '#1F2937',
-                        margin: '0'
-                    }}>🎨 Customize Your Avatar!</h2>
-                    <button 
-                        style={{
-                            width: '2rem',
-                            height: '2rem',
-                            borderRadius: '50%',
-                            border: 'none',
-                            background: '#E5E7EB',
-                            cursor: 'pointer',
-                            fontSize: '1.2rem'
-                        }}
-                        onClick={onClose}
-                    >×</button>
-                </div>
-                <div style={{ padding: '0 2rem 2rem', textAlign: 'center' }}>
-                    <p>Avatar customizer coming soon! This will let you personalize your character.</p>
-                    <button 
-                        style={{
-                            padding: '0.75rem 1.5rem',
-                            background: '#8B5CF6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            marginTop: '1rem'
-                        }}
-                        onClick={onClose}
-                    >Close</button>
-                </div>
-            </div>
-        </div>
-    );
 };
 
 export default PixelPlayGameHub;

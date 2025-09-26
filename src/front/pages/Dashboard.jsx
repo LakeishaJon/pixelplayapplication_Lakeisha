@@ -132,7 +132,7 @@ const Dashboard = () => {
         <section className="dashboard-header">
           <div className="header-content">
             <div className="welcome-text">
-              <h1>Welcome Back!</h1>
+              <h1>Welcome Back Champion!</h1>
               <p>Ready to continue your fitness journey?</p>
             </div>
             <div className="level-display">
