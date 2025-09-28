@@ -1,567 +1,323 @@
-// utils/avatarUtils.jsx
 import { createAvatar } from '@dicebear/core';
-import { avataaars, miniavs, personas } from '@dicebear/collection';
+import { 
+  micah,
+  avataaars,
+  bigSmile,
+  miniavs,
+  personas,
+  thumbs,
+  bigEars,
+  adventurer,
+  pixelArt,
+  openPeeps,
+  croodles,
+  lorelei
+} from '@dicebear/collection';
 
-/**
- * Avatar Utilities for PixelPlay Fitness App
- * Handles avatar generation, validation, and utility functions
- */
-// Generate theme configuration for UI theming
-export const generateThemeConfig = (theme = 'default') => {
-  const themeConfigs = {
-    default: {
-      primary: '#4CAF50',
-      secondary: '#2196F3',
-      accent: '#FF9800',
-      background: '#F5F5F5',
-      surface: '#FFFFFF',
-      text: '#212121',
-      textSecondary: '#757575',
-      border: '#E0E0E0'
-    },
-    dark: {
-      primary: '#66BB6A',
-      secondary: '#42A5F5',
-      accent: '#FFB74D',
-      background: '#121212',
-      surface: '#1E1E1E',
-      text: '#FFFFFF',
-      textSecondary: '#B0B0B0',
-      border: '#333333'
-    },
-    fitness: {
-      primary: '#FF5722',
-      secondary: '#4CAF50',
-      accent: '#FFC107',
-      background: '#FAFAFA',
-      surface: '#FFFFFF',
-      text: '#212121',
-      textSecondary: '#666666',
-      border: '#DDDDDD'
-    },
-    ocean: {
-      primary: '#00BCD4',
-      secondary: '#0097A7',
-      accent: '#4DD0E1',
-      background: '#E0F2F1',
-      surface: '#B2DFDB',
-      text: '#006064',
-      textSecondary: '#00838F',
-      border: '#80CBC4'
+// DiceBear avatar styles configuration
+export const AVATAR_STYLES = {
+  micah: {
+    name: 'Friendly Kids',
+    style: micah,
+    description: 'Diverse and welcoming characters perfect for kids',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['b6e3f4', 'c084fc', 'fb7185', 'fbbf24', '34d399', 'f472b6', '60a5fa'],
+      hair: ['long01', 'long02', 'long03', 'short01', 'short02', 'short03', 'short04'],
+      hairColor: ['2d3748', '744210', 'f59e0b', 'ef4444', '8b5cf6', '06b6d4', '10b981'],
+      eyes: ['happy', 'wink', 'surprised'],
+      eyebrows: ['down', 'up'],
+      mouth: ['happy', 'openSmile', 'serious'],
+      shirt: ['crew', 'open'],
+      shirtColor: ['3b82f6', 'ef4444', '10b981', 'f59e0b', '8b5cf6', 'ec4899']
     }
-  };
-
-  return themeConfigs[theme] || themeConfigs.default;
-};
-// Helper function to generate random seeds for unique avatars
-export const generateRandomSeed = () => {
-  const seeds = [
-    'happy', 'sunny', 'cool', 'awesome', 'bright', 'smart', 'kind',
-    'brave', 'strong', 'gentle', 'creative', 'fun', 'amazing', 'super',
-    'energetic', 'focused', 'determined', 'motivated', 'inspired', 'confident'
-  ];
-  const randomSeed = seeds[Math.floor(Math.random() * seeds.length)];
-  const timestamp = Date.now();
-  return `${randomSeed}-${timestamp}`;
-};
-
-// Get the appropriate DiceBear style collection
-export const getAvatarStyle = (styleName) => {
-  const styles = {
-    'avataaars': avataaars,
-    'miniavs': miniavs,
-    'personas': personas
-  };
-
-  return styles[styleName] || avataaars; // Default to avataaars if style not found
-};
-
-// Generate avatar data URI from avatar settings
-export const generateAvatarDataUri = (avatarSettings) => {
-  try {
-    // Validate input
-    if (!avatarSettings || typeof avatarSettings !== 'object') {
-      throw new Error('Invalid avatar settings provided');
+  },
+  
+  avataaars: {
+    name: 'Cartoon Heroes',
+    style: avataaars,
+    description: 'Popular cartoon-style avatars',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['65C9FF', 'FC909F', 'FFAF7A', 'BEAAE2', '93EDC7', 'FFD93D'],
+      top: ['NoHair', 'ShortHairDreads01', 'ShortHairShortFlat', 'ShortHairShortWaved', 'LongHairStraight', 'LongHairCurly'],
+      hairColor: ['Auburn', 'Black', 'Blonde', 'BlondeGolden', 'Brown', 'BrownDark', 'PastelPink', 'Red'],
+      accessories: ['Blank', 'Kurt', 'Prescription01', 'Round', 'Sunglasses', 'Wayfarers'],
+      facialHair: ['Blank', 'BeardLight', 'MoustacheFancy', 'MoustacheMagnum'],
+      clothes: ['BlazerShirt', 'BlazerSweater', 'CollarSweater', 'Hoodie', 'Overall', 'ShirtCrewNeck'],
+      clotheColor: ['Black', 'Blue01', 'Blue02', 'Gray01', 'Red', 'White'],
+      skin: ['Tanned', 'Yellow', 'Pale', 'Light', 'Brown', 'DarkBrown', 'Black']
     }
+  },
 
-    const style = getAvatarStyle(avatarSettings.style || 'avataaars');
-    const seed = avatarSettings.seed || generateRandomSeed();
+  bigSmile: {
+    name: 'Always Happy',
+    style: bigSmile,
+    description: 'Cheerful faces that are always smiling',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['blue', 'green', 'red', 'orange', 'yellow', 'purple', 'pink'],
+      hair: ['afro', 'bangs', 'bangs2', 'bun', 'bun2', 'fancy', 'long', 'short'],
+      hairColor: ['black', 'blonde', 'brown', 'gray', 'red'],
+      eyes: ['normal', 'happy', 'wink'],
+      mouth: ['happy', 'openSmile', 'tongue'],
+      skin: ['light', 'medium', 'dark']
+    }
+  },
 
-    // Create avatar with provided settings
-    const avatar = createAvatar(style, {
-      seed,
-      ...avatarSettings
-    });
+  miniavs: {
+    name: 'Minimalist',
+    style: miniavs,
+    description: 'Clean and simple avatar designs',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['ff5722', '2196f3', '4caf50', 'ff9800', '9c27b0', 'e91e63'],
+      body: ['variant01', 'variant02', 'variant03', 'variant04', 'variant05'],
+      hair: ['variant01', 'variant02', 'variant03', 'variant04', 'variant05', 'variant06'],
+      hairColor: ['333333', '8b4513', 'daa520', 'ff6347', '9370db'],
+      eyes: ['variant01', 'variant02', 'variant03', 'variant04'],
+      mouth: ['variant01', 'variant02', 'variant03', 'variant04']
+    }
+  },
 
-    return avatar.toDataUri();
-  } catch (error) {
-    console.error('Error generating avatar:', error);
+  personas: {
+    name: 'Professional',
+    style: personas,
+    description: 'Stylish and professional character designs',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['ffdfbf', 'c0aede', 'a8e6cf', 'ffd93d', 'ff8b94', '88d8b0'],
+      hair: ['curly', 'straight', 'wavy'],
+      hairColor: ['blonde', 'brown', 'black', 'red'],
+      eyes: ['normal', 'happy'],
+      nose: ['variant01', 'variant02', 'variant03'],
+      mouth: ['happy', 'serious'],
+      beard: ['variant01', 'variant02', 'variant03']
+    }
+  },
 
-    // Return fallback avatar
-    try {
-      const fallbackAvatar = createAvatar(avataaars, {
-        seed: 'fallback-' + Date.now()
-      });
-      return fallbackAvatar.toDataUri();
-    } catch (fallbackError) {
-      console.error('Error generating fallback avatar:', fallbackError);
-      return null;
+  thumbs: {
+    name: 'Thumbs Up',
+    style: thumbs,
+    description: 'Positive and encouraging thumb characters',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['0066ff', '7b68ee', 'ff6b35', '37d67a', 'f94144', 'f8961e'],
+      shading: ['variant01', 'variant02', 'variant03'],
+      eyes: ['variant01', 'variant02', 'variant03', 'variant04'],
+      mouth: ['variant01', 'variant02', 'variant03', 'variant04']
+    }
+  },
+
+  bigEars: {
+    name: 'Big Ears',
+    style: bigEars,
+    description: 'Cute characters with distinctive big ears',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['96ceb4', 'feca57', 'ff9ff3', '54a0ff', 'ee5a24', '00d2d3'],
+      hair: ['variant01', 'variant02', 'variant03', 'variant04'],
+      hairColor: ['2d3436', '6c5ce7', 'a29bfe', 'fd79a8', 'fdcb6e'],
+      accessories: ['variant01', 'variant02', 'variant03']
+    }
+  },
+
+  adventurer: {
+    name: 'Adventurer',
+    style: adventurer,
+    description: 'Bold characters ready for any adventure',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['92a8d1', 'b1cbbb', 'eea990', 'f4c2c2', 'd6a2e8', 'a8e6cf'],
+      hair: ['short01', 'short02', 'short03', 'long01', 'long02'],
+      hairColor: ['4a4a4a', '8b4513', 'daa520', 'cd853f', '9370db'],
+      eyes: ['variant01', 'variant02', 'variant03'],
+      mouth: ['variant01', 'variant02', 'variant03'],
+      skinTone: ['light', 'medium', 'dark']
+    }
+  },
+
+  pixelArt: {
+    name: 'Pixel Art',
+    style: pixelArt,
+    description: 'Retro pixel-style game characters',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['transparent'],
+      hair: ['pixie', 'short', 'long'],
+      hairColor: ['black', 'blonde', 'brown', 'red', 'blue', 'green'],
+      eyes: ['normal', 'wink', 'happy'],
+      accessories: ['glasses', 'sunglasses']
+    }
+  },
+
+  openPeeps: {
+    name: 'Open Peeps',
+    style: openPeeps,
+    description: 'Hand-drawn style illustrations',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['b6e3f4', 'c084fc', 'fb7185', 'fbbf24', '34d399'],
+      hair: ['afro', 'bangs', 'bunCurly', 'buzz', 'long', 'shortCurly'],
+      hairColor: ['000000', '2c1b18', '724133', 'a55728', 'd2b48c'],
+      accessories: ['glasses', 'sunglasses'],
+      facial_hair: ['goatee', 'moustache', 'stubble']
+    }
+  },
+
+  croodles: {
+    name: 'Doodle Style',
+    style: croodles,
+    description: 'Fun doodle-style characters',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['f093fb', '4facfe', '00f2fe', 'f0ff00', 'fe4a49', '96ceb4'],
+      hair: ['short', 'long', 'curly', 'wavy'],
+      mood: ['blissful', 'happy', 'sad', 'surprised']
+    }
+  },
+
+  lorelei: {
+    name: 'Artistic',
+    style: lorelei,
+    description: 'Artistic and stylized character portraits',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['ffdfbf', 'c0aede', 'a8e6cf', 'ffd93d', 'ff8b94'],
+      hair: ['variant01', 'variant02', 'variant03', 'variant04'],
+      eyes: ['variant01', 'variant02', 'variant03'],
+      accessories: ['variant01', 'variant02']
     }
   }
 };
 
-// Create default avatar settings
-export const getDefaultAvatar = (style = 'avataaars') => {
-  const baseSettings = {
-    style,
-    seed: generateRandomSeed(),
-    backgroundColor: ['transparent']
-  };
+// Generate avatar SVG string
+export const generateAvatarSVG = (avatarConfig) => {
+  if (!avatarConfig.style || !AVATAR_STYLES[avatarConfig.style]) {
+    return null;
+  }
 
-  // Style-specific default settings
-  const styleDefaults = {
-    avataaars: {
-      accessories: [],
-      accessoriesChance: 30,
-      clothing: 'blazerShirt',
-      clothingColor: ['blue'],
-      eyebrows: 'default',
-      eyes: 'default',
-      facialHair: [],
-      facialHairChance: 0,
-      hair: 'shortWaved',
-      hairColor: ['brown'],
-      mouth: 'default',
-      skin: ['light'],
-      top: 'shortWaved'
-    },
-    miniavs: {
-      hair: 'short',
-      clothing: 'shirt',
-      mood: 'happy'
-    },
-    personas: {
-      hair: 'short',
-      clothing: 'casual'
+  const styleConfig = AVATAR_STYLES[avatarConfig.style];
+  const avatar = createAvatar(styleConfig.style, {
+    seed: avatarConfig.seed || 'default',
+    ...avatarConfig.options
+  });
+
+  return avatar.toString();
+};
+
+// Get available options for a specific style and category
+export const getStyleOptions = (styleName, category) => {
+  const style = AVATAR_STYLES[styleName];
+  if (!style || !style.customOptions[category]) {
+    return [];
+  }
+  return style.customOptions[category];
+};
+
+// Get all available styles
+export const getAvailableStyles = () => {
+  return Object.keys(AVATAR_STYLES).map(key => ({
+    id: key,
+    name: AVATAR_STYLES[key].name,
+    description: AVATAR_STYLES[key].description,
+    kidFriendly: AVATAR_STYLES[key].kidFriendly
+  }));
+};
+
+// Create default avatar configuration for a style
+export const createDefaultAvatarConfig = (styleName, userId = 'default') => {
+  const style = AVATAR_STYLES[styleName];
+  if (!style) {
+    return null;
+  }
+
+  const defaultOptions = {};
+  
+  // Set first option as default for each category
+  Object.keys(style.customOptions).forEach(category => {
+    const options = style.customOptions[category];
+    if (options && options.length > 0) {
+      defaultOptions[category] = [options[0]];
     }
-  };
+  });
 
   return {
-    ...baseSettings,
-    ...(styleDefaults[style] || styleDefaults.avataaars)
+    style: styleName,
+    seed: `${userId}-${styleName}`,
+    options: defaultOptions
   };
 };
 
-// Calculate user level from points
-export const calculateLevel = (points) => {
-  if (typeof points !== 'number' || points < 0) return 1;
-  return Math.floor(points / 100) + 1;
-};
-
-// Calculate progress percentage to next level
-export const calculateProgress = (points) => {
-  if (typeof points !== 'number' || points < 0) return 0;
-  return (points % 100) / 100;
-};
-
-// Calculate points needed for next level
-export const pointsToNextLevel = (points) => {
-  if (typeof points !== 'number' || points < 0) return 100;
-  return 100 - (points % 100);
-};
-
-// Items that can be unlocked at different levels
-export const getUnlockableItems = () => ({
-  hair: {
-    1: ['shortWaved', 'longHair', 'curly'],
-    2: ['straight', 'bob', 'bun'],
-    3: ['mohawk', 'bald', 'dreads'],
-    4: ['frida', 'fro', 'shaggyMullet'],
-    5: ['fancy', 'wild', 'miaWallace']
-  },
-  clothing: {
-    1: ['blazerShirt', 'hoodie', 'tshirt'],
-    2: ['sweater', 'collarSweater', 'shirtCrewNeck'],
-    3: ['jacket', 'vest', 'overall'],
-    4: ['formal', 'graphicShirt', 'shirtScoopNeck'],
-    5: ['premium', 'designer', 'shirtVNeck']
-  },
-  accessories: {
-    2: ['glasses', 'prescription01'],
-    3: ['sunglasses', 'wayfarers', 'round'],
-    4: ['prescription02', 'kurt'],
-    5: ['crown', 'mask', 'premium-glasses']
-  },
-  colors: {
-    1: ['blue', 'red', 'green'],
-    2: ['purple', 'orange', 'yellow'],
-    3: ['pink', 'brown', 'black'],
-    4: ['white', 'gray', 'navy'],
-    5: ['gold', 'silver', 'rainbow']
-  }
-});
-
-// Check what items should be unlocked for a specific level
-export const getItemsForLevel = (level) => {
-  const unlockables = getUnlockableItems();
-  const items = {
-    hair: [],
-    clothing: [],
-    accessories: [],
-    colors: []
-  };
-
-  // Add items for each category based on level
-  Object.keys(unlockables).forEach(category => {
-    Object.keys(unlockables[category]).forEach(unlockLevel => {
-      const requiredLevel = parseInt(unlockLevel);
-      if (level >= requiredLevel) {
-        items[category] = [
-          ...items[category],
-          ...unlockables[category][unlockLevel]
-        ];
-      }
-    });
-  });
-
-  return items;
-};
-
-// Get newly unlocked items when leveling up
-export const getNewlyUnlockedItems = (oldLevel, newLevel) => {
-  if (newLevel <= oldLevel) return { hair: [], clothing: [], accessories: [], colors: [] };
-
-  const unlockables = getUnlockableItems();
-  const newItems = {
-    hair: [],
-    clothing: [],
-    accessories: [],
-    colors: []
-  };
-
-  // Find items unlocked between old and new level
-  Object.keys(unlockables).forEach(category => {
-    Object.keys(unlockables[category]).forEach(unlockLevel => {
-      const requiredLevel = parseInt(unlockLevel);
-      if (requiredLevel > oldLevel && requiredLevel <= newLevel) {
-        newItems[category] = [
-          ...newItems[category],
-          ...unlockables[category][unlockLevel]
-        ];
-      }
-    });
-  });
-
-  return newItems;
-};
-
-// Validate avatar settings object
-export const validateAvatarSettings = (settings) => {
-  if (!settings || typeof settings !== 'object') {
+// Validate avatar configuration
+export const validateAvatarConfig = (config) => {
+  if (!config.style || !AVATAR_STYLES[config.style]) {
     return false;
   }
 
-  // Check required fields
-  const requiredFields = ['style', 'seed'];
-  for (const field of requiredFields) {
-    if (!settings[field]) {
-      return false;
+  const style = AVATAR_STYLES[config.style];
+  
+  // Check if all options are valid for the style
+  if (config.options) {
+    for (const [category, value] of Object.entries(config.options)) {
+      if (style.customOptions[category]) {
+        const validOptions = style.customOptions[category];
+        const selectedValue = Array.isArray(value) ? value[0] : value;
+        if (!validOptions.includes(selectedValue)) {
+          return false;
+        }
+      }
     }
-  }
-
-  // Validate style
-  const validStyles = ['avataaars', 'miniavs', 'personas'];
-  if (!validStyles.includes(settings.style)) {
-    return false;
   }
 
   return true;
 };
 
-// Create a random avatar with specified style
-export const createRandomAvatar = (style = 'avataaars') => {
-  const defaultAvatar = getDefaultAvatar(style);
-  const unlockableItems = getUnlockableItems();
-
-  // Randomize some features
-  if (style === 'avataaars') {
-    const randomHair = unlockableItems.hair[1][Math.floor(Math.random() * unlockableItems.hair[1].length)];
-    const randomClothing = unlockableItems.clothing[1][Math.floor(Math.random() * unlockableItems.clothing[1].length)];
-    const randomColors = unlockableItems.colors[1];
-    const randomHairColor = randomColors[Math.floor(Math.random() * randomColors.length)];
-    const randomClothingColor = randomColors[Math.floor(Math.random() * randomColors.length)];
-
-    return {
-      ...defaultAvatar,
-      hair: randomHair,
-      clothing: randomClothing,
-      hairColor: [randomHairColor],
-      clothingColor: [randomClothingColor],
-      seed: generateRandomSeed()
-    };
-  }
-
-  return {
-    ...defaultAvatar,
-    seed: generateRandomSeed()
+// Legacy function compatibility
+export const getItemsForLevel = (level) => {
+  // For backwards compatibility with existing inventory system
+  const baseItems = {
+    hair: ['short01', 'long01', 'curly'],
+    clothing: ['crew', 'hoodie', 'blazer'],
+    accessories: ['glasses', 'sunglasses'],
+    colors: ['blue', 'red', 'green', 'purple', 'orange']
   };
-};
 
-// Export avatar settings as JSON string for saving
-export const exportAvatarSettings = (avatarSettings) => {
-  try {
-    return JSON.stringify(avatarSettings, null, 2);
-  } catch (error) {
-    console.error('Error exporting avatar settings:', error);
-    return null;
+  // Unlock more items as level increases
+  if (level >= 5) {
+    baseItems.hair.push('short02', 'long02', 'fancy');
+    baseItems.clothing.push('overall', 'sweater');
+    baseItems.accessories.push('kurt', 'wayfarers');
   }
+
+  if (level >= 10) {
+    baseItems.hair.push('short03', 'long03', 'dreads');
+    baseItems.clothing.push('blazerSweater', 'collarSweater');
+    baseItems.accessories.push('prescription01', 'round');
+  }
+
+  return baseItems;
 };
 
-// Import avatar settings from JSON string
-export const importAvatarSettings = (jsonString) => {
-  try {
-    const settings = JSON.parse(jsonString);
-    if (validateAvatarSettings(settings)) {
-      return settings;
-    } else {
-      throw new Error('Invalid avatar settings format');
+export const generateThemeConfig = (theme) => {
+  // Generate theme-based avatar configurations
+  const themes = {
+    fitness: {
+      preferredStyles: ['micah', 'avataaars', 'adventurer'],
+      colors: ['34d399', '3b82f6', 'f59e0b'],
+      clothing: ['hoodie', 'crew', 'blazer']
+    },
+    fun: {
+      preferredStyles: ['bigSmile', 'thumbs', 'pixelArt'],
+      colors: ['fb7185', 'fbbf24', 'c084fc'],
+      clothing: ['hoodie', 'overall']
+    },
+    creative: {
+      preferredStyles: ['openPeeps', 'croodles', 'lorelei'],
+      colors: ['a8e6cf', 'ffdfbf', 'c0aede'],
+      clothing: ['blazer', 'sweater']
     }
-  } catch (error) {
-    console.error('Error importing avatar settings:', error);
-    return null;
-  }
-};
-
-// Create avatar thumbnail (smaller version for lists)
-export const generateAvatarThumbnail = (avatarSettings, size = 64) => {
-  try {
-    const style = getAvatarStyle(avatarSettings.style || 'avataaars');
-    const avatar = createAvatar(style, {
-      ...avatarSettings,
-      size: size
-    });
-
-    return avatar.toDataUri();
-  } catch (error) {
-    console.error('Error generating avatar thumbnail:', error);
-    return generateAvatarDataUri(getDefaultAvatar());
-  }
-};
-
-// Workout reward system - determine what items to unlock based on workout
-export const getWorkoutRewards = (workoutType, userLevel) => {
-  const baseRewards = {
-    'jumping-jacks': { points: 25, category: 'accessories', items: ['sporty-glasses', 'sweatband'] },
-    'push-ups': { points: 15, category: 'clothing', items: ['tank-top', 'athletic-wear'] },
-    'yoga': { points: 40, category: 'hair', items: ['zen-bun', 'peaceful-waves'] },
-    'running': { points: 50, category: 'accessories', items: ['running-cap', 'athletic-shoes'] },
-    'dancing': { points: 35, category: 'clothing', items: ['dance-outfit', 'colorful-shirt'] }
   };
 
-  const reward = baseRewards[workoutType] || { points: 20, category: 'accessories', items: ['basic-item'] };
-
-  // Level bonus
-  const levelBonus = Math.floor(userLevel / 5) * 5;
-
-  return {
-    ...reward,
-    points: reward.points + levelBonus,
-    levelBonus
-  };
-};
-
-// Achievement system helpers
-export const checkAchievements = (userStats) => {
-  const achievements = [];
-
-  // Workout achievements
-  if (userStats.workoutsCompleted === 1) {
-    achievements.push({ id: 'first-workout', name: 'First Steps', reward: 'medal' });
-  }
-
-  if (userStats.workoutsCompleted === 10) {
-    achievements.push({ id: 'workout-warrior', name: 'Workout Warrior', reward: 'trophy' });
-  }
-
-  // Level achievements
-  if (userStats.level === 5) {
-    achievements.push({ id: 'level-5', name: 'Rising Star', reward: 'star-crown' });
-  }
-
-  if (userStats.level === 10) {
-    achievements.push({ id: 'level-10', name: 'Fitness Master', reward: 'master-badge' });
-  }
-
-  // Point achievements
-  if (userStats.points >= 1000) {
-    achievements.push({ id: 'point-master', name: 'Point Collector', reward: 'golden-accessory' });
-  }
-
-  // Streak achievements
-  if (userStats.streak >= 7) {
-    achievements.push({ id: 'week-streak', name: 'Week Warrior', reward: 'consistency-badge' });
-  }
-
-  return achievements;
-};
-
-// Generate multiple random avatars for gallery/selection
-export const generateAvatarCollection = (count = 6, style = 'avataaars') => {
-  const collection = [];
-
-  for (let i = 0; i < count; i++) {
-    const avatar = createRandomAvatar(style);
-    avatar.name = `Avatar ${i + 1}`;
-    avatar.id = `random-${Date.now()}-${i}`;
-    collection.push(avatar);
-  }
-
-  return collection;
-};
-
-// Avatar comparison utility
-export const compareAvatars = (avatar1, avatar2) => {
-  const differences = [];
-
-  const compareFields = ['hair', 'clothing', 'accessories', 'hairColor', 'clothingColor', 'skin'];
-
-  compareFields.forEach(field => {
-    if (JSON.stringify(avatar1[field]) !== JSON.stringify(avatar2[field])) {
-      differences.push({
-        field,
-        avatar1Value: avatar1[field],
-        avatar2Value: avatar2[field]
-      });
-    }
-  });
-
-  return {
-    identical: differences.length === 0,
-    differences
-  };
-};
-
-// Create avatar variations (slight modifications)
-export const createAvatarVariations = (baseAvatar, count = 3) => {
-  const variations = [];
-  const unlockableItems = getUnlockableItems();
-
-  for (let i = 0; i < count; i++) {
-    const variation = { ...baseAvatar };
-
-    // Randomly change one aspect
-    const aspects = ['hair', 'clothing', 'hairColor', 'clothingColor'];
-    const randomAspect = aspects[Math.floor(Math.random() * aspects.length)];
-
-    if (randomAspect === 'hair' && unlockableItems.hair[1]) {
-      variation.hair = unlockableItems.hair[1][Math.floor(Math.random() * unlockableItems.hair[1].length)];
-    } else if (randomAspect === 'clothing' && unlockableItems.clothing[1]) {
-      variation.clothing = unlockableItems.clothing[1][Math.floor(Math.random() * unlockableItems.clothing[1].length)];
-    } else if (randomAspect === 'hairColor' && unlockableItems.colors[1]) {
-      variation.hairColor = [unlockableItems.colors[1][Math.floor(Math.random() * unlockableItems.colors[1].length)]];
-    } else if (randomAspect === 'clothingColor' && unlockableItems.colors[1]) {
-      variation.clothingColor = [unlockableItems.colors[1][Math.floor(Math.random() * unlockableItems.colors[1].length)]];
-    }
-
-    variation.seed = generateRandomSeed();
-    variation.name = `Variation ${i + 1}`;
-    variation.id = `variation-${Date.now()}-${i}`;
-
-    variations.push(variation);
-  }
-
-  return variations;
-};
-
-// Avatar fitness stats calculator
-export const calculateAvatarFitnessStats = (userStats) => {
-  const level = calculateLevel(userStats.points);
-  const progress = calculateProgress(userStats.points);
-  const nextLevelPoints = pointsToNextLevel(userStats.points);
-
-  // Calculate fitness metrics
-  const avgWorkoutLength = userStats.totalMinutesExercised / Math.max(userStats.workoutsCompleted, 1);
-  const pointsPerWorkout = userStats.points / Math.max(userStats.workoutsCompleted, 1);
-
-  return {
-    level,
-    progress: Math.round(progress * 100),
-    nextLevelPoints,
-    avgWorkoutLength: Math.round(avgWorkoutLength * 10) / 10,
-    pointsPerWorkout: Math.round(pointsPerWorkout * 10) / 10,
-    fitnessScore: Math.min(100, Math.round((userStats.workoutsCompleted * 10) + (userStats.streak * 5) + level)),
-    rank: level >= 10 ? 'Master' : level >= 5 ? 'Expert' : level >= 3 ? 'Intermediate' : 'Beginner'
-  };
-};
-
-// Motivational messages based on progress
-export const getMotivationalMessage = (userStats) => {
-  const fitnessStats = calculateAvatarFitnessStats(userStats);
-
-  const messages = {
-    'Beginner': [
-      'Great start! Every journey begins with a single step! 🌟',
-      'You\'re building healthy habits! Keep it up! 💪',
-      'Amazing progress for a beginner! 🎉'
-    ],
-    'Intermediate': [
-      'You\'re really getting the hang of this! 🔥',
-      'Fantastic dedication to your fitness journey! 🏃‍♂️',
-      'Your consistency is paying off! 📈'
-    ],
-    'Expert': [
-      'Wow! You\'re becoming a fitness expert! 🏆',
-      'Your dedication is truly inspiring! ⭐',
-      'You\'re crushing your fitness goals! 💥'
-    ],
-    'Master': [
-      'Incredible! You\'ve mastered the art of fitness! 👑',
-      'You\'re a true fitness legend! 🏅',
-      'Your commitment is absolutely amazing! 🌟'
-    ]
-  };
-
-  const rankMessages = messages[fitnessStats.rank] || messages['Beginner'];
-  return rankMessages[Math.floor(Math.random() * rankMessages.length)];
-};
-
-// Avatar preview with fitness overlay
-export const generateFitnessAvatarPreview = (avatarSettings, userStats) => {
-  const fitnessStats = calculateAvatarFitnessStats(userStats);
-  const motivationalMessage = getMotivationalMessage(userStats);
-
-  return {
-    avatarUri: generateAvatarDataUri(avatarSettings),
-    fitnessStats,
-    motivationalMessage,
-    badgeLevel: fitnessStats.rank,
-    nextGoal: `Reach level ${fitnessStats.level + 1} (${fitnessStats.nextLevelPoints} points needed)`
-  };
-};
-
-// Default export with all functions
-export default {
-  generateRandomSeed,
-  getAvatarStyle,
-  generateAvatarDataUri,
-  getDefaultAvatar,
-  calculateLevel,
-  calculateProgress,
-  pointsToNextLevel,
-  getUnlockableItems,
-  getItemsForLevel,
-  getNewlyUnlockedItems,
-  validateAvatarSettings,
-  createRandomAvatar,
-  exportAvatarSettings,
-  importAvatarSettings,
-  generateAvatarThumbnail,
-  getWorkoutRewards,
-  checkAchievements,
-  generateAvatarCollection,
-  compareAvatars,
-  createAvatarVariations,
-  calculateAvatarFitnessStats,
-  getMotivationalMessage,
-  generateFitnessAvatarPreview
+  return themes[theme] || themes.fitness;
 };

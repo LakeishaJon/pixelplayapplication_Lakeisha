@@ -1,62 +1,223 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Add this import
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAvatar } from "../Contexts/AvatarContext";
 import AvatarDisplay from "../components/AvatarDisplay";
-import ColorPalette from "../components/ColorPalette";
 import StyleSelector from "../components/StyleSelector";
 import ItemSelector from "../components/ItemSelector";
-import { getItemsForLevel, generateThemeConfig } from "../utils/avatarUtils.jsx";
+import { 
+  createDefaultAvatarConfig, 
+  AVATAR_STYLES, 
+  validateAvatarConfig,
+  getStyleOptions 
+} from "../utils/avatarUtils.jsx";
 import "../styles/AvatarEditorPage.css";
 
-const AvatarEditorPage = () => { // ✅ Remove onNavigate prop
-  const navigate = useNavigate(); // ✅ Add useNavigate hook
-  const { currentAvatar, updateAvatar, saveAvatar, inventory, userStats } = useAvatar();
-  const [previewAvatar, setPreviewAvatar] = useState({ ...currentAvatar });
-  const [activeTab, setActiveTab] = useState("hair");
+const AvatarEditorPage = () => {
+  const navigate = useNavigate();
+  const { currentAvatar, updateAvatar, saveAvatar, userStats } = useAvatar();
+  
+  // State management
+  const [previewAvatar, setPreviewAvatar] = useState(null);
+  const [activeTab, setActiveTab] = useState("style");
   const [avatarName, setAvatarName] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAvatarChange = (changes) => {
-    setPreviewAvatar({ ...previewAvatar, ...changes });
+  // Initialize preview avatar
+  useEffect(() => {
+    console.log('Initializing avatar editor with:', { currentAvatar, userStats });
+    
+    try {
+      let initialAvatar;
+      
+      if (currentAvatar && validateAvatarConfig(currentAvatar)) {
+        initialAvatar = { ...currentAvatar };
+        console.log('Using current avatar:', initialAvatar);
+      } else {
+        // Create default avatar with micah style
+        const userId = userStats?.id || 'default';
+        initialAvatar = createDefaultAvatarConfig('micah', `user-${userId}`);
+        console.log('Created default avatar:', initialAvatar);
+      }
+      
+      if (initialAvatar) {
+        setPreviewAvatar(initialAvatar);
+      }
+    } catch (error) {
+      console.error('Error initializing avatar:', error);
+      // Fallback to basic config
+      setPreviewAvatar({
+        style: 'micah',
+        seed: 'fallback',
+        options: { backgroundColor: ['b6e3f4'] }
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentAvatar, userStats]);
+
+  // Handle avatar configuration changes
+  const handleAvatarChange = (newAvatarConfig) => {
+    console.log('Avatar change requested:', newAvatarConfig);
+    
+    if (!newAvatarConfig) {
+      console.warn('Received null avatar config');
+      return;
+    }
+    
+    if (validateAvatarConfig(newAvatarConfig)) {
+      console.log('Valid config, updating preview avatar');
+      setPreviewAvatar({ ...newAvatarConfig });
+    } else {
+      console.warn('Invalid avatar configuration:', newAvatarConfig);
+    }
   };
 
+  // Save avatar with validation
   const handleSave = () => {
     if (!avatarName.trim()) {
       alert("Please give your avatar a name!");
       return;
     }
-    saveAvatar(avatarName, previewAvatar);
-    updateAvatar(previewAvatar);
-    setAvatarName("");
-    alert("Avatar saved!");
+    
+    if (!previewAvatar || !validateAvatarConfig(previewAvatar)) {
+      alert("Invalid avatar configuration! Please try selecting a different style.");
+      return;
+    }
+
+    try {
+      saveAvatar(avatarName, previewAvatar);
+      updateAvatar(previewAvatar);
+      setAvatarName("");
+      alert("Avatar saved successfully!");
+    } catch (error) {
+      console.error('Error saving avatar:', error);
+      alert("Error saving avatar. Please try again.");
+    }
   };
 
+  // Set as current avatar
   const handleSetAsCurrent = () => {
-    updateAvatar(previewAvatar);
-    alert("Avatar updated!");
+    if (!previewAvatar || !validateAvatarConfig(previewAvatar)) {
+      alert("Invalid avatar configuration! Please try selecting a different style.");
+      return;
+    }
+    
+    try {
+      updateAvatar(previewAvatar);
+      alert("Avatar updated successfully!");
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      alert("Error updating avatar. Please try again.");
+    }
   };
 
-  const handleReset = () => setPreviewAvatar({ ...currentAvatar });
-
-  // ✅ Add navigation handlers
-  const handleNavigateToDashboard = () => {
-    navigate("/dashboard");
+  // Reset to original
+  const handleReset = () => {
+    try {
+      if (currentAvatar && validateAvatarConfig(currentAvatar)) {
+        setPreviewAvatar({ ...currentAvatar });
+      } else {
+        const userId = userStats?.id || 'default';
+        const defaultConfig = createDefaultAvatarConfig('micah', `user-${userId}`);
+        setPreviewAvatar(defaultConfig);
+      }
+      console.log('Avatar reset successfully');
+    } catch (error) {
+      console.error('Error resetting avatar:', error);
+    }
   };
 
-  const handleNavigateToInventory = () => {
-    navigate("/inventory");
+  // Randomize current style options
+  const handleRandomize = () => {
+    if (!previewAvatar?.style) {
+      console.warn('No preview avatar style available for randomization');
+      return;
+    }
+    
+    try {
+      const style = AVATAR_STYLES[previewAvatar.style];
+      if (!style || !style.customOptions) {
+        console.warn('No customization options available for style:', previewAvatar.style);
+        return;
+      }
+      
+      const randomOptions = {};
+      
+      // Randomize each customization option
+      Object.keys(style.customOptions).forEach(category => {
+        const options = style.customOptions[category];
+        if (options && options.length > 0) {
+          const randomOption = options[Math.floor(Math.random() * options.length)];
+          randomOptions[category] = [randomOption];
+        }
+      });
+
+      const randomConfig = {
+        ...previewAvatar,
+        seed: Math.random().toString(36).substring(7),
+        options: randomOptions
+      };
+
+      console.log('Generated random config:', randomConfig);
+      setPreviewAvatar(randomConfig);
+    } catch (error) {
+      console.error('Error randomizing avatar:', error);
+    }
   };
 
-  const handleNavigateToHome = () => {
-    navigate("/");
-  };
+  // Navigation handlers
+  const handleNavigateToDashboard = () => navigate("/dashboard");
+  const handleNavigateToInventory = () => navigate("/inventory");
+  const handleNavigateToHome = () => navigate("/");
 
+  // Tab configuration
   const tabs = [
+    { id: "style", label: "Avatar Style", icon: "🎨" },
     { id: "hair", label: "Hair", icon: "💇" },
-    { id: "clothing", label: "Clothes", icon: "👕" },
+    { id: "skin", label: "Skin & Colors", icon: "🌈" },
+    { id: "clothing", label: "Clothing", icon: "👕" },
     { id: "accessories", label: "Accessories", icon: "👓" },
-    { id: "colors", label: "Colors", icon: "🎨" },
-    { id: "style", label: "Style", icon: "✨" },
+    { id: "features", label: "Features", icon: "😊" },
   ];
+
+  // Get current style info for display
+  const currentStyleInfo = previewAvatar?.style ? AVATAR_STYLES[previewAvatar.style] : null;
+
+  // Helper function to check if a category has options
+  const hasStyleOptions = (category) => {
+    if (!previewAvatar?.style) return false;
+    const options = getStyleOptions(previewAvatar.style, category);
+    return options && options.length > 0;
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="avatar-editor-page">
+        <div className="editor-header">
+          <div className="header-content">
+            <div className="header-left">
+              <div className="cube-icon">🎨</div>
+              <div className="header-text">
+                <h1>Avatar Art Studio</h1>
+                <p>Loading your avatar editor...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '400px',
+          color: 'white',
+          fontSize: '1.2rem'
+        }}>
+          <div>🎭 Loading Avatar Editor...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="avatar-editor-page">
@@ -79,21 +240,47 @@ const AvatarEditorPage = () => { // ✅ Remove onNavigate prop
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Two Panel Layout */}
       <div className="editor-content">
-        {/* Preview Section */}
+        
+        {/* LEFT PANEL - Preview Section */}
         <div className="preview-section">
           <div className="preview-card">
             <h2>Your Avatar Preview</h2>
-            <div className="avatar-display-container">
-              <AvatarDisplay
-                avatar={previewAvatar}
-                size={180}
-                showLevel={true}
-                level={userStats?.level || 1}
-              />
-            </div>
+            
+            {/* Avatar Display */}
+            {previewAvatar ? (
+              <div className="avatar-display-container">
+                <AvatarDisplay
+                  avatar={previewAvatar}
+                  size={180}
+                  showLevel={true}
+                  level={userStats?.level || 1}
+                  showBorder={true}
+                  borderColor="#8B5CF6"
+                />
+              </div>
+            ) : (
+              <div className="avatar-loading">
+                <div className="loading-placeholder">
+                  <span>🎭</span>
+                  <p>Loading avatar...</p>
+                </div>
+              </div>
+            )}
 
+            {/* Current Style Info */}
+            {currentStyleInfo && (
+              <div className="current-style-info">
+                <h4>{currentStyleInfo.name}</h4>
+                <p>{currentStyleInfo.description}</p>
+                {currentStyleInfo.kidFriendly && (
+                  <span className="kid-friendly-badge">👶 Kid Friendly</span>
+                )}
+              </div>
+            )}
+
+            {/* Save Controls */}
             <div className="save-controls">
               <input
                 type="text"
@@ -101,16 +288,35 @@ const AvatarEditorPage = () => { // ✅ Remove onNavigate prop
                 value={avatarName}
                 onChange={(e) => setAvatarName(e.target.value)}
                 className="avatar-name-input"
+                maxLength={50}
               />
 
               <div className="control-buttons">
-                <button onClick={handleSave} className="control-button save-button">
+                <button 
+                  onClick={handleSave} 
+                  className="control-button save-button"
+                  disabled={!previewAvatar}
+                >
                   💾 Save Avatar
                 </button>
-                <button onClick={handleSetAsCurrent} className="control-button use-button">
+                <button 
+                  onClick={handleSetAsCurrent} 
+                  className="control-button use-button"
+                  disabled={!previewAvatar}
+                >
                   ✅ Use This
                 </button>
-                <button onClick={handleReset} className="control-button reset-button">
+                <button 
+                  onClick={handleRandomize} 
+                  className="control-button randomize-button"
+                  disabled={!previewAvatar?.style}
+                >
+                  🎲 Randomize
+                </button>
+                <button 
+                  onClick={handleReset} 
+                  className="control-button reset-button"
+                >
                   🔄 Reset
                 </button>
               </div>
@@ -118,12 +324,12 @@ const AvatarEditorPage = () => { // ✅ Remove onNavigate prop
           </div>
         </div>
 
-        {/* Customization Section */}
+        {/* RIGHT PANEL - Customization Section */}
         <div className="customization-section">
           <div className="customization-card">
-            <h2>Choose Avatar Style</h2>
+            <h2>Customize Your Avatar</h2>
 
-            {/* Tabs */}
+            {/* Horizontal Tabs */}
             <div className="editor-tabs">
               {tabs.map((tab) => (
                 <button
@@ -139,76 +345,280 @@ const AvatarEditorPage = () => { // ✅ Remove onNavigate prop
 
             {/* Tab Content */}
             <div className="tab-content">
-              {activeTab === "hair" && (
-                <div className="tab-panel">
-                  <h3>Hair Styles</h3>
-                  <p>Choose from available hair options</p>
-                  <ItemSelector
-                    title="Hair Style"
-                    category="hair"
-                    currentValue={previewAvatar.hair}
-                    availableItems={inventory.hair || ['shortWaved', 'longHair', 'curly']}
-                    onChange={(value) => handleAvatarChange({ hair: value })}
-                  />
-                </div>
-              )}
-
-              {activeTab === "clothing" && (
-                <div className="tab-panel">
-                  <h3>Clothing Options</h3>
-                  <p>Select your outfit</p>
-                  <ItemSelector
-                    title="Clothing"
-                    category="clothing"
-                    currentValue={previewAvatar.clothing}
-                    availableItems={inventory.clothing || ['blazerShirt', 'hoodie', 'tshirt']}
-                    onChange={(value) => handleAvatarChange({ clothing: value })}
-                  />
-                </div>
-              )}
-
-              {activeTab === "accessories" && (
-                <div className="tab-panel">
-                  <h3>Accessories</h3>
-                  <p>Add some flair to your look</p>
-                  <ItemSelector
-                    title="Accessories"
-                    category="accessories"
-                    currentValue={previewAvatar.accessories?.[0] || ''}
-                    availableItems={inventory.accessories || ['glasses', 'sunglasses']}
-                    onChange={(value) => handleAvatarChange({ accessories: [value] })}
-                  />
-                </div>
-              )}
-
-              {activeTab === "colors" && (
-                <div className="tab-panel">
-                  <h3>Color Palette</h3>
-                  <p>Customize your colors</p>
-                  <ColorPalette
-                    avatar={previewAvatar}
-                    availableColors={inventory.colors || ['blue', 'red', 'green', 'purple']}
-                    onChange={handleAvatarChange}
-                  />
-                </div>
-              )}
-
+              
+              {/* Style Selection Tab */}
               {activeTab === "style" && (
                 <div className="tab-panel">
-                  <h3>Avatar Style</h3>
-                  <p>Choose your avatar's overall style</p>
-                  <StyleSelector
-                    currentStyle={previewAvatar.style}
-                    onChange={(style) => handleAvatarChange({ style })}
-                  />
+                  <h3>Choose Avatar Style</h3>
+                  <p>Select from our collection of kid-friendly avatar styles</p>
+                  {previewAvatar ? (
+                    <StyleSelector
+                      currentStyle={previewAvatar.style}
+                      currentConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                    />
+                  ) : (
+                    <div>Loading styles...</div>
+                  )}
                 </div>
               )}
+
+              {/* Hair Customization Tab */}
+              {activeTab === "hair" && previewAvatar && (
+                <div className="tab-panel">
+                  <h3>Hair & Hair Color</h3>
+                  <p>Style your avatar's hair</p>
+                  
+                  {/* Hair Style */}
+                  {hasStyleOptions('hair') && (
+                    <ItemSelector
+                      title="Hair Style"
+                      category="hair"
+                      currentValue={previewAvatar.options?.hair?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+                  
+                  {/* Hair Color */}
+                  {hasStyleOptions('hairColor') && (
+                    <ItemSelector
+                      title="Hair Color"
+                      category="hairColor"
+                      currentValue={previewAvatar.options?.hairColor?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={false}
+                    />
+                  )}
+
+                  {/* Alternative hair option names for different styles */}
+                  {hasStyleOptions('top') && (
+                    <ItemSelector
+                      title="Hair Style"
+                      category="top"
+                      currentValue={previewAvatar.options?.top?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+
+                  {!hasStyleOptions('hair') && !hasStyleOptions('hairColor') && !hasStyleOptions('top') && (
+                    <div className="no-options-message">
+                      <p>No hair customization options available for this avatar style.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Skin & Colors Tab */}
+              {activeTab === "skin" && previewAvatar && (
+                <div className="tab-panel">
+                  <h3>Skin & Background Colors</h3>
+                  <p>Customize colors and skin tone</p>
+                  
+                  {/* Skin Color */}
+                  {hasStyleOptions('skin') && (
+                    <ItemSelector
+                      title="Skin Tone"
+                      category="skin"
+                      currentValue={previewAvatar.options?.skin?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={false}
+                    />
+                  )}
+                  
+                  {/* Background Color */}
+                  {hasStyleOptions('backgroundColor') && (
+                    <ItemSelector
+                      title="Background Color"
+                      category="backgroundColor"
+                      currentValue={previewAvatar.options?.backgroundColor?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={false}
+                    />
+                  )}
+
+                  {!hasStyleOptions('skin') && !hasStyleOptions('backgroundColor') && (
+                    <div className="no-options-message">
+                      <p>No skin or color customization options available for this avatar style.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Clothing Tab */}
+              {activeTab === "clothing" && previewAvatar && (
+                <div className="tab-panel">
+                  <h3>Clothing & Style</h3>
+                  <p>Dress up your avatar</p>
+                  
+                  {/* Shirt */}
+                  {hasStyleOptions('shirt') && (
+                    <ItemSelector
+                      title="Shirt Style"
+                      category="shirt"
+                      currentValue={previewAvatar.options?.shirt?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+                  
+                  {/* Clothes (avataaars style) */}
+                  {hasStyleOptions('clothes') && (
+                    <ItemSelector
+                      title="Clothing"
+                      category="clothes"
+                      currentValue={previewAvatar.options?.clothes?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+                  
+                  {/* Shirt Color */}
+                  {hasStyleOptions('shirtColor') && (
+                    <ItemSelector
+                      title="Shirt Color"
+                      category="shirtColor"
+                      currentValue={previewAvatar.options?.shirtColor?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={false}
+                    />
+                  )}
+
+                  {/* Clothing Color (alternative) */}
+                  {hasStyleOptions('clotheColor') && (
+                    <ItemSelector
+                      title="Clothing Color"
+                      category="clotheColor"
+                      currentValue={previewAvatar.options?.clotheColor?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={false}
+                    />
+                  )}
+
+                  {!hasStyleOptions('shirt') && !hasStyleOptions('clothes') && !hasStyleOptions('shirtColor') && !hasStyleOptions('clotheColor') && (
+                    <div className="no-options-message">
+                      <p>No clothing customization options available for this avatar style.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Accessories Tab */}
+              {activeTab === "accessories" && previewAvatar && (
+                <div className="tab-panel">
+                  <h3>Accessories & Extras</h3>
+                  <p>Add some personality to your avatar</p>
+                  
+                  {/* Accessories */}
+                  {hasStyleOptions('accessories') && (
+                    <ItemSelector
+                      title="Accessories"
+                      category="accessories"
+                      currentValue={previewAvatar.options?.accessories?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+                  
+                  {/* Facial Hair */}
+                  {hasStyleOptions('facialHair') && (
+                    <ItemSelector
+                      title="Facial Hair"
+                      category="facialHair"
+                      currentValue={previewAvatar.options?.facialHair?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+
+                  {!hasStyleOptions('accessories') && !hasStyleOptions('facialHair') && (
+                    <div className="no-options-message">
+                      <p>No accessory options available for this avatar style.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Features Tab */}
+              {activeTab === "features" && previewAvatar && (
+                <div className="tab-panel">
+                  <h3>Facial Features</h3>
+                  <p>Customize facial expressions and features</p>
+                  
+                  {/* Eyes */}
+                  {hasStyleOptions('eyes') && (
+                    <ItemSelector
+                      title="Eyes"
+                      category="eyes"
+                      currentValue={previewAvatar.options?.eyes?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+                  
+                  {/* Mouth */}
+                  {hasStyleOptions('mouth') && (
+                    <ItemSelector
+                      title="Mouth"
+                      category="mouth"
+                      currentValue={previewAvatar.options?.mouth?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+                  
+                  {/* Eyebrows */}
+                  {hasStyleOptions('eyebrows') && (
+                    <ItemSelector
+                      title="Eyebrows"
+                      category="eyebrows"
+                      currentValue={previewAvatar.options?.eyebrows?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+
+                  {/* Mood (for some styles) */}
+                  {hasStyleOptions('mood') && (
+                    <ItemSelector
+                      title="Mood"
+                      category="mood"
+                      currentValue={previewAvatar.options?.mood?.[0]}
+                      currentAvatarConfig={previewAvatar}
+                      onChange={handleAvatarChange}
+                      showPreview={true}
+                    />
+                  )}
+
+                  {!hasStyleOptions('eyes') && !hasStyleOptions('mouth') && !hasStyleOptions('eyebrows') && !hasStyleOptions('mood') && (
+                    <div className="no-options-message">
+                      <p>No facial feature options available for this avatar style.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
         </div>
       </div>
 
-      {/* ✅ FIXED NAVIGATION - Using proper React Router navigation */}
+      {/* Navigation */}
       <div className="editor-navigation">
         <div className="nav-buttons">
           <button

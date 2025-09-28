@@ -1,34 +1,43 @@
 import React from 'react';
+import { AVATAR_STYLES, generateAvatarSVG, createDefaultAvatarConfig } from '../utils/avatarUtils';
+import '../styles/AvatarEditorPage.css';
 
-const StyleSelector = ({ currentStyle, onChange }) => {
-  const styles = [
-    { id: 'avataaars', name: 'Avataaars', description: 'Fun cartoon style' },
-    { id: 'miniavs', name: 'Miniavs', description: 'Cute mini characters' },
-    { id: 'personas', name: 'Personas', description: 'Professional look' }
-  ];
+const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
+  const styles = Object.keys(AVATAR_STYLES);
+
+  const handleStyleChange = (newStyle) => {
+    if (newStyle === currentStyle) return;
+    
+    // Create default config for new style
+    const defaultConfig = createDefaultAvatarConfig(newStyle, currentConfig?.seed?.split('-')[0] || 'user');
+    
+    onChange(defaultConfig);
+  };
 
   return (
-    <div>
-      <h4 style={{ marginBottom: '15px', color: '#333' }}>✨ Choose Avatar Style</h4>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        {styles.map(style => (
-          <div
-            key={style.id}
-            onClick={() => onChange(style.id)}
-            style={{
-              padding: '15px',
-              border: currentStyle === style.id ? '3px solid #4CAF50' : '2px solid #ddd',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              background: currentStyle === style.id ? '#f0f8f0' : 'white',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <h5 style={{ margin: '0 0 5px 0', color: '#333' }}>{style.name}</h5>
-            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>{style.description}</p>
-          </div>
-        ))}
+    <div className="style-selector">
+      <div className="selector-section">
+        <h3>Avatar Styles</h3>
+        <p>Choose from available hair options</p>
+        
+        {/* Compact Button Grid - Like Image 4 */}
+        <div className="option-buttons-grid">
+          {styles.map(styleKey => {
+            const style = AVATAR_STYLES[styleKey];
+            const isSelected = currentStyle === styleKey;
+            
+            return (
+              <button
+                key={styleKey}
+                className={`option-button ${isSelected ? 'selected' : ''}`}
+                onClick={() => handleStyleChange(styleKey)}
+              >
+                {style.name}
+                {style.kidFriendly && <span className="kid-badge">👶</span>}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
