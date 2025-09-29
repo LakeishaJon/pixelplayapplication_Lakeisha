@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { generateAvatarSVG } from '../utils/avatarUtils';
 import '../styles/Avatar.css';
 
@@ -8,7 +8,7 @@ const AvatarDisplay = ({
   showLevel = false, 
   level = 1,
   showBorder = true,
-  borderColor = '#667eea',
+  borderColor = '#8B5CF6',
   className = '',
   onClick = null,
   showName = false,
@@ -16,21 +16,39 @@ const AvatarDisplay = ({
   showCustomizeButton = false,
   onCustomize
 }) => {
-  // Generate avatar using your utils function (supports all 12 styles)
+  const [error, setError] = useState(null);
+
+  // Generate avatar safely
   const avatarSvg = useMemo(() => {
     if (!avatar || !avatar.style) {
+      setError('Invalid avatar configuration');
       return null;
     }
-    
+
     try {
-      return generateAvatarSVG(avatar);
-    } catch (error) {
-      console.error('Error generating avatar:', error);
+      const svg = generateAvatarSVG(avatar);
+      setError(null);
+      return svg;
+    } catch (err) {
+      console.error('Error generating avatar:', err);
+      setError('Error generating avatar');
       return null;
     }
   }, [avatar]);
 
-  // Handle fallback if avatar generation fails
+  // Error fallback
+  if (error) {
+    return (
+      <div 
+        className={`avatar-display error ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <div className="avatar-error-message">❌ {error}</div>
+      </div>
+    );
+  }
+
+  // Empty fallback
   if (!avatarSvg) {
     return (
       <div 
@@ -70,7 +88,7 @@ const AvatarDisplay = ({
         }}
         onClick={onClick}
       >
-        {/* Use SVG directly instead of img with data URI */}
+        {/* Avatar SVG */}
         <div 
           className="avatar-svg"
           style={{
@@ -84,28 +102,23 @@ const AvatarDisplay = ({
         />
         
         {/* Level Badge */}
-        {showLevel && level && (
+        {showLevel && (
           <div 
             className="level-badge"
             style={{
               position: 'absolute',
-              bottom: '-5px',
-              right: '-5px',
-              backgroundColor: '#fbbf24',
+              bottom: '0',
+              right: '0',
+              background: '#8B5CF6',
               color: 'white',
-              borderRadius: '50%',
-              width: size * 0.25,
-              height: size * 0.25,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: size * 0.12,
+              padding: '4px 8px',
+              borderRadius: '12px',
+              fontSize: '0.75rem',
               fontWeight: 'bold',
-              border: '2px solid white',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+              border: '2px solid white'
             }}
           >
-            {level}
+            Lv {level}
           </div>
         )}
 
@@ -159,7 +172,5 @@ const AvatarDisplay = ({
     </div>
   );
 };
-
-// Keep your existing AvatarGallery and AvatarComparison components as they are
 
 export default AvatarDisplay;

@@ -5,7 +5,6 @@ import {
   bigSmile,
   miniavs,
   personas,
-  thumbs,
   bigEars,
   adventurer,
   pixelArt,
@@ -14,7 +13,7 @@ import {
   lorelei
 } from '@dicebear/collection';
 
-// DiceBear avatar styles configuration
+// Updated DiceBear avatar styles configuration with working options
 export const AVATAR_STYLES = {
   micah: {
     name: 'Friendly Kids',
@@ -36,17 +35,20 @@ export const AVATAR_STYLES = {
   avataaars: {
     name: 'Cartoon Heroes',
     style: avataaars,
-    description: 'Popular cartoon-style avatars',
+    description: 'Popular cartoon-style avatars with lots of customization',
     kidFriendly: true,
     customOptions: {
       backgroundColor: ['65C9FF', 'FC909F', 'FFAF7A', 'BEAAE2', '93EDC7', 'FFD93D'],
-      top: ['NoHair', 'ShortHairDreads01', 'ShortHairShortFlat', 'ShortHairShortWaved', 'LongHairStraight', 'LongHairCurly'],
+      top: ['NoHair', 'ShortHairDreads01', 'ShortHairShortFlat', 'ShortHairShortWaved', 'LongHairStraight', 'LongHairCurly', 'LongHairBob', 'LongHairBun', 'ShortHairTheCaesar', 'ShortHairSides'],
       hairColor: ['Auburn', 'Black', 'Blonde', 'BlondeGolden', 'Brown', 'BrownDark', 'PastelPink', 'Red'],
       accessories: ['Blank', 'Kurt', 'Prescription01', 'Round', 'Sunglasses', 'Wayfarers'],
       facialHair: ['Blank', 'BeardLight', 'MoustacheFancy', 'MoustacheMagnum'],
       clothes: ['BlazerShirt', 'BlazerSweater', 'CollarSweater', 'Hoodie', 'Overall', 'ShirtCrewNeck'],
       clotheColor: ['Black', 'Blue01', 'Blue02', 'Gray01', 'Red', 'White'],
-      skin: ['Tanned', 'Yellow', 'Pale', 'Light', 'Brown', 'DarkBrown', 'Black']
+      skin: ['Tanned', 'Yellow', 'Pale', 'Light', 'Brown', 'DarkBrown', 'Black'],
+      eyes: ['Close', 'Default', 'Happy', 'Hearts', 'Side', 'Squint', 'Surprised', 'Wink'],
+      eyebrows: ['Angry', 'Default', 'RaisedExcited', 'SadConcerned', 'UnibrowNatural'],
+      mouth: ['Default', 'Eating', 'Smile', 'Tongue', 'Twinkle']
     }
   },
 
@@ -93,19 +95,6 @@ export const AVATAR_STYLES = {
       nose: ['variant01', 'variant02', 'variant03'],
       mouth: ['happy', 'serious'],
       beard: ['variant01', 'variant02', 'variant03']
-    }
-  },
-
-  thumbs: {
-    name: 'Thumbs Up',
-    style: thumbs,
-    description: 'Positive and encouraging thumb characters',
-    kidFriendly: true,
-    customOptions: {
-      backgroundColor: ['0066ff', '7b68ee', 'ff6b35', '37d67a', 'f94144', 'f8961e'],
-      shading: ['variant01', 'variant02', 'variant03'],
-      eyes: ['variant01', 'variant02', 'variant03', 'variant04'],
-      mouth: ['variant01', 'variant02', 'variant03', 'variant04']
     }
   },
 
@@ -177,42 +166,67 @@ export const AVATAR_STYLES = {
     }
   },
 
-  lorelei: {
-    name: 'Artistic',
-    style: lorelei,
-    description: 'Artistic and stylized character portraits',
-    kidFriendly: true,
-    customOptions: {
-      backgroundColor: ['ffdfbf', 'c0aede', 'a8e6cf', 'ffd93d', 'ff8b94'],
-      hair: ['variant01', 'variant02', 'variant03', 'variant04'],
-      eyes: ['variant01', 'variant02', 'variant03'],
-      accessories: ['variant01', 'variant02']
-    }
   }
-};
 
-// Generate avatar SVG string
+// Generate avatar SVG string using local DiceBear library
 export const generateAvatarSVG = (avatarConfig) => {
-  if (!avatarConfig.style || !AVATAR_STYLES[avatarConfig.style]) {
+  console.log('Generating avatar with config:', avatarConfig);
+  
+  if (!avatarConfig || !avatarConfig.style || !AVATAR_STYLES[avatarConfig.style]) {
+    console.warn('Invalid avatar config:', avatarConfig);
     return null;
   }
 
-  const styleConfig = AVATAR_STYLES[avatarConfig.style];
-  const avatar = createAvatar(styleConfig.style, {
-    seed: avatarConfig.seed || 'default',
-    ...avatarConfig.options
-  });
-
-  return avatar.toString();
+  try {
+    const styleConfig = AVATAR_STYLES[avatarConfig.style];
+    
+    // Prepare options object for DiceBear
+    const options = {
+      seed: avatarConfig.seed || 'default'
+    };
+    
+    // Convert array options to single values or comma-separated strings
+    if (avatarConfig.options) {
+      Object.entries(avatarConfig.options).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          if (value.length === 1) {
+            options[key] = value[0];
+          } else if (value.length > 1) {
+            options[key] = value.join(',');
+          }
+        } else if (value !== null && value !== undefined) {
+          options[key] = value;
+        }
+      });
+    }
+    
+    console.log('DiceBear options:', options);
+    
+    const avatar = createAvatar(styleConfig.style, options);
+    const svgString = avatar.toString();
+    
+    console.log('Generated SVG length:', svgString.length);
+    return svgString;
+    
+  } catch (error) {
+    console.error('Error generating avatar SVG:', error);
+    return null;
+  }
 };
 
 // Get available options for a specific style and category
 export const getStyleOptions = (styleName, category) => {
+  console.log(`Getting options for ${styleName} -> ${category}`);
+  
   const style = AVATAR_STYLES[styleName];
   if (!style || !style.customOptions[category]) {
+    console.warn(`No options found for ${styleName} -> ${category}`);
     return [];
   }
-  return style.customOptions[category];
+  
+  const options = style.customOptions[category];
+  console.log(`Found ${options.length} options:`, options);
+  return options;
 };
 
 // Get all available styles
@@ -227,55 +241,148 @@ export const getAvailableStyles = () => {
 
 // Create default avatar configuration for a style
 export const createDefaultAvatarConfig = (styleName, userId = 'default') => {
+  console.log(`Creating default config for ${styleName} with user ${userId}`);
+  
   const style = AVATAR_STYLES[styleName];
   if (!style) {
+    console.error(`Unknown style: ${styleName}`);
     return null;
   }
 
   const defaultOptions = {};
   
-  // Set first option as default for each category
-  Object.keys(style.customOptions).forEach(category => {
-    const options = style.customOptions[category];
+  // Set smart defaults for each category
+  Object.entries(style.customOptions).forEach(([category, options]) => {
     if (options && options.length > 0) {
-      defaultOptions[category] = [options[0]];
+      let defaultValue;
+      
+      // Smart default selection based on category
+      switch (category) {
+        case 'hair':
+        case 'top':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('short') || 
+            opt.toLowerCase().includes('medium') ||
+            opt === 'short01'
+          ) || options[0];
+          break;
+          
+        case 'hairColor':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('brown') || 
+            opt === 'brown' ||
+            opt === 'Brown'
+          ) || options[0];
+          break;
+          
+        case 'backgroundColor':
+          defaultValue = options.find(opt => 
+            opt === 'b6e3f4' || 
+            opt === '65C9FF' ||
+            opt === 'blue'
+          ) || options[0];
+          break;
+          
+        case 'skin':
+        case 'skinTone':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('light') || 
+            opt === 'Light'
+          ) || options[0];
+          break;
+          
+        case 'shirt':
+        case 'clothes':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('crew') || 
+            opt.toLowerCase().includes('shirt') ||
+            opt === 'crew'
+          ) || options[0];
+          break;
+          
+        case 'shirtColor':
+        case 'clotheColor':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('blue') || 
+            opt === 'Blue01'
+          ) || options[0];
+          break;
+          
+        case 'eyes':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('default') || 
+            opt.toLowerCase().includes('normal') ||
+            opt.toLowerCase().includes('happy')
+          ) || options[0];
+          break;
+          
+        case 'mouth':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('default') || 
+            opt.toLowerCase().includes('happy') ||
+            opt.toLowerCase().includes('smile')
+          ) || options[0];
+          break;
+          
+        case 'accessories':
+        case 'facialHair':
+        case 'facial_hair':
+          defaultValue = options.find(opt => 
+            opt.toLowerCase().includes('blank') || 
+            opt.toLowerCase().includes('none')
+          ) || options[0];
+          break;
+          
+        default:
+          defaultValue = options[0];
+      }
+      
+      defaultOptions[category] = [defaultValue];
     }
   });
 
-  return {
+  const config = {
     style: styleName,
-    seed: `${userId}-${styleName}`,
+    seed: `${userId}-${styleName}-${Date.now()}`,
     options: defaultOptions
   };
+  
+  console.log('Created default config:', config);
+  return config;
+};
+
+// Update avatar config with new option
+export const updateAvatarOption = (currentConfig, category, value) => {
+  console.log(`Updating ${category} to ${value}`);
+  
+  if (!validateAvatarConfig(currentConfig)) {
+    console.error('Invalid current config for update');
+    return currentConfig;
+  }
+  
+  const updatedConfig = {
+    ...currentConfig,
+    options: {
+      ...currentConfig.options,
+      [category]: Array.isArray(value) ? value : [value]
+    }
+  };
+  
+  console.log('Updated config:', updatedConfig);
+  return updatedConfig;
 };
 
 // Validate avatar configuration
 export const validateAvatarConfig = (config) => {
-  if (!config.style || !AVATAR_STYLES[config.style]) {
+  if (!config || !config.style || !AVATAR_STYLES[config.style]) {
+    console.warn('Invalid avatar config:', config);
     return false;
   }
-
-  const style = AVATAR_STYLES[config.style];
-  
-  // Check if all options are valid for the style
-  if (config.options) {
-    for (const [category, value] of Object.entries(config.options)) {
-      if (style.customOptions[category]) {
-        const validOptions = style.customOptions[category];
-        const selectedValue = Array.isArray(value) ? value[0] : value;
-        if (!validOptions.includes(selectedValue)) {
-          return false;
-        }
-      }
-    }
-  }
-
   return true;
 };
 
-// Legacy function compatibility
+// Legacy function compatibility for existing code
 export const getItemsForLevel = (level) => {
-  // For backwards compatibility with existing inventory system
   const baseItems = {
     hair: ['short01', 'long01', 'curly'],
     clothing: ['crew', 'hoodie', 'blazer'],
@@ -283,7 +390,6 @@ export const getItemsForLevel = (level) => {
     colors: ['blue', 'red', 'green', 'purple', 'orange']
   };
 
-  // Unlock more items as level increases
   if (level >= 5) {
     baseItems.hair.push('short02', 'long02', 'fancy');
     baseItems.clothing.push('overall', 'sweater');
@@ -300,7 +406,6 @@ export const getItemsForLevel = (level) => {
 };
 
 export const generateThemeConfig = (theme) => {
-  // Generate theme-based avatar configurations
   const themes = {
     fitness: {
       preferredStyles: ['micah', 'avataaars', 'adventurer'],
@@ -320,4 +425,22 @@ export const generateThemeConfig = (theme) => {
   };
 
   return themes[theme] || themes.fitness;
+};
+
+// Debug function to test avatar generation
+export const debugAvatarGeneration = (styleName) => {
+  console.group(`Debug Avatar Generation: ${styleName}`);
+  
+  const config = createDefaultAvatarConfig(styleName, 'debug-user');
+  console.log('Default config:', config);
+  
+  const svg = generateAvatarSVG(config);
+  console.log('Generated SVG:', svg ? 'Success' : 'Failed');
+  
+  if (svg) {
+    console.log('SVG preview (first 200 chars):', svg.substring(0, 200));
+  }
+  
+  console.groupEnd();
+  return { config, svg };
 };

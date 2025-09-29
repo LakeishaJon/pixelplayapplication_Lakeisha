@@ -4,41 +4,41 @@ import { useAvatar } from "../Contexts/AvatarContext";
 import AvatarDisplay from "../components/AvatarDisplay";
 import StyleSelector from "../components/StyleSelector";
 import ItemSelector from "../components/ItemSelector";
-import { 
-  createDefaultAvatarConfig, 
-  AVATAR_STYLES, 
+import {
+  createDefaultAvatarConfig,
+  AVATAR_STYLES,
   validateAvatarConfig,
-  getStyleOptions 
+  getStyleOptions
 } from "../utils/avatarUtils.jsx";
 import "../styles/AvatarEditorPage.css";
 
 const AvatarEditorPage = () => {
   const navigate = useNavigate();
   const { currentAvatar, updateAvatar, saveAvatar, userStats } = useAvatar();
-  
+
   // State management
   const [previewAvatar, setPreviewAvatar] = useState(null);
-  const [activeTab, setActiveTab] = useState("style");
+  const [activeTab, setActiveTab] = useState("style"); // Start with style tab like Image 1
   const [avatarName, setAvatarName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize preview avatar
   useEffect(() => {
     console.log('Initializing avatar editor with:', { currentAvatar, userStats });
-    
+
     try {
       let initialAvatar;
-      
+
       if (currentAvatar && validateAvatarConfig(currentAvatar)) {
         initialAvatar = { ...currentAvatar };
         console.log('Using current avatar:', initialAvatar);
       } else {
-        // Create default avatar with micah style
+        // Create default avatar
         const userId = userStats?.id || 'default';
-        initialAvatar = createDefaultAvatarConfig('micah', `user-${userId}`);
+        initialAvatar = createDefaultAvatarConfig('avataaars', `user-${userId}`);
         console.log('Created default avatar:', initialAvatar);
       }
-      
+
       if (initialAvatar) {
         setPreviewAvatar(initialAvatar);
       }
@@ -46,7 +46,7 @@ const AvatarEditorPage = () => {
       console.error('Error initializing avatar:', error);
       // Fallback to basic config
       setPreviewAvatar({
-        style: 'micah',
+        style: 'avataaars',
         seed: 'fallback',
         options: { backgroundColor: ['b6e3f4'] }
       });
@@ -58,12 +58,12 @@ const AvatarEditorPage = () => {
   // Handle avatar configuration changes
   const handleAvatarChange = (newAvatarConfig) => {
     console.log('Avatar change requested:', newAvatarConfig);
-    
+
     if (!newAvatarConfig) {
       console.warn('Received null avatar config');
       return;
     }
-    
+
     if (validateAvatarConfig(newAvatarConfig)) {
       console.log('Valid config, updating preview avatar');
       setPreviewAvatar({ ...newAvatarConfig });
@@ -78,7 +78,7 @@ const AvatarEditorPage = () => {
       alert("Please give your avatar a name!");
       return;
     }
-    
+
     if (!previewAvatar || !validateAvatarConfig(previewAvatar)) {
       alert("Invalid avatar configuration! Please try selecting a different style.");
       return;
@@ -101,7 +101,7 @@ const AvatarEditorPage = () => {
       alert("Invalid avatar configuration! Please try selecting a different style.");
       return;
     }
-    
+
     try {
       updateAvatar(previewAvatar);
       alert("Avatar updated successfully!");
@@ -118,7 +118,7 @@ const AvatarEditorPage = () => {
         setPreviewAvatar({ ...currentAvatar });
       } else {
         const userId = userStats?.id || 'default';
-        const defaultConfig = createDefaultAvatarConfig('micah', `user-${userId}`);
+        const defaultConfig = createDefaultAvatarConfig('avataaars', `user-${userId}`);
         setPreviewAvatar(defaultConfig);
       }
       console.log('Avatar reset successfully');
@@ -133,16 +133,16 @@ const AvatarEditorPage = () => {
       console.warn('No preview avatar style available for randomization');
       return;
     }
-    
+
     try {
       const style = AVATAR_STYLES[previewAvatar.style];
       if (!style || !style.customOptions) {
         console.warn('No customization options available for style:', previewAvatar.style);
         return;
       }
-      
+
       const randomOptions = {};
-      
+
       // Randomize each customization option
       Object.keys(style.customOptions).forEach(category => {
         const options = style.customOptions[category];
@@ -170,7 +170,7 @@ const AvatarEditorPage = () => {
   const handleNavigateToInventory = () => navigate("/inventory");
   const handleNavigateToHome = () => navigate("/");
 
-  // Tab configuration
+  // Tab configuration - ORDER LIKE IMAGE 1
   const tabs = [
     { id: "style", label: "Avatar Style", icon: "🎨" },
     { id: "hair", label: "Hair", icon: "💇" },
@@ -205,10 +205,10 @@ const AvatarEditorPage = () => {
             </div>
           </div>
         </div>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
           height: '400px',
           color: 'white',
           fontSize: '1.2rem'
@@ -221,7 +221,7 @@ const AvatarEditorPage = () => {
 
   return (
     <div className="avatar-editor-page">
-      {/* Header */}
+      {/* Header - Like Image 1 */}
       <div className="editor-header">
         <div className="header-content">
           <div className="header-left">
@@ -240,15 +240,15 @@ const AvatarEditorPage = () => {
         </div>
       </div>
 
-      {/* Main Content - Two Panel Layout */}
+      {/* Main Content - Two Panel Layout Like Image 1 */}
       <div className="editor-content">
-        
-        {/* LEFT PANEL - Preview Section */}
+
+        {/* LEFT PANEL - Avatar Preview (Like Image 1) */}
         <div className="preview-section">
           <div className="preview-card">
             <h2>Your Avatar Preview</h2>
-            
-            {/* Avatar Display */}
+
+            {/* Avatar Display - Circular with border like Image 1 */}
             {previewAvatar ? (
               <div className="avatar-display-container">
                 <AvatarDisplay
@@ -280,7 +280,7 @@ const AvatarEditorPage = () => {
               </div>
             )}
 
-            {/* Save Controls */}
+            {/* Save Controls - Exactly like Image 1 */}
             <div className="save-controls">
               <input
                 type="text"
@@ -292,29 +292,29 @@ const AvatarEditorPage = () => {
               />
 
               <div className="control-buttons">
-                <button 
-                  onClick={handleSave} 
+                <button
+                  onClick={handleSave}
                   className="control-button save-button"
                   disabled={!previewAvatar}
                 >
                   💾 Save Avatar
                 </button>
-                <button 
-                  onClick={handleSetAsCurrent} 
+                <button
+                  onClick={handleSetAsCurrent}
                   className="control-button use-button"
                   disabled={!previewAvatar}
                 >
                   ✅ Use This
                 </button>
-                <button 
-                  onClick={handleRandomize} 
+                <button
+                  onClick={handleRandomize}
                   className="control-button randomize-button"
                   disabled={!previewAvatar?.style}
                 >
                   🎲 Randomize
                 </button>
-                <button 
-                  onClick={handleReset} 
+                <button
+                  onClick={handleReset}
                   className="control-button reset-button"
                 >
                   🔄 Reset
@@ -324,12 +324,12 @@ const AvatarEditorPage = () => {
           </div>
         </div>
 
-        {/* RIGHT PANEL - Customization Section */}
+        {/* RIGHT PANEL - Customization (Like Image 1) */}
         <div className="customization-section">
           <div className="customization-card">
-            <h2>Customize Your Avatar</h2>
+            <h2>Choose Avatar Style</h2>
 
-            {/* Horizontal Tabs */}
+            {/* Horizontal Tabs - Like Image 1 */}
             <div className="editor-tabs">
               {tabs.map((tab) => (
                 <button
@@ -343,14 +343,14 @@ const AvatarEditorPage = () => {
               ))}
             </div>
 
-            {/* Tab Content */}
+            {/* Tab Content - COMPACT BUTTONS ONLY */}
             <div className="tab-content">
-              
-              {/* Style Selection Tab */}
+
+              {/* Style Selection Tab - Compact Buttons */}
               {activeTab === "style" && (
                 <div className="tab-panel">
-                  <h3>Choose Avatar Style</h3>
-                  <p>Select from our collection of kid-friendly avatar styles</p>
+                  <h3>Avatar Style</h3>
+                  <p>Choose your avatar's overall style</p>
                   {previewAvatar ? (
                     <StyleSelector
                       currentStyle={previewAvatar.style}
@@ -363,12 +363,12 @@ const AvatarEditorPage = () => {
                 </div>
               )}
 
-              {/* Hair Customization Tab */}
+              {/* Hair Customization Tab - Compact Buttons */}
               {activeTab === "hair" && previewAvatar && (
                 <div className="tab-panel">
                   <h3>Hair & Hair Color</h3>
                   <p>Style your avatar's hair</p>
-                  
+
                   {/* Hair Style */}
                   {hasStyleOptions('hair') && (
                     <ItemSelector
@@ -377,10 +377,9 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.hair?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={true}
                     />
                   )}
-                  
+
                   {/* Hair Color */}
                   {hasStyleOptions('hairColor') && (
                     <ItemSelector
@@ -389,11 +388,10 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.hairColor?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={false}
                     />
                   )}
 
-                  {/* Alternative hair option names for different styles */}
+                  {/* Alternative hair option names */}
                   {hasStyleOptions('top') && (
                     <ItemSelector
                       title="Hair Style"
@@ -401,7 +399,6 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.top?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={true}
                     />
                   )}
 
@@ -413,12 +410,12 @@ const AvatarEditorPage = () => {
                 </div>
               )}
 
-              {/* Skin & Colors Tab */}
+              {/* Skin & Colors Tab - Color Buttons */}
               {activeTab === "skin" && previewAvatar && (
                 <div className="tab-panel">
                   <h3>Skin & Background Colors</h3>
                   <p>Customize colors and skin tone</p>
-                  
+
                   {/* Skin Color */}
                   {hasStyleOptions('skin') && (
                     <ItemSelector
@@ -427,10 +424,9 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.skin?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={false}
                     />
                   )}
-                  
+
                   {/* Background Color */}
                   {hasStyleOptions('backgroundColor') && (
                     <ItemSelector
@@ -439,7 +435,6 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.backgroundColor?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={false}
                     />
                   )}
 
@@ -451,25 +446,13 @@ const AvatarEditorPage = () => {
                 </div>
               )}
 
-              {/* Clothing Tab */}
+              {/* Clothing Tab - Compact Buttons */}
               {activeTab === "clothing" && previewAvatar && (
                 <div className="tab-panel">
                   <h3>Clothing & Style</h3>
                   <p>Dress up your avatar</p>
-                  
-                  {/* Shirt */}
-                  {hasStyleOptions('shirt') && (
-                    <ItemSelector
-                      title="Shirt Style"
-                      category="shirt"
-                      currentValue={previewAvatar.options?.shirt?.[0]}
-                      currentAvatarConfig={previewAvatar}
-                      onChange={handleAvatarChange}
-                      showPreview={true}
-                    />
-                  )}
-                  
-                  {/* Clothes (avataaars style) */}
+
+                  {/* Clothing Options */}
                   {hasStyleOptions('clothes') && (
                     <ItemSelector
                       title="Clothing"
@@ -477,23 +460,10 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.clothes?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={true}
-                    />
-                  )}
-                  
-                  {/* Shirt Color */}
-                  {hasStyleOptions('shirtColor') && (
-                    <ItemSelector
-                      title="Shirt Color"
-                      category="shirtColor"
-                      currentValue={previewAvatar.options?.shirtColor?.[0]}
-                      currentAvatarConfig={previewAvatar}
-                      onChange={handleAvatarChange}
-                      showPreview={false}
                     />
                   )}
 
-                  {/* Clothing Color (alternative) */}
+                  {/* Clothing Color */}
                   {hasStyleOptions('clotheColor') && (
                     <ItemSelector
                       title="Clothing Color"
@@ -501,11 +471,10 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.clotheColor?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={false}
                     />
                   )}
 
-                  {!hasStyleOptions('shirt') && !hasStyleOptions('clothes') && !hasStyleOptions('shirtColor') && !hasStyleOptions('clotheColor') && (
+                  {!hasStyleOptions('clothes') && !hasStyleOptions('clotheColor') && (
                     <div className="no-options-message">
                       <p>No clothing customization options available for this avatar style.</p>
                     </div>
@@ -513,12 +482,12 @@ const AvatarEditorPage = () => {
                 </div>
               )}
 
-              {/* Accessories Tab */}
+              {/* Accessories Tab - Toggle Buttons */}
               {activeTab === "accessories" && previewAvatar && (
                 <div className="tab-panel">
                   <h3>Accessories & Extras</h3>
                   <p>Add some personality to your avatar</p>
-                  
+
                   {/* Accessories */}
                   {hasStyleOptions('accessories') && (
                     <ItemSelector
@@ -527,10 +496,9 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.accessories?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={true}
                     />
                   )}
-                  
+
                   {/* Facial Hair */}
                   {hasStyleOptions('facialHair') && (
                     <ItemSelector
@@ -539,7 +507,6 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.facialHair?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={true}
                     />
                   )}
 
@@ -556,7 +523,7 @@ const AvatarEditorPage = () => {
                 <div className="tab-panel">
                   <h3>Facial Features</h3>
                   <p>Customize facial expressions and features</p>
-                  
+
                   {/* Eyes */}
                   {hasStyleOptions('eyes') && (
                     <ItemSelector
@@ -565,10 +532,9 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.eyes?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={true}
                     />
                   )}
-                  
+
                   {/* Mouth */}
                   {hasStyleOptions('mouth') && (
                     <ItemSelector
@@ -577,35 +543,10 @@ const AvatarEditorPage = () => {
                       currentValue={previewAvatar.options?.mouth?.[0]}
                       currentAvatarConfig={previewAvatar}
                       onChange={handleAvatarChange}
-                      showPreview={true}
-                    />
-                  )}
-                  
-                  {/* Eyebrows */}
-                  {hasStyleOptions('eyebrows') && (
-                    <ItemSelector
-                      title="Eyebrows"
-                      category="eyebrows"
-                      currentValue={previewAvatar.options?.eyebrows?.[0]}
-                      currentAvatarConfig={previewAvatar}
-                      onChange={handleAvatarChange}
-                      showPreview={true}
                     />
                   )}
 
-                  {/* Mood (for some styles) */}
-                  {hasStyleOptions('mood') && (
-                    <ItemSelector
-                      title="Mood"
-                      category="mood"
-                      currentValue={previewAvatar.options?.mood?.[0]}
-                      currentAvatarConfig={previewAvatar}
-                      onChange={handleAvatarChange}
-                      showPreview={true}
-                    />
-                  )}
-
-                  {!hasStyleOptions('eyes') && !hasStyleOptions('mouth') && !hasStyleOptions('eyebrows') && !hasStyleOptions('mood') && (
+                  {!hasStyleOptions('eyes') && !hasStyleOptions('mouth') && (
                     <div className="no-options-message">
                       <p>No facial feature options available for this avatar style.</p>
                     </div>
@@ -618,7 +559,7 @@ const AvatarEditorPage = () => {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - Bottom buttons */}
       <div className="editor-navigation">
         <div className="nav-buttons">
           <button

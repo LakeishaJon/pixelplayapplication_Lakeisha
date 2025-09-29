@@ -29,14 +29,14 @@ const PixelPlayGameHub = () => {
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [score, setScore] = useState(0);
     const [streakCount, setStreakCount] = useState(0);
-    
+
     // UI state
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedDifficulty, setSelectedDifficulty] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [audioEnabled, setAudioEnabled] = useState(true);
     const [currentAudio, setCurrentAudio] = useState(null);
-    
+
     // Game music configuration
     const gameMusic = {
         'dance': '/audio/upbeat-dance.mp3',
@@ -50,7 +50,7 @@ const PixelPlayGameHub = () => {
         'magic': '/audio/mystical-ambient.mp3',
         'sports': '/audio/sports-theme.mp3'
     };
-    
+
     // User state
     const [user] = useState({
         id: 'user123',
@@ -344,24 +344,24 @@ const PixelPlayGameHub = () => {
     // Audio management functions
     const playBackgroundMusic = useCallback((gameId) => {
         if (!audioEnabled || !gameMusic[gameId]) return;
-        
+
         try {
             if (currentAudio) {
                 currentAudio.pause();
                 currentAudio.currentTime = 0;
             }
-            
+
             const audio = new Audio(gameMusic[gameId]);
             audio.loop = true;
             audio.volume = 0.3;
-            
+
             audio.play().then(() => {
                 console.log(`🎶 Background music started for: ${gameId}`);
                 setCurrentAudio(audio);
             }).catch((error) => {
                 console.log(`🔇 Music file not found, continuing without background music: ${gameMusic[gameId]}`);
             });
-            
+
         } catch (error) {
             console.log('Audio error:', error);
         }
@@ -393,7 +393,7 @@ const PixelPlayGameHub = () => {
     // Timer logic
     useEffect(() => {
         let interval = null;
-        
+
         if (gameState === 'playing' && timeRemaining > 0) {
             interval = setInterval(() => {
                 setTimeRemaining(time => time - 1);
@@ -410,7 +410,7 @@ const PixelPlayGameHub = () => {
     // Game logic functions
     const handleExerciseComplete = () => {
         if (!selectedGame || !selectedGame.exercises) return;
-        
+
         setScore(prev => prev + 10);
         setStreakCount(prev => prev + 1);
 
@@ -425,19 +425,19 @@ const PixelPlayGameHub = () => {
 
     const startGame = (game) => {
         console.log('Starting game:', game.name);
-        
+
         if (!game.exercises || game.exercises.length === 0) {
             console.warn('Game has no exercises');
             return;
         }
-        
+
         setSelectedGame(game);
         setGameState('playing');
         setCurrentExerciseIndex(0);
         setTimeRemaining(game.exercises[0].duration || 30);
         setScore(0);
         setStreakCount(0);
-        
+
         if (game.hasMusic) {
             playBackgroundMusic(game.id);
         }
@@ -447,12 +447,12 @@ const PixelPlayGameHub = () => {
         setGameState('paused');
         pauseBackgroundMusic();
     };
-    
+
     const resumeGame = () => {
         setGameState('playing');
         resumeBackgroundMusic();
     };
-    
+
     const resetGame = () => {
         setGameState('menu');
         setSelectedGame(null);
@@ -503,7 +503,7 @@ const PixelPlayGameHub = () => {
                         padding: '0 2rem'
                     }}>
                         <div>
-                            <button 
+                            <button
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -539,7 +539,7 @@ const PixelPlayGameHub = () => {
                             alignItems: 'center',
                             gap: '1rem'
                         }}>
-                            <button 
+                            <button
                                 style={{
                                     width: '2.5rem',
                                     height: '2.5rem',
@@ -587,7 +587,7 @@ const PixelPlayGameHub = () => {
                     margin: '0 auto',
                     padding: '2rem'
                 }}>
-                    
+
                     {/* Header Section */}
                     <section style={{ marginBottom: '2rem' }}>
                         <div style={{
@@ -725,13 +725,13 @@ const PixelPlayGameHub = () => {
                                                 fontSize: '0.875rem',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s ease',
-                                                background: selectedCategory === category.id 
+                                                background: selectedCategory === category.id
                                                     ? 'linear-gradient(135deg, #8B5CF6, #EC4899)'
                                                     : 'rgba(139, 92, 246, 0.1)',
                                                 color: selectedCategory === category.id ? 'white' : '#8B5CF6',
                                                 transform: selectedCategory === category.id ? 'scale(1.05)' : 'scale(1)',
-                                                boxShadow: selectedCategory === category.id 
-                                                    ? '0 4px 12px rgba(139, 92, 246, 0.3)' 
+                                                boxShadow: selectedCategory === category.id
+                                                    ? '0 4px 12px rgba(139, 92, 246, 0.3)'
                                                     : 'none'
                                             }}
                                         >
@@ -769,13 +769,13 @@ const PixelPlayGameHub = () => {
                                                 fontSize: '0.875rem',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s ease',
-                                                background: selectedDifficulty === diff.id 
+                                                background: selectedDifficulty === diff.id
                                                     ? 'linear-gradient(135deg, #EC4899, #F59E0B)'
                                                     : 'rgba(236, 72, 153, 0.1)',
                                                 color: selectedDifficulty === diff.id ? 'white' : '#EC4899',
                                                 transform: selectedDifficulty === diff.id ? 'scale(1.05)' : 'scale(1)',
-                                                boxShadow: selectedDifficulty === diff.id 
-                                                    ? '0 4px 12px rgba(236, 72, 153, 0.3)' 
+                                                boxShadow: selectedDifficulty === diff.id
+                                                    ? '0 4px 12px rgba(236, 72, 153, 0.3)'
                                                     : 'none'
                                             }}
                                         >
@@ -802,7 +802,7 @@ const PixelPlayGameHub = () => {
                                     const isUnlocked = user.level >= game.unlockLevel;
                                     const isCompleted = user.completedGames.includes(game.id);
                                     const isFavorite = user.favoriteGames.includes(game.id);
-                                    
+
                                     return (
                                         <div
                                             key={game.id}
@@ -834,7 +834,7 @@ const PixelPlayGameHub = () => {
                                                     lineHeight: '1.5',
                                                     fontSize: '0.9rem'
                                                 }}>{game.description}</p>
-                                                
+
                                                 {/* Game Stats */}
                                                 <div style={{
                                                     display: 'grid',
@@ -943,8 +943,8 @@ const PixelPlayGameHub = () => {
                                                         border: 'none',
                                                         cursor: isUnlocked ? 'pointer' : 'not-allowed',
                                                         transition: 'all 0.2s ease',
-                                                        background: isUnlocked 
-                                                            ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
+                                                        background: isUnlocked
+                                                            ? 'linear-gradient(135deg, #8B5CF6, #EC4899)'
                                                             : '#E5E7EB',
                                                         color: isUnlocked ? 'white' : '#9CA3AF'
                                                     }}
@@ -1048,7 +1048,7 @@ const PixelPlayGameHub = () => {
     // Game playing screen
     if (gameState === 'playing' || gameState === 'paused') {
         const currentExercise = selectedGame?.exercises?.[currentExerciseIndex];
-        
+
         return (
             <div style={{
                 minHeight: '100vh',
@@ -1073,7 +1073,7 @@ const PixelPlayGameHub = () => {
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button 
+                        <button
                             style={{
                                 background: 'rgba(255, 255, 255, 0.2)',
                                 color: 'white',
@@ -1086,7 +1086,7 @@ const PixelPlayGameHub = () => {
                         >
                             {gameState === 'playing' ? <Pause size={20} /> : <Play size={20} />}
                         </button>
-                        <button 
+                        <button
                             style={{
                                 background: 'rgba(255, 255, 255, 0.2)',
                                 color: 'white',
@@ -1114,7 +1114,7 @@ const PixelPlayGameHub = () => {
                         opacity: '0.9',
                         margin: '0 0 2rem 0'
                     }}>{currentExercise?.instruction || 'Prepare for your workout!'}</p>
-                    
+
                     <div style={{
                         width: '150px',
                         height: '150px',
@@ -1168,7 +1168,7 @@ const PixelPlayGameHub = () => {
                         }}>
                             <h3 style={{ margin: '0 0 1rem 0' }}>Game Paused</h3>
                             <p style={{ margin: '0 0 1.5rem 0' }}>Take a breath and resume when ready!</p>
-                            <button 
+                            <button
                                 style={{
                                     background: '#10b981',
                                     color: 'white',
@@ -1258,7 +1258,7 @@ const PixelPlayGameHub = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <button 
+                        <button
                             style={{
                                 background: '#10b981',
                                 color: 'white',
@@ -1278,7 +1278,7 @@ const PixelPlayGameHub = () => {
                             <Play size={20} />
                             Play Again
                         </button>
-                        <button 
+                        <button
                             style={{
                                 background: 'rgba(255, 255, 255, 0.2)',
                                 color: 'white',
