@@ -7,6 +7,7 @@ import GameHub from "./components/GameHub";
 import AvatarEditorPage from "./pages/AvatarEditorPage";
 import AvatarInventory from "./pages/AvatarInventory";
 import InventoryPage from "./pages/InventoryPage";
+import StoryCreator from './pages/StoryCreator';
 
 // Create the router configuration with RootLayout wrapping everything
 const router = createBrowserRouter([
@@ -28,15 +29,15 @@ const router = createBrowserRouter([
       },
       {
         path: "avatar-editor",
-        element: <AvatarEditorPage />, // ✅ Now this can use useAvatar!
+        element: <AvatarEditorPage />, 
       },
       {
         path: "avatar-inventory",
         element: <AvatarInventory />,
       },
       {
-        path: "inventory",
-        element: <InventoryPage />,
+        path: "story-creator",
+        element: <StoryCreator />,
       },
     ],
   },

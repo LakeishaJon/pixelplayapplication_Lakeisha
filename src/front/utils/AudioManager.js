@@ -14,12 +14,14 @@ class AudioManager {
       ninja: "action-theme.mp3",
       yoga: "calm-ambient.mp3",
       rhythm: "electronic-beat.mp3",
-      "lightning-ladders": "energetic-workout.mp3",
-      "shadow-punch": "combat-music.mp3",
+      lightning-ladders: "energetic-workout.mp3",
+      shadow-punch: "combat-music.mp3",
       adventure: "adventure-theme.mp3",
       superhero: "heroic-theme.mp3",
       magic: "mystical-ambient.mp3",
       sports: "sports-theme.mp3",
+      memory: "memory-theme.mp3",
+      brain: "brain-theme.mp3",
     };
 
     // Web Audio API tone-based effects
@@ -40,7 +42,8 @@ class AudioManager {
   init() {
     if (!this.audioContext) {
       try {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.audioContext = new (window.AudioContext ||
+          window.webkitAudioContext)();
       } catch (error) {
         console.warn("Web Audio API not supported:", error);
         return false;
@@ -52,14 +55,16 @@ class AudioManager {
   // Enable/disable audio
   setAudioEnabled(enabled) {
     this.audioEnabled = enabled;
-    if (this.backgroundMusic) this.backgroundMusic.volume = enabled ? this.musicVolume : 0;
+    if (this.backgroundMusic)
+      this.backgroundMusic.volume = enabled ? this.musicVolume : 0;
   }
 
   // Set volumes
   setVolume(musicVolume = 0.2, effectsVolume = 0.1) {
     this.musicVolume = Math.min(Math.max(musicVolume, 0), 1);
     this.effectsVolume = Math.min(Math.max(effectsVolume, 0), 1);
-    if (this.backgroundMusic && this.audioEnabled) this.backgroundMusic.volume = this.musicVolume;
+    if (this.backgroundMusic && this.audioEnabled)
+      this.backgroundMusic.volume = this.musicVolume;
   }
 
   // Background Music Management
@@ -85,11 +90,13 @@ class AudioManager {
   }
 
   pauseBackgroundMusic() {
-    if (this.backgroundMusic && !this.backgroundMusic.paused) this.backgroundMusic.pause();
+    if (this.backgroundMusic && !this.backgroundMusic.paused)
+      this.backgroundMusic.pause();
   }
 
   resumeBackgroundMusic() {
-    if (this.backgroundMusic && this.backgroundMusic.paused) this.backgroundMusic.play().catch(() => {});
+    if (this.backgroundMusic && this.backgroundMusic.paused)
+      this.backgroundMusic.play().catch(() => {});
   }
 
   stopBackgroundMusic() {
@@ -102,7 +109,12 @@ class AudioManager {
 
   // Web Audio API: Tone-based effects (oscillators)
   playToneEffect(effectType, duration = 0.3) {
-    if (!this.audioEnabled || !this.audioContext || !this.toneEffects[effectType]) return;
+    if (
+      !this.audioEnabled ||
+      !this.audioContext ||
+      !this.toneEffects[effectType]
+    )
+      return;
 
     const frequencies = this.toneEffects[effectType];
     const oscillator = this.audioContext.createOscillator();
@@ -111,14 +123,25 @@ class AudioManager {
     oscillator.connect(gainNode);
     gainNode.connect(this.audioContext.destination);
 
-    oscillator.frequency.setValueAtTime(frequencies[0], this.audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(
+      frequencies[0],
+      this.audioContext.currentTime
+    );
     frequencies.slice(1).forEach((freq, i) => {
-      const time = this.audioContext.currentTime + (duration / frequencies.length) * (i + 1);
+      const time =
+        this.audioContext.currentTime +
+        (duration / frequencies.length) * (i + 1);
       oscillator.frequency.setValueAtTime(freq, time);
     });
 
-    gainNode.gain.setValueAtTime(this.effectsVolume, this.audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+    gainNode.gain.setValueAtTime(
+      this.effectsVolume,
+      this.audioContext.currentTime
+    );
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      this.audioContext.currentTime + duration
+    );
 
     oscillator.start(this.audioContext.currentTime);
     oscillator.stop(this.audioContext.currentTime + duration);
@@ -141,19 +164,36 @@ class AudioManager {
   }
 
   // Convenience methods for common events
-  playSuccessSound() { this.playToneEffect("success"); }
-  playCountdownSound() { this.playToneEffect("countdown"); }
-  playCompletionSound() { this.playToneEffect("complete", 0.6); }
-  playButtonSound() { this.playToneEffect("button", 0.2); }
-  playErrorSound() { this.playToneEffect("error"); }
-  playLevelUpSound() { this.playToneEffect("levelUp", 1.0); }
+  playSuccessSound() {
+    this.playToneEffect("success");
+  }
+  playCountdownSound() {
+    this.playToneEffect("countdown");
+  }
+  playCompletionSound() {
+    this.playToneEffect("complete", 0.6);
+  }
+  playButtonSound() {
+    this.playToneEffect("button", 0.2);
+  }
+  playErrorSound() {
+    this.playToneEffect("error");
+  }
+  playLevelUpSound() {
+    this.playToneEffect("levelUp", 1.0);
+  }
 
-  hasBackgroundMusic(gameId) { return !!this.musicTracks[gameId]; }
-  getGamesWithMusic() { return Object.keys(this.musicTracks); }
+  hasBackgroundMusic(gameId) {
+    return !!this.musicTracks[gameId];
+  }
+  getGamesWithMusic() {
+    return Object.keys(this.musicTracks);
+  }
 
   cleanup() {
     this.stopBackgroundMusic();
-    if (this.audioContext && this.audioContext.state !== "closed") this.audioContext.close().catch(console.warn);
+    if (this.audioContext && this.audioContext.state !== "closed")
+      this.audioContext.close().catch(console.warn);
   }
 
   getStatus() {

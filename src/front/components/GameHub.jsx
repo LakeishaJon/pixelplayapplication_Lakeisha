@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Play,
     Pause,
@@ -10,8 +10,6 @@ import {
     Users,
     Target,
     Timer,
-    Gamepad2,
-    Sparkles,
     Lock,
     CheckCircle,
     Search,
@@ -21,37 +19,51 @@ import {
     Filter
 } from 'lucide-react';
 
+// Game music configuration - OUTSIDE component to prevent recreation
+const GAME_MUSIC = {
+    'dance': '/Audio/upbeat-dance.mp3',
+    'ninja': '/Audio/action-theme.mp3',
+    'yoga': '/Audio/calm-ambient.mp3',
+    'rhythm': '/Audio/electronic-beat.mp3',
+    'lightning-ladders': '/Audio/energetic-workout.mp3',
+    'shadow-punch': '/Audio/combat-music.mp3',
+    'adventure': '/Audio/adventure-theme.mp3',
+    'superhero': '/Audio/heroic-theme.mp3',
+    'magic': '/Audio/mystical-ambient.mp3',
+    'sports': '/Audio/sports-theme.mp3',
+    'memory-match': '/Audio/memory-theme.mp3',
+    'sequence-memory': '/Audio/brain-theme.mp3'
+};
+
 const PixelPlayGameHub = () => {
-    // Game state management
     const [selectedGame, setSelectedGame] = useState(null);
-    const [gameState, setGameState] = useState('menu'); // menu, playing, paused, completed
+    const [gameState, setGameState] = useState('menu');
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
     const [timeRemaining, setTimeRemaining] = useState(0);
     const [score, setScore] = useState(0);
     const [streakCount, setStreakCount] = useState(0);
 
-    // UI state
+    const [memoryCards, setMemoryCards] = useState([]);
+    const [flippedCards, setFlippedCards] = useState([]);
+    const [matchedCards, setMatchedCards] = useState([]);
+    const [memoryMoves, setMemoryMoves] = useState(0);
+    const [memoryTimer, setMemoryTimer] = useState(0);
+
+    const [sequence, setSequence] = useState([]);
+    const [playerSequence, setPlayerSequence] = useState([]);
+    const [isPlayerTurn, setIsPlayerTurn] = useState(false);
+    const [activeButton, setActiveButton] = useState(null);
+    const [sequenceLevel, setSequenceLevel] = useState(1);
+    const [sequenceMessage, setSequenceMessage] = useState('Click START to begin!');
+
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedDifficulty, setSelectedDifficulty] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
     const [audioEnabled, setAudioEnabled] = useState(true);
-    const [currentAudio, setCurrentAudio] = useState(null);
 
-    // Game music configuration
-    const gameMusic = {
-        'dance': '/audio/upbeat-dance.mp3',
-        'ninja': '/audio/action-theme.mp3',
-        'yoga': '/audio/calm-ambient.mp3',
-        'rhythm': '/audio/electronic-beat.mp3',
-        'lightning-ladders': '/audio/energetic-workout.mp3',
-        'shadow-punch': '/audio/combat-music.mp3',
-        'adventure': '/audio/adventure-theme.mp3',
-        'superhero': '/audio/heroic-theme.mp3',
-        'magic': '/audio/mystical-ambient.mp3',
-        'sports': '/audio/sports-theme.mp3'
-    };
+    const currentAudioRef = useRef(null);
+    const audioContextRef = useRef(null);
 
-    // User state
     const [user] = useState({
         id: 'user123',
         name: 'Alex',
@@ -60,17 +72,18 @@ const PixelPlayGameHub = () => {
         xp: 850,
         totalGamesPlayed: 23,
         weeklyStreak: 3,
-        unlockedGames: ['dance', 'ninja', 'yoga', 'adventure', 'sports', 'superhero', 'lightning-ladders', 'shadow-punch', 'magic', 'rhythm'],
+        unlockedGames: ['dance', 'ninja', 'yoga', 'adventure', 'sports', 'superhero', 'lightning-ladders', 'shadow-punch', 'magic', 'rhythm', 'memory-match', 'sequence-memory'],
         completedGames: ['dance', 'yoga', 'lightning-ladders'],
         favoriteGames: ['dance', 'ninja', 'adventure']
     });
 
-    // Complete games database with proper exercise durations
+    // Complete games database
     const games = [
         {
             id: 'dance',
             name: 'Dance Party',
             emoji: '💃',
+            gameType: 'exercise',
             description: 'Dance to fun music and copy the moves! Perfect for getting your groove on.',
             category: 'cardio',
             difficulty: 'Easy',
@@ -94,6 +107,7 @@ const PixelPlayGameHub = () => {
             id: 'ninja',
             name: 'Ninja Training',
             emoji: '🥷',
+            gameType: 'exercise',
             description: 'Jump, duck, and punch like a ninja! Master the ancient arts of fitness.',
             category: 'strength',
             difficulty: 'Medium',
@@ -120,6 +134,7 @@ const PixelPlayGameHub = () => {
             id: 'yoga',
             name: 'Animal Yoga',
             emoji: '🧘',
+            gameType: 'exercise',
             description: 'Stretch like different animals! Calm your mind and strengthen your body.',
             category: 'flexibility',
             difficulty: 'Easy',
@@ -147,6 +162,7 @@ const PixelPlayGameHub = () => {
             id: 'rhythm',
             name: 'Rhythm Master',
             emoji: '🥁',
+            gameType: 'exercise',
             description: 'Create beats with your body! Musical fitness that gets your heart pumping.',
             category: 'cardio',
             difficulty: 'Medium',
@@ -171,6 +187,7 @@ const PixelPlayGameHub = () => {
             id: 'lightning-ladders',
             name: 'Lightning Ladders',
             emoji: '⚡',
+            gameType: 'exercise',
             description: 'Sprint in place to climb the lightning ladder and reach the sky!',
             category: 'cardio',
             difficulty: 'Medium',
@@ -197,6 +214,7 @@ const PixelPlayGameHub = () => {
             id: 'shadow-punch',
             name: 'Shadow Boxing',
             emoji: '👊',
+            gameType: 'exercise',
             description: 'Punch targets in rhythm to defeat shadow opponents!',
             category: 'strength',
             difficulty: 'Medium',
@@ -223,6 +241,7 @@ const PixelPlayGameHub = () => {
             id: 'adventure',
             name: 'Quest Adventure',
             emoji: '🗺️',
+            gameType: 'exercise',
             description: 'Go on epic fitness quests! Explore magical worlds through exercise.',
             category: 'adventure',
             difficulty: 'Medium',
@@ -249,6 +268,7 @@ const PixelPlayGameHub = () => {
             id: 'superhero',
             name: 'Superhero Training',
             emoji: '🦸',
+            gameType: 'exercise',
             description: 'Train like your favorite superheroes! Develop super strength and speed.',
             category: 'strength',
             difficulty: 'Hard',
@@ -275,6 +295,7 @@ const PixelPlayGameHub = () => {
             id: 'magic',
             name: 'Magic Academy',
             emoji: '🪄',
+            gameType: 'exercise',
             description: 'Learn magical spells through movement! Cast fitness spells and brew potions.',
             category: 'flexibility',
             difficulty: 'Easy',
@@ -301,6 +322,7 @@ const PixelPlayGameHub = () => {
             id: 'sports',
             name: 'Mini Sports',
             emoji: '⚽',
+            gameType: 'exercise',
             description: 'Play soccer, basketball, and more! Compete in fun mini sporting events.',
             category: 'sports',
             difficulty: 'Medium',
@@ -322,16 +344,47 @@ const PixelPlayGameHub = () => {
             ],
             hasMusic: true,
             safetyFeatures: ['sport-safety', 'team-coordination']
+        },
+        {
+            id: 'memory-match',
+            name: 'Fitness Match Pairs',
+            emoji: '🎴',
+            description: 'Flip cards to find matching pairs of fitness items! Test your visual memory.',
+            category: 'cognitive',
+            difficulty: 'Easy',
+            duration: '5-10 min',
+            xpReward: 60,
+            energyRequired: 10,
+            unlockLevel: 1,
+            playerCount: '1-4 players',
+            gameType: 'memory-match',
+            hasMusic: true
+        },
+        {
+            id: 'sequence-memory',
+            name: 'Exercise Sequence',
+            emoji: '🧠',
+            description: 'Watch exercises light up, then repeat the pattern! Challenge your memory.',
+            category: 'cognitive',
+            difficulty: 'Medium',
+            duration: '8-15 min',
+            xpReward: 85,
+            energyRequired: 15,
+            unlockLevel: 2,
+            playerCount: '1-6 players',
+            gameType: 'sequence-memory',
+            hasMusic: true
         }
     ];
 
     const categories = [
         { id: 'all', name: 'All Games', emoji: '🎮' },
         { id: 'cardio', name: 'Cardio Fun', emoji: '💓' },
+        { id: 'cognitive', name: 'Brain Games', emoji: '🧠' },
         { id: 'strength', name: 'Get Strong', emoji: '💪' },
         { id: 'flexibility', name: 'Stretch Time', emoji: '🤸' },
         { id: 'sports', name: 'Sports Zone', emoji: '⚽' },
-        { id: 'adventure', name: 'Adventures', emoji: '🗺️' },
+        { id: 'adventure', name: 'Adventures', emoji: '🗺️' }
     ];
 
     const difficulties = [
@@ -341,54 +394,214 @@ const PixelPlayGameHub = () => {
         { id: 'Hard', name: 'Challenge Me!' }
     ];
 
-    // Audio management functions
+    useEffect(() => {
+        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }, []);
+
+    // Audio management functions with fixed dependencies
     const playBackgroundMusic = useCallback((gameId) => {
-        if (!audioEnabled || !gameMusic[gameId]) return;
+        if (!audioEnabled || !GAME_MUSIC[gameId]) {
+            console.log('Audio disabled or no music file for:', gameId);
+            return;
+        }
 
         try {
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.currentTime = 0;
+            // Stop current audio if playing
+            if (currentAudioRef.current) {
+                currentAudioRef.current.pause();
+                currentAudioRef.current.currentTime = 0;
+                currentAudioRef.current = null;
             }
 
-            const audio = new Audio(gameMusic[gameId]);
+            const audio = new Audio(GAME_MUSIC[gameId]);
             audio.loop = true;
             audio.volume = 0.3;
 
-            audio.play().then(() => {
-                console.log(`🎶 Background music started for: ${gameId}`);
-                setCurrentAudio(audio);
-            }).catch((error) => {
-                console.log(`🔇 Music file not found, continuing without background music: ${gameMusic[gameId]}`);
-            });
+            currentAudioRef.current = audio;
+
+            audio.play()
+                .then(() => {
+                    console.log(`✅ Playing music: ${gameId}`);
+                })
+                .catch((error) => {
+                    console.warn(`⚠️ Could not autoplay music:`, error.message);
+                    console.log('User interaction may be required for audio playback');
+                });
 
         } catch (error) {
-            console.log('Audio error:', error);
+            console.error('Audio error:', error);
         }
-    }, [audioEnabled, gameMusic, currentAudio]);
+    }, [audioEnabled]);
 
     const stopBackgroundMusic = useCallback(() => {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
-            setCurrentAudio(null);
-            console.log('🔇 Background music stopped');
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            currentAudioRef.current.currentTime = 0;
+            currentAudioRef.current = null;
+            console.log('🔇 Music stopped');
         }
-    }, [currentAudio]);
+    }, []);
 
     const pauseBackgroundMusic = useCallback(() => {
-        if (currentAudio) {
-            currentAudio.pause();
+        if (currentAudioRef.current) {
+            currentAudioRef.current.pause();
+            console.log('⏸️ Music paused');
         }
-    }, [currentAudio]);
+    }, []);
 
     const resumeBackgroundMusic = useCallback(() => {
-        if (currentAudio) {
-            currentAudio.play().catch(error => {
-                console.log('Could not resume background music:', error.message);
+        if (currentAudioRef.current) {
+            currentAudioRef.current.play().catch(error => {
+                console.warn('Could not resume music:', error.message);
             });
+            console.log('▶️ Music resumed');
         }
-    }, [currentAudio]);
+    }, []);
+    const playSound = useCallback((frequency) => {
+        if (!audioEnabled || !audioContextRef.current) return;
+        try {
+            const oscillator = audioContextRef.current.createOscillator();
+            const gainNode = audioContextRef.current.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContextRef.current.destination);
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, audioContextRef.current.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContextRef.current.currentTime + 0.3);
+            oscillator.start(audioContextRef.current.currentTime);
+            oscillator.stop(audioContextRef.current.currentTime + 0.3);
+        } catch (error) {
+            console.error('Sound error:', error);
+        }
+    }, [audioEnabled]);
+
+     const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const initializeMemoryMatch = () => {
+        const fitnessEmojis = ['🏋️', '🧘', '🏃', '⚽', '🥊', '🏊', '🚴', '🤸'];
+        const shuffledCards = [...fitnessEmojis, ...fitnessEmojis]
+            .sort(() => Math.random() - 0.5)
+            .map((emoji, index) => ({ id: index, emoji }));
+
+        setMemoryCards(shuffledCards);
+        setFlippedCards([]);
+        setMatchedCards([]);
+        setMemoryMoves(0);
+        setMemoryTimer(0);
+        setScore(0);
+    };
+
+    const handleMemoryCardClick = (cardId) => {
+        if (flippedCards.length === 2 || flippedCards.includes(cardId) || matchedCards.includes(cardId)) return;
+
+        const newFlippedCards = [...flippedCards, cardId];
+        setFlippedCards(newFlippedCards);
+        playSound(400);
+
+        if (newFlippedCards.length === 2) {
+            setMemoryMoves(m => m + 1);
+            const [firstId, secondId] = newFlippedCards;
+            const firstCard = memoryCards.find(c => c.id === firstId);
+            const secondCard = memoryCards.find(c => c.id === secondId);
+
+            if (firstCard.emoji === secondCard.emoji) {
+                setTimeout(() => {
+                    setMatchedCards(m => [...m, firstId, secondId]);
+                    setFlippedCards([]);
+                    setScore(s => s + 10);
+                    playSound(600);
+                }, 500);
+            } else {
+                setTimeout(() => {
+                    setFlippedCards([]);
+                    playSound(200);
+                }, 1000);
+            }
+        }
+    };
+
+    const initializeSequenceMemory = () => {
+        setSequence([]);
+        setPlayerSequence([]);
+        setSequenceLevel(1);
+        setScore(0);
+        setIsPlayerTurn(false);
+        setSequenceMessage('Watch the sequence...');
+        setTimeout(() => addToSequence([]), 500);
+    };
+
+    const addToSequence = (currentSequence) => {
+        const newExercise = Math.floor(Math.random() * 4);
+        const newSequence = [...currentSequence, newExercise];
+        setSequence(newSequence);
+        playSequence(newSequence);
+    };
+
+    const playSequence = async (seq) => {
+        setIsPlayerTurn(false);
+        setSequenceMessage('Watch carefully...');
+
+        for (let i = 0; i < seq.length; i++) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setActiveButton(seq[i]);
+            playSound(300 + seq[i] * 100);
+            await new Promise(resolve => setTimeout(resolve, 400));
+            setActiveButton(null);
+        }
+
+        setIsPlayerTurn(true);
+        setSequenceMessage('Your turn! Repeat the sequence');
+    };
+
+    const handleSequenceButtonClick = (exerciseId) => {
+        if (!isPlayerTurn) return;
+
+        const newPlayerSequence = [...playerSequence, exerciseId];
+        setPlayerSequence(newPlayerSequence);
+
+        setActiveButton(exerciseId);
+        playSound(300 + exerciseId * 100);
+        setTimeout(() => setActiveButton(null), 300);
+
+        const currentIndex = newPlayerSequence.length - 1;
+
+        if (newPlayerSequence[currentIndex] !== sequence[currentIndex]) {
+            setSequenceMessage('Game Over! Wrong sequence');
+            setIsPlayerTurn(false);
+            setTimeout(() => setGameState('completed'), 1500);
+        } else if (newPlayerSequence.length === sequence.length) {
+            const newScore = score + (sequenceLevel * 10);
+            setScore(newScore);
+            setSequenceLevel(l => l + 1);
+            setPlayerSequence([]);
+            setIsPlayerTurn(false);
+            setSequenceMessage(`Level ${sequenceLevel} Complete!`);
+
+            setTimeout(() => {
+                setSequenceMessage('Next level...');
+                addToSequence(sequence);
+            }, 1500);
+        }
+    };
+
+    useEffect(() => {
+        let interval;
+        if (gameState === 'playing' && selectedGame?.gameType === 'memory-match' && matchedCards.length < memoryCards.length) {
+            interval = setInterval(() => setMemoryTimer(t => t + 1), 1000);
+        }
+        return () => clearInterval(interval);
+    }, [gameState, selectedGame, matchedCards.length, memoryCards.length]);
+
+    useEffect(() => {
+        if (matchedCards.length === memoryCards.length && memoryCards.length > 0) {
+            setTimeout(() => setGameState('completed'), 1000);
+        }
+    }, [matchedCards, memoryCards]);
+
 
     // Timer logic
     useEffect(() => {
@@ -398,14 +611,14 @@ const PixelPlayGameHub = () => {
             interval = setInterval(() => {
                 setTimeRemaining(time => time - 1);
             }, 1000);
-        } else if (gameState === 'playing' && timeRemaining === 0) {
+        } else if (gameState === 'playing'  && selectedGame?.gameType === 'exercise' && timeRemaining === 0) {
             handleExerciseComplete();
         }
 
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [gameState, timeRemaining]);
+    }, [gameState, timeRemaining, selectedGame]);
 
     // Game logic functions
     const handleExerciseComplete = () => {
@@ -426,7 +639,7 @@ const PixelPlayGameHub = () => {
     const startGame = (game) => {
         console.log('Starting game:', game.name);
 
-        if (!game.exercises || game.exercises.length === 0) {
+        if (!game.gameType && (!game.exercises || game.exercises.length === 0)) {
             console.warn('Game has no exercises');
             return;
         }
@@ -434,11 +647,19 @@ const PixelPlayGameHub = () => {
         setSelectedGame(game);
         setGameState('playing');
         setCurrentExerciseIndex(0);
-        setTimeRemaining(game.exercises[0].duration || 30);
         setScore(0);
         setStreakCount(0);
 
-        if (game.hasMusic) {
+        if (game.gameType === 'memory-match') {
+            initializeMemoryMatch();
+        } else if (game.gameType === 'sequence-memory') {
+            initializeSequenceMemory();
+        } else if (game.gameType === 'exercise' && game.exercises?.length > 0) {
+            setCurrentExerciseIndex(0);
+            setTimeRemaining(game.exercises[0].duration);
+        }
+
+        if (game.hasMusic && audioEnabled) {
             playBackgroundMusic(game.id);
         }
     };
@@ -460,14 +681,23 @@ const PixelPlayGameHub = () => {
         setTimeRemaining(0);
         setScore(0);
         setStreakCount(0);
+        setMemoryCards([]);
+        setFlippedCards([]);
+        setMatchedCards([]);
+        setMemoryMoves(0);
+        setMemoryTimer(0);
+        setSequence([]);
+        setPlayerSequence([]);
+        setSequenceLevel(1);
         stopBackgroundMusic();
     };
 
     const handleBackToDashboard = () => {
+        stopBackgroundMusic();
         window.history.back();
     };
 
-    // Filter games
+
     const filteredGames = games.filter(game => {
         const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory;
         const matchesDifficulty = selectedDifficulty === 'all' || game.difficulty === selectedDifficulty;
@@ -476,7 +706,13 @@ const PixelPlayGameHub = () => {
         return matchesCategory && matchesDifficulty && matchesSearch;
     });
 
-    // Main menu view
+    useEffect(() => {
+        return () => {
+            stopBackgroundMusic();
+        };
+    }, [stopBackgroundMusic]);
+
+
     if (gameState === 'menu') {
         return (
             <div style={{
@@ -545,8 +781,8 @@ const PixelPlayGameHub = () => {
                                     height: '2.5rem',
                                     borderRadius: '50%',
                                     border: 'none',
-                                    background: 'rgba(139, 92, 246, 0.1)',
-                                    color: '#8B5CF6',
+                                    background: audioEnabled ? 'rgba(139, 92, 246, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                    color: audioEnabled ? '#8B5CF6' : '#EF4444',
                                     cursor: 'pointer',
                                     transition: 'all 0.2s ease',
                                     display: 'flex',
@@ -818,6 +1054,16 @@ const PixelPlayGameHub = () => {
                                                 cursor: isUnlocked ? 'pointer' : 'not-allowed',
                                                 opacity: isUnlocked ? '1' : '0.7'
                                             }}
+                                            onMouseEnter={(e) => {
+                                                if (isUnlocked) {
+                                                    e.currentTarget.style.transform = 'translateY(-4px)';
+                                                    e.currentTarget.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.15)';
+                                                }
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1)';
+                                            }}
                                         >
                                             {/* Game Card Content */}
                                             <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -948,6 +1194,16 @@ const PixelPlayGameHub = () => {
                                                             : '#E5E7EB',
                                                         color: isUnlocked ? 'white' : '#9CA3AF'
                                                     }}
+                                                    onMouseEnter={(e) => {
+                                                        if (isUnlocked) {
+                                                            e.target.style.transform = 'scale(1.05)';
+                                                            e.target.style.boxShadow = '0 4px 16px rgba(139, 92, 246, 0.4)';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.transform = 'scale(1)';
+                                                        e.target.style.boxShadow = 'none';
+                                                    }}
                                                 >
                                                     {isUnlocked ? (
                                                         <>
@@ -1045,9 +1301,130 @@ const PixelPlayGameHub = () => {
         );
     }
 
+    if (gameState === 'playing' && selectedGame?.gameType === 'memory-match') {
+        return (
+            <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', background: 'rgba(255, 255, 255, 0.2)', padding: '1rem', borderRadius: '12px', color: 'white' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.5rem' }}>{selectedGame.emoji} {selectedGame.name}</h2>
+                    <button onClick={resetGame} style={{ background: 'rgba(255, 255, 255, 0.3)', color: 'white', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer' }}>
+                        <RotateCcw size={20} />
+                    </button>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '30px', flexWrap: 'wrap' }}>
+                    <div style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '15px 25px', borderRadius: '12px', color: 'white', textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', opacity: 0.9 }}>Time</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{formatTime(memoryTimer)}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '15px 25px', borderRadius: '12px', color: 'white', textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', opacity: 0.9 }}>Moves</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{memoryMoves}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255, 255, 255, 0.2)', padding: '15px 25px', borderRadius: '12px', color: 'white', textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', opacity: 0.9 }}>Matched</div>
+                        <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{matchedCards.length / 2} / 8</div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', maxWidth: '600px', margin: '0 auto' }}>
+                    {memoryCards.map(card => (
+                        <div
+                            key={card.id}
+                            onClick={() => handleMemoryCardClick(card.id)}
+                            style={{
+                                aspectRatio: '1',
+                                background: flippedCards.includes(card.id) || matchedCards.includes(card.id) ? matchedCards.includes(card.id) ? 'rgba(144, 238, 144, 0.9)' : 'white' : 'rgba(255, 255, 255, 0.3)',
+                                borderRadius: '15px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                fontSize: '50px',
+                                transition: 'all 0.3s ease',
+                                border: matchedCards.includes(card.id) ? '3px solid #32cd32' : '3px solid rgba(255, 255, 255, 0.5)'
+                            }}
+                        >
+                            {flippedCards.includes(card.id) || matchedCards.includes(card.id) ? card.emoji : '?'}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (gameState === 'playing' && selectedGame?.gameType === 'sequence-memory') {
+        const exercises = [
+            { id: 0, name: 'Squats', emoji: '🏋️', color: '#ff6b6b' },
+            { id: 1, name: 'Push-ups', emoji: '💪', color: '#4ecdc4' },
+            { id: 2, name: 'Jumping', emoji: '🤸', color: '#ffe66d' },
+            { id: 3, name: 'Running', emoji: '🏃', color: '#95e1d3' }
+        ];
+
+        return (
+            <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)', padding: '20px', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', background: 'white', padding: '1rem', borderRadius: '12px' }}>
+                    <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#2d3561' }}>{selectedGame.emoji} {selectedGame.name}</h2>
+                    <button onClick={resetGame} style={{ background: '#667eea', color: 'white', border: 'none', padding: '0.75rem', borderRadius: '8px', cursor: 'pointer' }}>
+                        <RotateCcw size={20} />
+                    </button>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    <div style={{ background: 'white', padding: '15px 25px', borderRadius: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', color: '#666' }}>Level</div>
+                        <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2d3561' }}>{sequenceLevel}</div>
+                    </div>
+                    <div style={{ background: 'white', padding: '15px 25px', borderRadius: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', color: '#666' }}>Score</div>
+                        <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2d3561' }}>{score}</div>
+                    </div>
+                    <div style={{ background: 'white', padding: '15px 25px', borderRadius: '12px', textAlign: 'center' }}>
+                        <div style={{ fontSize: '14px', color: '#666' }}>Length</div>
+                        <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2d3561' }}>{sequence.length}</div>
+                    </div>
+                </div>
+
+                <div style={{ background: isPlayerTurn ? 'rgba(78, 205, 196, 0.9)' : 'rgba(255, 230, 109, 0.9)', maxWidth: '500px', margin: '0 auto 30px', padding: '20px', borderRadius: '15px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '20px', fontWeight: 'bold', color: '#2d3561', margin: 0 }}>{sequenceMessage}</p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', maxWidth: '500px', margin: '0 auto', padding: '20px' }}>
+                    {exercises.map(exercise => (
+                        <button
+                            key={exercise.id}
+                            onClick={() => handleSequenceButtonClick(exercise.id)}
+                            disabled={!isPlayerTurn}
+                            style={{
+                                aspectRatio: '1',
+                                border: 'none',
+                                borderRadius: '20px',
+                                background: activeButton === exercise.id ? exercise.color : `${exercise.color}80`,
+                                transform: activeButton === exercise.id ? 'scale(0.95)' : 'scale(1)',
+                                boxShadow: activeButton === exercise.id ? `0 0 30px ${exercise.color}` : '0 4px 15px rgba(0,0,0,0.3)',
+                                cursor: isPlayerTurn ? 'pointer' : 'not-allowed',
+                                opacity: isPlayerTurn || activeButton === exercise.id ? 1 : 0.7,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s ease',
+                                minHeight: '150px'
+                            }}
+                        >
+                            <div style={{ fontSize: '60px' }}>{exercise.emoji}</div>
+                            <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'white', textShadow: '1px 1px 2px rgba(0,0,0,0.3)' }}>
+                                {exercise.name}
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     // Game playing screen
-    if (gameState === 'playing' || gameState === 'paused') {
-        const currentExercise = selectedGame?.exercises?.[currentExerciseIndex];
+    if (gameState === 'playing' && selectedGame?.gameType === 'exercise') {
+        const currentExercise = selectedGame.exercises[currentExerciseIndex];
 
         return (
             <div style={{
@@ -1080,9 +1457,12 @@ const PixelPlayGameHub = () => {
                                 border: 'none',
                                 padding: '0.75rem',
                                 borderRadius: '8px',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
                             }}
                             onClick={gameState === 'playing' ? pauseGame : resumeGame}
+                            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+                            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
                         >
                             {gameState === 'playing' ? <Pause size={20} /> : <Play size={20} />}
                         </button>
@@ -1093,9 +1473,12 @@ const PixelPlayGameHub = () => {
                                 border: 'none',
                                 padding: '0.75rem',
                                 borderRadius: '8px',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease'
                             }}
                             onClick={resetGame}
+                            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+                            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
                         >
                             <RotateCcw size={20} />
                         </button>
@@ -1153,21 +1536,23 @@ const PixelPlayGameHub = () => {
 
                 {gameState === 'paused' && (
                     <div style={{
-                        position: 'absolute',
+                        position: 'fixed',
                         inset: '0',
                         background: 'rgba(0, 0, 0, 0.8)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        zIndex: 1000
                     }}>
                         <div style={{
-                            background: 'rgba(255, 255, 255, 0.1)',
+                            background: 'rgba(255, 255, 255, 0.95)',
                             padding: '2rem',
                             borderRadius: '16px',
-                            textAlign: 'center'
+                            textAlign: 'center',
+                            color: '#1F2937'
                         }}>
-                            <h3 style={{ margin: '0 0 1rem 0' }}>Game Paused</h3>
-                            <p style={{ margin: '0 0 1.5rem 0' }}>Take a breath and resume when ready!</p>
+                            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem' }}>Game Paused</h3>
+                            <p style={{ margin: '0 0 1.5rem 0', color: '#6B7280' }}>Take a breath and resume when ready!</p>
                             <button
                                 style={{
                                     background: '#10b981',
@@ -1179,9 +1564,13 @@ const PixelPlayGameHub = () => {
                                     fontWeight: '600',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.5rem'
+                                    gap: '0.5rem',
+                                    margin: '0 auto',
+                                    transition: 'all 0.2s ease'
                                 }}
                                 onClick={resumeGame}
+                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                             >
                                 <Play size={20} />
                                 Resume
@@ -1271,9 +1660,18 @@ const PixelPlayGameHub = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '0.5rem'
+                                gap: '0.5rem',
+                                transition: 'all 0.2s ease'
                             }}
                             onClick={() => startGame(selectedGame)}
+                            onMouseEnter={(e) => {
+                                e.target.style.transform = 'scale(1.05)';
+                                e.target.style.boxShadow = '0 4px 16px rgba(16, 185, 129, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.transform = 'scale(1)';
+                                e.target.style.boxShadow = 'none';
+                            }}
                         >
                             <Play size={20} />
                             Play Again
@@ -1286,9 +1684,12 @@ const PixelPlayGameHub = () => {
                                 padding: '0.75rem 1.5rem',
                                 borderRadius: '8px',
                                 cursor: 'pointer',
-                                fontWeight: '500'
+                                fontWeight: '500',
+                                transition: 'all 0.2s ease'
                             }}
                             onClick={resetGame}
+                            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+                            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
                         >
                             Back to Menu
                         </button>

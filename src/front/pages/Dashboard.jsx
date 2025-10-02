@@ -4,19 +4,19 @@ import '../styles/Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  
+
   const [userStats, setUserStats] = useState({
     level: 1,
     points: 0,
     streakDays: 0
   });
-  
+
   const [todayStats, setTodayStats] = useState({
     workoutsCompleted: 0,
     minutesExercised: 0,
     pointsEarned: 0
   });
-  
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -24,9 +24,15 @@ const Dashboard = () => {
   }, []);
 
   const handleNavigation = (route) => {
-    switch(route) {
+    switch (route) {
+      case 'home':
+        navigate('/');
+        break;
       case 'games':
         navigate('/games');
+        break;
+      case 'workout':
+        navigate('/story-creator');
         break;
       case 'editor':
         navigate('/avatar-editor');
@@ -46,7 +52,7 @@ const Dashboard = () => {
       description: 'Begin your fitness journey',
       icon: '💪',
       gradient: 'from-orange-400 to-red-500',
-      action: () => handleNavigation('games')
+      action: () => handleNavigation('workout')
     },
     {
       id: 'games',
@@ -68,7 +74,7 @@ const Dashboard = () => {
       id: 'collection',
       title: 'View Collection',
       description: 'See your gear',
-      icon: '📦',
+      icon: '🎒',
       gradient: 'from-green-400 to-blue-500',
       action: () => handleNavigation('inventory')
     }
@@ -85,7 +91,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Navigation Bar - Matching your existing design */}
+      {/* Navigation Bar */}
       <nav className="dashboard-nav">
         <div className="nav-content">
           <div className="nav-left">
@@ -95,18 +101,21 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="nav-center">
-            <button className="nav-btn nav-btn-active">
+            <button
+              className="nav-btn nav-btn-active"
+              onClick={() => handleNavigation('home')}
+            >
               <span className="nav-btn-icon">🏠</span>
               Home
             </button>
-            <button 
+            <button
               className="nav-btn"
               onClick={() => handleNavigation('editor')}
             >
               <span className="nav-btn-icon">🎨</span>
               Editor
             </button>
-            <button 
+            <button
               className="nav-btn"
               onClick={() => handleNavigation('inventory')}
             >
@@ -120,7 +129,7 @@ const Dashboard = () => {
               <span className="points-label">{userStats.points} pts</span>
             </div>
             <div className="avatar-badge">
-              <span>Avatar</span>
+              <span>👤</span>
             </div>
           </div>
         </div>
@@ -147,26 +156,38 @@ const Dashboard = () => {
         {/* Stats and Avatar Section */}
         <section className="stats-avatar-section">
           <div className="section-grid">
-            
+
             {/* Avatar Card */}
             <div className="avatar-section">
               <div className="avatar-card">
                 <h2>Your Avatar</h2>
                 <div className="avatar-display">
                   <div className="avatar-circle">
-                    <img src="/api/placeholder/80/80" alt="Avatar" className="avatar-image" />
-                    <div className="avatar-edit-badge">
-                      <span>✏️</span>
+                    <div className="avatar-placeholder">
+                      <span style={{ fontSize: '3rem' }}>👤</span>
                     </div>
+                    <button
+                      className="avatar-edit-badge"
+                      onClick={() => handleNavigation('editor')}
+                      title="Edit Avatar"
+                    >
+                      <span>✏️</span>
+                    </button>
                   </div>
                 </div>
+                <button
+                  className="customize-btn"
+                  onClick={() => handleNavigation('editor')}
+                >
+                  Customize Avatar
+                </button>
               </div>
             </div>
 
             {/* Stats Grid */}
             <div className="stats-section">
               <div className="stats-grid-container">
-                
+
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">🏋️</span>
@@ -213,7 +234,7 @@ const Dashboard = () => {
           <h2 className="section-title">Quick Actions</h2>
           <div className="actions-grid">
             {quickActions.map(action => (
-              <button 
+              <button
                 key={action.id}
                 className={`action-card bg-gradient-to-br ${action.gradient}`}
                 onClick={action.action}
@@ -240,7 +261,7 @@ const Dashboard = () => {
               </div>
               <div className="progress-bar-container">
                 <div className="progress-bar">
-                  <div 
+                  <div
                     className="progress-fill"
                     style={{ width: `${(userStats.points % 100)}%` }}
                   ></div>

@@ -33,13 +33,13 @@ const AvatarInventory = ({ onNavigate }) => {
         <div className="saved-avatars-section">
           <div className="section-card">
             <h2>Saved Avatars</h2>
-            
+
             {savedAvatars.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">👤</div>
                 <h3>No Saved Avatars Yet</h3>
                 <p>Create and save your first avatar to see it here!</p>
-                <button 
+                <button
                   className="create-avatar-btn"
                   onClick={() => onNavigate('editor')}
                 >
@@ -51,8 +51,8 @@ const AvatarInventory = ({ onNavigate }) => {
                 {savedAvatars.map((avatar) => (
                   <div key={avatar.id} className="avatar-card">
                     <div className="avatar-display-container">
-                      <AvatarDisplay 
-                        avatar={avatar.settings} 
+                      <AvatarDisplay
+                        avatar={avatar.settings}
                         size={120}
                         showLevel={true}
                         level={userStats?.level || 1}
@@ -65,7 +65,7 @@ const AvatarInventory = ({ onNavigate }) => {
                       </p>
                     </div>
                     <div className="avatar-actions">
-                      <button 
+                      <button
                         className="action-btn use-btn"
                         onClick={() => {
                           // Logic to set this as current avatar would go here
@@ -74,7 +74,7 @@ const AvatarInventory = ({ onNavigate }) => {
                       >
                         Use Avatar
                       </button>
-                      <button 
+                      <button
                         className="action-btn edit-btn"
                         onClick={() => onNavigate('editor')}
                       >
@@ -92,9 +92,9 @@ const AvatarInventory = ({ onNavigate }) => {
         <div className="inventory-items-section">
           <div className="section-card">
             <h2>Inventory Items</h2>
-            
-            {Object.keys(inventory).length === 0 || 
-             Object.values(inventory).every(items => items.length === 0) ? (
+
+            {Object.keys(inventory).length === 0 ||
+              Object.values(inventory).every(items => items.length === 0) ? (
               <div className="empty-state">
                 <div className="empty-icon">📦</div>
                 <h3>No Items Yet</h3>
@@ -108,7 +108,7 @@ const AvatarInventory = ({ onNavigate }) => {
                       <h3>{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
                       <span className="item-count">{items.length} items</span>
                     </div>
-                    
+
                     {items.length === 0 ? (
                       <div className="category-empty">
                         <p>No {category} items yet</p>
@@ -163,7 +163,7 @@ const AvatarInventory = ({ onNavigate }) => {
           onClick={() => onNavigate('dashboard')}
           className="nav-btn secondary"
         >
-          🏠 Back to Dashboard
+          📊 Back to Dashboard
         </button>
         <button
           onClick={() => onNavigate('editor')}

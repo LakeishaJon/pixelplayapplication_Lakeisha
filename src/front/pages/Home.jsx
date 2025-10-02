@@ -16,12 +16,20 @@ const Home = () => {
 
   const features = [
     {
-      id: 'games',
+      id: 'fitness-games',
       title: 'Fitness Games',
       description: 'Play fun fitness games that make exercise enjoyable',
       icon: '🎮',
       path: '/games',
       gradient: 'from-purple-400 to-blue-500'
+    },
+    {
+      id: 'story-workout',
+      title: 'Story Workout Creator',
+      description: 'Create exciting story-based workout adventures',
+      icon: '🏋️',
+      path: '/story-creator',
+      gradient: 'from-indigo-400 to-purple-500'
     },
     {
       id: 'avatar',
@@ -35,16 +43,16 @@ const Home = () => {
       id: 'progress',
       title: 'Track Progress',
       description: 'Monitor your fitness journey and achievements',
-      icon: '📊',
+      icon: '📈',
       path: '/dashboard',
       gradient: 'from-green-400 to-blue-500'
     },
     {
-      id: 'collection',
-      title: 'Your Collection',
-      description: 'Unlock and collect fitness rewards',
+      id: 'rewards',
+      title: 'Your Rewards',
+      description: 'Earn rewards after completing workouts',
       icon: '🏆',
-      path: '/inventory',
+      path: '/rewards',
       gradient: 'from-orange-400 to-red-500'
     }
   ];
@@ -97,7 +105,7 @@ const Home = () => {
             <div className="hero-actions">
               <button 
                 className="cta-button cta-primary"
-                onClick={() => handleNavigation('/games')}
+                onClick={() => handleNavigation('/story-creator')}
               >
                 Start Your Journey
               </button>
@@ -191,7 +199,7 @@ const Home = () => {
           </p>
           <button 
             className="cta-button cta-large"
-            onClick={() => handleNavigation('/games')}
+            onClick={() => handleNavigation('/story-creator')}
           >
             Begin Your Journey
           </button>

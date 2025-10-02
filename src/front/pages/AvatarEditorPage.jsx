@@ -566,7 +566,7 @@ const AvatarEditorPage = () => {
             onClick={handleNavigateToDashboard}
             className="nav-btn secondary"
           >
-            🏠 Back to Dashboard
+            📊 Back to Dashboard
           </button>
           <button
             onClick={handleNavigateToInventory}
