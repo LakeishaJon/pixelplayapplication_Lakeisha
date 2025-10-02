@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ Add this import
+import { useNavigate } from 'react-router-dom';
 import { useAvatar } from '../Contexts/AvatarContext';
 import "../styles/InventoryPage.css";
 
-const InventoryPage = () => { // ✅ Remove onNavigate prop
-  const navigate = useNavigate(); // ✅ Add useNavigate hook
+const InventoryPage = () => {
+  const navigate = useNavigate();
   const { userStats } = useAvatar();
   const [activeTab, setActiveTab] = useState('myItems');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -17,7 +17,7 @@ const InventoryPage = () => { // ✅ Remove onNavigate prop
   // API Base URL - adjust this to match your backend
   const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
-  // ✅ Add navigation handlers
+
   const handleNavigateToDashboard = () => {
     navigate('/dashboard');
   };
@@ -544,24 +544,24 @@ const InventoryPage = () => { // ✅ Remove onNavigate prop
           </div>
         )}
 
-        {/* Content based on active tab */}
+
         <div className="tab-content">
           {activeTab === 'myItems' && renderInventoryItems()}
           {activeTab === 'shop' && renderShop()}
           {activeTab === 'achievements' && renderAchievements()}
         </div>
 
-        {/* ✅ FIXED NAVIGATION BUTTONS - Using proper React Router navigation */}
+
         <div className="bottom-navigation">
           <div className="nav-buttons">
             <button
-              onClick={handleNavigateToDashboard} // ✅ CHANGED FROM onNavigate('dashboard')
+              onClick={handleNavigateToDashboard}
               className="nav-btn secondary"
             >
-              🏠 Back to Dashboard
+              📊 Back to Dashboard
             </button>
             <button
-              onClick={handleNavigateToEditor} // ✅ CHANGED FROM onNavigate('editor')
+              onClick={handleNavigateToEditor}
               className="nav-btn primary"
             >
               🎨 Edit Avatar

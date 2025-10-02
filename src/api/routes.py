@@ -1,109 +1,10 @@
 from flask import Flask, request, jsonify, url_for, Blueprint
-import json
 from datetime import datetime
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask_cors import CORS
-from api.utils import generate_sitemap, APIException
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token
+from werkzeug.security import generate_password_hash, check_password_hash
 from api.models import db, User, Task, Game, InventoryItem, UserInventory, Achievement, UserAchievement
 
 api = Blueprint('api', __name__)
-
-
-@api.route('/games', methods=['POST'])
-@jwt_required()
-def create_game():
-    """Create a new game"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-
-        # Validate required fields
-        if not data or not data.get('name'):
-            return jsonify({
-                'success': False,
-                'message': 'Game name is required'
-            }), 400
-
-        # Check if game already exists for this user
-        existing_game = Game.query.filter_by(
-            name=data['name'], user_id=user_id).first()
-        if existing_game:
-            return jsonify({
-                'success': False,
-                'message': 'Game already exists for this user'
-            }), 409
-
-        # Create new game
-        game = Game(
-            name=data['name'],
-            user_id=user_id,
-            progress=data.get('progress', 0)
-        )
-
-        db.session.add(game)
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Game created successfully',
-            'game': game.serialize()
-        }), 201
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error creating game: {str(e)}'
-        }), 500
-
-
-@api.route('/games/<int:game_id>/progress', methods=['PATCH'])
-@jwt_required()
-def update_game_progress(game_id):
-    """Update game progress"""
-    try:
-        user_id = get_jwt_identity()
-        game = Game.query.filter_by(id=game_id, user_id=user_id).first()
-
-        if not game:
-            return jsonify({
-                'success': False,
-                'message': 'Game not found'
-            }), 404
-
-        data = request.get_json()
-
-        if 'progress' in data:
-            # Set specific progress
-            if not game.update_progress(data['progress']):
-                return jsonify({
-                    'success': False,
-                    'message': 'Progress must be between 0 and 100'
-                }), 400
-        elif 'add_progress' in data:
-            # Add to existing progress
-            game.add_progress(data['add_progress'])
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Either "progress" or "add_progress" is required'
-            }), 400
-
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': f'Game progress updated to {game.progress}%',
-            'game': game.serialize(),
-            'completed': game.is_completed()
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error updating progress: {str(e)}'
-        }), 500
 
 
 # ===============================
@@ -125,10 +26,12 @@ def get_gamehub_games():
             }), 404
 
         # Get user's game progress
-        user_games = {game.name.lower().replace(
-            ' ', ''): game for game in Game.query.filter_by(user_id=user_id).all()}
+        user_games = {
+            game.name.lower().replace(' ', ''): game
+            for game in Game.query.filter_by(user_id=user_id).all()
+        }
 
-        # Define all available games in GameHub
+        # Define all available games in GameHub (matches frontend)
         games_catalog = [
             {
                 'id': 'dance',
@@ -141,9 +44,8 @@ def get_gamehub_games():
                 'xp_reward': 50,
                 'energy_required': 20,
                 'unlock_level': 1,
-                'features': ['Music rhythm', 'Dance moves', 'Fun choreography'],
                 'player_count': '1-4 players',
-                'instructions': 'Follow the dancing character on screen and copy their moves!'
+                'has_music': True
             },
             {
                 'id': 'ninja',
@@ -156,9 +58,8 @@ def get_gamehub_games():
                 'xp_reward': 75,
                 'energy_required': 30,
                 'unlock_level': 3,
-                'features': ['Reaction training', 'Combat moves', 'Stealth exercises'],
                 'player_count': '1-2 players',
-                'instructions': 'Do ninja moves when you see the symbols: Jump for ⬆️, Duck for ⬇️, Punch for 👊'
+                'has_music': True
             },
             {
                 'id': 'yoga',
@@ -171,129 +72,8 @@ def get_gamehub_games():
                 'xp_reward': 60,
                 'energy_required': 15,
                 'unlock_level': 1,
-                'features': ['Animal poses', 'Breathing exercises', 'Mindfulness'],
                 'player_count': '1+ players',
-                'instructions': 'Copy the animal poses: Cat stretch, Dog pose, Frog jumps!'
-            },
-            {
-                'id': 'adventure',
-                'name': 'Quest Adventure',
-                'emoji': '🗺️',
-                'description': 'Go on epic fitness quests! Explore magical worlds through exercise.',
-                'category': 'adventure',
-                'difficulty': 'Medium',
-                'duration': '15-20 min',
-                'xp_reward': 100,
-                'energy_required': 40,
-                'unlock_level': 4,
-                'features': ['Story mode', 'Multiple levels', 'Treasure rewards'],
-                'player_count': '1-6 players',
-                'instructions': 'Complete physical challenges to progress through the adventure map!'
-            },
-            {
-                'id': 'sports',
-                'name': 'Mini Sports',
-                'emoji': '⚽',
-                'description': 'Play soccer, basketball, and more! Compete in fun mini sporting events.',
-                'category': 'sports',
-                'difficulty': 'Medium',
-                'duration': '8-15 min',
-                'xp_reward': 80,
-                'energy_required': 35,
-                'unlock_level': 2,
-                'features': ['Multiple sports', 'Team play', 'Tournaments'],
-                'player_count': '2-8 players',
-                'instructions': 'Use your whole body to play different sports games!'
-            },
-            {
-                'id': 'superhero',
-                'name': 'Superhero Training',
-                'emoji': '🦸',
-                'description': 'Train like your favorite superheroes! Develop super strength and speed.',
-                'category': 'strength',
-                'difficulty': 'Hard',
-                'duration': '12-18 min',
-                'xp_reward': 120,
-                'energy_required': 50,
-                'unlock_level': 6,
-                'features': ['Hero workouts', 'Power challenges', 'Cape physics'],
-                'player_count': '1-4 players',
-                'instructions': 'Complete superhero training exercises to unlock your powers!'
-            },
-            {
-                'id': 'space',
-                'name': 'Space Explorer',
-                'emoji': '🚀',
-                'description': 'Exercise like an astronaut in space! Zero gravity workouts await.',
-                'category': 'cardio',
-                'difficulty': 'Medium',
-                'duration': '10-15 min',
-                'xp_reward': 90,
-                'energy_required': 30,
-                'unlock_level': 8,
-                'features': ['Zero gravity sim', 'Space missions', 'Planet exploration'],
-                'player_count': '1-6 players',
-                'instructions': 'Move like you\'re floating in space while doing astronaut exercises!'
-            },
-            {
-                'id': 'pirate',
-                'name': 'Pirate Adventure',
-                'emoji': '🏴‍☠️',
-                'description': 'Sail the seven seas and find treasure through swashbuckling workouts!',
-                'category': 'adventure',
-                'difficulty': 'Hard',
-                'duration': '15-25 min',
-                'xp_reward': 150,
-                'energy_required': 45,
-                'unlock_level': 10,
-                'features': ['Ship battles', 'Treasure hunting', 'Sword fighting'],
-                'player_count': '2-8 players',
-                'instructions': 'Complete pirate challenges to find buried treasure!'
-            },
-            {
-                'id': 'magic',
-                'name': 'Magic Academy',
-                'emoji': '🪄',
-                'description': 'Learn magical spells through movement! Cast fitness spells and brew potions.',
-                'category': 'flexibility',
-                'difficulty': 'Easy',
-                'duration': '8-12 min',
-                'xp_reward': 70,
-                'energy_required': 25,
-                'unlock_level': 5,
-                'features': ['Spell casting', 'Potion brewing', 'Magic duels'],
-                'player_count': '1-4 players',
-                'instructions': 'Use gestures and movements to cast magical fitness spells!'
-            },
-            {
-                'id': 'racing',
-                'name': 'Turbo Racing',
-                'emoji': '🏎️',
-                'description': 'Race through obstacle courses! Speed and agility training disguised as fun.',
-                'category': 'cardio',
-                'difficulty': 'Hard',
-                'duration': '6-10 min',
-                'xp_reward': 85,
-                'energy_required': 40,
-                'unlock_level': 7,
-                'features': ['Racing circuits', 'Time trials', 'Speed boosts'],
-                'player_count': '2-8 players',
-                'instructions': 'Run, jump, and dodge obstacles to win the race!'
-            },
-            {
-                'id': 'detective',
-                'name': 'Fitness Detective',
-                'emoji': '🕵️',
-                'description': 'Solve mysteries through physical clues! Exercise your body and brain.',
-                'category': 'mixed',
-                'difficulty': 'Medium',
-                'duration': '12-20 min',
-                'xp_reward': 95,
-                'energy_required': 35,
-                'unlock_level': 9,
-                'features': ['Mystery solving', 'Physical puzzles', 'Detective tools'],
-                'player_count': '1-6 players',
-                'instructions': 'Solve physical puzzles and follow exercise clues to crack the case!'
+                'has_music': True
             },
             {
                 'id': 'rhythm',
@@ -306,9 +86,122 @@ def get_gamehub_games():
                 'xp_reward': 75,
                 'energy_required': 30,
                 'unlock_level': 4,
-                'features': ['Beat creation', 'Musical timing', 'Rhythm challenges'],
                 'player_count': '1-8 players',
-                'instructions': 'Use your body to create rhythm and beats in time with the music!'
+                'has_music': True
+            },
+            {
+                'id': 'lightning-ladders',
+                'name': 'Lightning Ladders',
+                'emoji': '⚡',
+                'description': 'Sprint in place to climb the lightning ladder and reach the sky!',
+                'category': 'cardio',
+                'difficulty': 'Medium',
+                'duration': '6-8 min',
+                'xp_reward': 75,
+                'energy_required': 30,
+                'unlock_level': 3,
+                'player_count': '1-6 players',
+                'has_music': True
+            },
+            {
+                'id': 'shadow-punch',
+                'name': 'Shadow Boxing',
+                'emoji': '👊',
+                'description': 'Punch targets in rhythm to defeat shadow opponents!',
+                'category': 'strength',
+                'difficulty': 'Medium',
+                'duration': '7-10 min',
+                'xp_reward': 60,
+                'energy_required': 35,
+                'unlock_level': 4,
+                'player_count': '1-4 players',
+                'has_music': True
+            },
+            {
+                'id': 'adventure',
+                'name': 'Quest Adventure',
+                'emoji': '🗺️',
+                'description': 'Go on epic fitness quests! Explore magical worlds through exercise.',
+                'category': 'adventure',
+                'difficulty': 'Medium',
+                'duration': '15-20 min',
+                'xp_reward': 100,
+                'energy_required': 40,
+                'unlock_level': 4,
+                'player_count': '1-6 players',
+                'has_music': True
+            },
+            {
+                'id': 'superhero',
+                'name': 'Superhero Training',
+                'emoji': '🦸',
+                'description': 'Train like your favorite superheroes! Develop super strength and speed.',
+                'category': 'strength',
+                'difficulty': 'Hard',
+                'duration': '12-18 min',
+                'xp_reward': 120,
+                'energy_required': 50,
+                'unlock_level': 6,
+                'player_count': '1-4 players',
+                'has_music': True
+            },
+            {
+                'id': 'magic',
+                'name': 'Magic Academy',
+                'emoji': '🪄',
+                'description': 'Learn magical spells through movement! Cast fitness spells and brew potions.',
+                'category': 'flexibility',
+                'difficulty': 'Easy',
+                'duration': '8-12 min',
+                'xp_reward': 70,
+                'energy_required': 25,
+                'unlock_level': 5,
+                'player_count': '1-4 players',
+                'has_music': True
+            },
+            {
+                'id': 'sports',
+                'name': 'Mini Sports',
+                'emoji': '⚽',
+                'description': 'Play soccer, basketball, and more! Compete in fun mini sporting events.',
+                'category': 'sports',
+                'difficulty': 'Medium',
+                'duration': '8-15 min',
+                'xp_reward': 80,
+                'energy_required': 35,
+                'unlock_level': 2,
+                'player_count': '2-8 players',
+                'has_music': True
+            },
+            {
+                'id': 'memory-match',
+                'name': 'Fitness Match Pairs',
+                'emoji': '🎴',
+                'description': 'Flip cards to find matching pairs of fitness items! Test your visual memory.',
+                'category': 'cognitive',
+                'difficulty': 'Easy',
+                'duration': '5-10 min',
+                'xp_reward': 60,
+                'energy_required': 10,
+                'unlock_level': 1,
+                'player_count': '1-4 players',
+                'game_type': 'memory-match',
+                'has_music': True
+            },
+            {
+                'id': 'sequence-memory',
+                'name': 'Exercise Sequence',
+                'emoji': '🧠',
+                'description': 'Watch exercises light up, then repeat the pattern! Challenge your memory.',
+                'category': 'cognitive',
+                'difficulty': 'Medium',
+                'duration': '8-15 min',
+                'xp_reward': 85,
+                'energy_required': 15,
+                'unlock_level': 2,
+                'player_count': '1-6 players',
+                'game_type': 'sequence-memory',
+                'has_music': True
             }
         ]
 
@@ -368,11 +261,12 @@ def start_game_session():
                 'message': 'User not found'
             }), 404
 
-        # Game unlock levels
+        # Game unlock levels (matches frontend)
         game_unlock_levels = {
-            'dance': 1, 'yoga': 1, 'sports': 2, 'ninja': 3, 'adventure': 4,
-            'magic': 5, 'superhero': 6, 'racing': 7, 'space': 8,
-            'detective': 9, 'pirate': 10, 'rhythm': 4
+            'dance': 1, 'yoga': 1, 'sports': 2, 'ninja': 3,
+            'rhythm': 4, 'adventure': 4, 'lightning-ladders': 3,
+            'shadow-punch': 4, 'magic': 5, 'superhero': 6,
+            'memory-match': 1, 'sequence-memory': 2
         }
 
         required_level = game_unlock_levels.get(game_id, 1)
@@ -389,7 +283,7 @@ def start_game_session():
             db.session.add(game)
 
         # Update last played timestamp
-        game.updated_at = datetime.utcnow()
+        game.last_played = datetime.utcnow()
         db.session.commit()
 
         return jsonify({
@@ -419,12 +313,11 @@ def complete_game_session():
         user_id = get_jwt_identity()
         data = request.get_json()
 
-        required_fields = ['game_id', 'session_id',
-                           'score', 'duration_seconds']
+        required_fields = ['game_id', 'score', 'duration_seconds']
         if not data or not all(field in data for field in required_fields):
             return jsonify({
                 'success': False,
-                'message': 'Missing required fields: game_id, session_id, score, duration_seconds'
+                'message': 'Missing required fields: game_id, score, duration_seconds'
             }), 400
 
         game_id = data['game_id']
@@ -445,36 +338,30 @@ def complete_game_session():
             game = Game(name=game_id, user_id=user_id, progress=0)
             db.session.add(game)
 
-        # Calculate XP reward based on game and performance
+        # Calculate XP reward
         base_xp_rewards = {
-            'dance': 50, 'ninja': 75, 'yoga': 60, 'adventure': 100,
-            'sports': 80, 'superhero': 120, 'space': 90, 'pirate': 150,
-            'magic': 70, 'racing': 85, 'detective': 95, 'rhythm': 75
+            'dance': 50, 'ninja': 75, 'yoga': 60, 'rhythm': 75,
+            'lightning-ladders': 75, 'shadow-punch': 60,
+            'adventure': 100, 'superhero': 120, 'magic': 70,
+            'sports': 80, 'memory-match': 60, 'sequence-memory': 85
         }
 
         base_xp = base_xp_rewards.get(game_id, 50)
-
-        # Bonus XP for good performance (assuming score is 0-100)
         performance_bonus = int(base_xp * (score / 100) * 0.5)
-
-        # Duration bonus (encourage longer play)
-        # 5 XP per minute, max 25
         duration_bonus = min(int(duration / 60) * 5, 25)
-
         total_xp = base_xp + performance_bonus + duration_bonus
 
         # Award XP and check for level up
         level_up = user.add_xp(total_xp)
 
-        # Update game progress (assuming score represents progress)
+        # Update game progress
         if score > game.progress:
             game.progress = min(score, 100)
 
         # Record play session
         game.record_play_session(duration_minutes, score)
 
-        # Award coins for completion
-        # Base 10 coins + bonus based on score
+        # Award coins
         coins_earned = 10 + (score // 10)
         user.coins += coins_earned
 
@@ -534,7 +421,6 @@ def toggle_favorite_game():
 
         # Toggle favorite status
         is_favorite = game.toggle_favorite()
-
         db.session.commit()
 
         return jsonify({
@@ -552,45 +438,6 @@ def toggle_favorite_game():
         }), 500
 
 
-@api.route('/gamehub/leaderboard/<game_id>', methods=['GET'])
-@jwt_required()
-def get_game_leaderboard(game_id):
-    """Get leaderboard for a specific game"""
-    try:
-        # Get top players for this game
-        top_games = db.session.query(
-            Game, User.email
-        ).join(User).filter(
-            Game.name == game_id
-        ).order_by(
-            Game.personal_best.desc()
-        ).limit(10).all()
-
-        leaderboard = []
-        for i, (game, user_email) in enumerate(top_games, 1):
-            leaderboard.append({
-                'rank': i,
-                # Use part of email as display name
-                'user_name': user_email.split('@')[0],
-                'progress': game.progress,
-                'personal_best': game.personal_best,
-                'times_played': game.times_played
-            })
-
-        return jsonify({
-            'success': True,
-            'game_id': game_id,
-            'leaderboard': leaderboard,
-            'total_players': len(leaderboard)
-        }), 200
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching leaderboard: {str(e)}'
-        }), 500
-
-
 @api.route('/gamehub/stats', methods=['GET'])
 @jwt_required()
 def get_gamehub_stats():
@@ -599,33 +446,19 @@ def get_gamehub_stats():
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
 
-        # Get user's game statistics
-        total_games_played = Game.query.filter_by(user_id=user_id).count()
-        completed_games = Game.query.filter_by(
-            user_id=user_id).filter(Game.progress >= 100).count()
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
 
-        # Calculate averages
+        # Get user's game statistics
         user_games = Game.query.filter_by(user_id=user_id).all()
+        total_games_played = len(user_games)
+        completed_games = len([g for g in user_games if g.progress >= 100])
         total_playtime = sum(game.total_time for game in user_games)
         avg_progress = sum(game.progress for game in user_games) / \
             len(user_games) if user_games else 0
-
-        # Get favorite category (most played category)
-        category_counts = {}
-        game_categories = {
-            'dance': 'cardio', 'ninja': 'strength', 'yoga': 'flexibility',
-            'adventure': 'adventure', 'sports': 'sports', 'superhero': 'strength',
-            'space': 'cardio', 'pirate': 'adventure', 'magic': 'flexibility',
-            'racing': 'cardio', 'detective': 'mixed', 'rhythm': 'cardio'
-        }
-
-        for game in user_games:
-            category = game_categories.get(game.name, 'mixed')
-            category_counts[category] = category_counts.get(
-                category, 0) + game.times_played
-
-        favorite_category = max(category_counts.items(), key=lambda x: x[1])[
-            0] if category_counts else 'cardio'
 
         return jsonify({
             'success': True,
@@ -635,8 +468,6 @@ def get_gamehub_stats():
                 'completion_rate': round((completed_games / total_games_played * 100), 2) if total_games_played > 0 else 0,
                 'average_progress': round(avg_progress, 1),
                 'total_playtime_minutes': total_playtime,
-                'favorite_category': favorite_category,
-                'category_breakdown': category_counts,
                 'user_level': user.level,
                 'total_xp': user.xp,
                 'total_coins': user.coins
@@ -664,7 +495,6 @@ def get_user_inventory():
         # Optional query parameters
         category = request.args.get('category')
         equipped_only = request.args.get('equipped', type=bool)
-        favorites_only = request.args.get('favorites', type=bool)
 
         # Build query
         query = UserInventory.query.filter_by(
@@ -674,12 +504,9 @@ def get_user_inventory():
             query = query.filter(InventoryItem.category == category)
         if equipped_only:
             query = query.filter(UserInventory.is_equipped == True)
-        if favorites_only:
-            query = query.filter(UserInventory.is_favorite == True)
 
-        query = query.order_by(UserInventory.acquired_at.desc())
-
-        inventory_items = query.all()
+        inventory_items = query.order_by(
+            UserInventory.acquired_at.desc()).all()
 
         return jsonify({
             'success': True,
@@ -717,24 +544,15 @@ def get_available_items():
             inv.item_id for inv in UserInventory.query.filter_by(user_id=user_id).all()]
 
         # Categorize items
-        result = {
-            'owned': [],
-            'affordable': [],
-            'locked': []
-        }
+        result = {'owned': [], 'affordable': [], 'locked': []}
 
         for item in available_items:
             item_data = item.serialize()
-
-            # Check affordability
-            can_afford_xp = user.xp >= item.xp_cost if item.xp_cost > 0 else True
-            can_afford_coins = user.coins >= item.coin_cost if item.coin_cost > 0 else True
-            can_afford_level = user.level >= item.level_required
-
-            item_data['can_afford'] = can_afford_xp and can_afford_coins and can_afford_level
-            item_data['user_level'] = user.level
-            item_data['user_xp'] = user.xp
-            item_data['user_coins'] = user.coins
+            item_data['can_afford'] = (
+                user.xp >= (item.xp_cost or 0) and
+                user.coins >= (item.coin_cost or 0) and
+                user.level >= item.level_required
+            )
 
             if item.id in owned_item_ids:
                 result['owned'].append(item_data)
@@ -774,42 +592,27 @@ def purchase_item(item_id):
             }), 404
 
         # Check if user already owns this item
-        existing = UserInventory.query.filter_by(
-            user_id=user_id, item_id=item_id).first()
-        if existing:
+        if UserInventory.query.filter_by(user_id=user_id, item_id=item_id).first():
             return jsonify({
                 'success': False,
                 'message': 'Item already owned'
             }), 409
 
-        # Check level requirement
+        # Validate requirements
         if user.level < item.level_required:
-            return jsonify({
-                'success': False,
-                'message': f'Level {item.level_required} required'
-            }), 403
-
-        # Check XP cost
+            return jsonify({'success': False, 'message': f'Level {item.level_required} required'}), 403
         if item.xp_cost > 0 and user.xp < item.xp_cost:
-            return jsonify({
-                'success': False,
-                'message': 'Insufficient XP'
-            }), 403
-
-        # Check coin cost
-        if item.coin_cost > 0 and not user.can_afford(item.coin_cost):
-            return jsonify({
-                'success': False,
-                'message': 'Insufficient coins'
-            }), 403
+            return jsonify({'success': False, 'message': 'Insufficient XP'}), 403
+        if item.coin_cost > 0 and user.coins < item.coin_cost:
+            return jsonify({'success': False, 'message': 'Insufficient coins'}), 403
 
         # Deduct costs
         if item.xp_cost > 0:
             user.xp -= item.xp_cost
         if item.coin_cost > 0:
-            user.spend_coins(item.coin_cost)
+            user.coins -= item.coin_cost
 
-        # Add to user inventory
+        # Add to inventory
         user_inventory = UserInventory(user_id=user_id, item_id=item_id)
         db.session.add(user_inventory)
         db.session.commit()
@@ -830,83 +633,6 @@ def purchase_item(item_id):
         }), 500
 
 
-@api.route('/inventory/<int:inventory_id>/equip', methods=['PATCH'])
-@jwt_required()
-def equip_item(inventory_id):
-    """Equip or unequip an inventory item"""
-    try:
-        user_id = get_jwt_identity()
-        inventory_item = UserInventory.query.filter_by(
-            id=inventory_id,
-            user_id=user_id
-        ).first()
-
-        if not inventory_item:
-            return jsonify({
-                'success': False,
-                'message': 'Inventory item not found'
-            }), 404
-
-        # Toggle equipped status
-        inventory_item.is_equipped = not inventory_item.is_equipped
-
-        # If equipping, unequip other items in same category/subcategory
-        if inventory_item.is_equipped and inventory_item.item.subcategory:
-            UserInventory.query.filter_by(user_id=user_id).join(InventoryItem).filter(
-                InventoryItem.subcategory == inventory_item.item.subcategory,
-                UserInventory.id != inventory_id
-            ).update({'is_equipped': False})
-
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': f'Item {"equipped" if inventory_item.is_equipped else "unequipped"}',
-            'item': inventory_item.serialize()
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error updating item: {str(e)}'
-        }), 500
-
-
-@api.route('/inventory/<int:inventory_id>/favorite', methods=['PATCH'])
-@jwt_required()
-def toggle_favorite(inventory_id):
-    """Toggle favorite status of an inventory item"""
-    try:
-        user_id = get_jwt_identity()
-        inventory_item = UserInventory.query.filter_by(
-            id=inventory_id,
-            user_id=user_id
-        ).first()
-
-        if not inventory_item:
-            return jsonify({
-                'success': False,
-                'message': 'Inventory item not found'
-            }), 404
-
-        inventory_item.is_favorite = not inventory_item.is_favorite
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': f'Item {"added to" if inventory_item.is_favorite else "removed from"} favorites',
-            'item': inventory_item.serialize()
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error updating favorite: {str(e)}'
-        }), 500
-
-
 # ===============================
 # ACHIEVEMENTS ENDPOINTS
 # ===============================
@@ -923,20 +649,18 @@ def get_user_achievements():
 
         # Get user's achievement progress
         user_achievements = {
-            ua.achievement_id: ua for ua in
-            UserAchievement.query.filter_by(user_id=user_id).all()
+            ua.achievement_id: ua
+            for ua in UserAchievement.query.filter_by(user_id=user_id).all()
         }
 
         result = []
         for achievement in all_achievements:
             user_progress = user_achievements.get(achievement.id)
-
             achievement_data = achievement.serialize()
             achievement_data['user_progress'] = user_progress.progress if user_progress else 0
             achievement_data['is_completed'] = user_progress.is_completed if user_progress else False
             achievement_data['earned_at'] = user_progress.earned_at.isoformat(
             ) if user_progress and user_progress.earned_at else None
-
             result.append(achievement_data)
 
         return jsonify({
@@ -950,276 +674,4 @@ def get_user_achievements():
         return jsonify({
             'success': False,
             'message': f'Error fetching achievements: {str(e)}'
-        }), 500
-
-
-@api.route('/achievements/check', methods=['POST'])
-@jwt_required()
-def check_achievements():
-    """Check and award new achievements for user based on current progress"""
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
-
-        # Get user's current achievements
-        user_achievements = {
-            ua.achievement_id: ua for ua in
-            UserAchievement.query.filter_by(user_id=user_id).all()
-        }
-
-        # Get user's game and task stats
-        total_tasks = Task.query.filter_by(
-            user_id=user_id, is_completed=True).count()
-        total_games = Game.query.filter_by(user_id=user_id).count()
-        completed_games = Game.query.filter_by(
-            user_id=user_id).filter(Game.progress >= 100).count()
-        total_playtime = sum(
-            game.total_time for game in Game.query.filter_by(user_id=user_id).all())
-
-        newly_earned = []
-
-        # Check each available achievement
-        for achievement in Achievement.query.filter_by(is_active=True):
-            if achievement.id in user_achievements:
-                continue  # Already have this achievement
-
-            # Check if user meets requirements
-            current_value = 0
-
-            if achievement.requirement_type == 'level':
-                current_value = user.level
-            elif achievement.requirement_type == 'xp':
-                current_value = user.xp
-            elif achievement.requirement_type == 'tasks':
-                current_value = total_tasks
-            elif achievement.requirement_type == 'games':
-                current_value = completed_games
-            elif achievement.requirement_type == 'time_minutes':
-                current_value = total_playtime
-            elif achievement.requirement_type == 'streak_days':
-                current_value = user.streak_days
-
-            # Award achievement if requirement is met
-            if current_value >= achievement.requirement_value:
-                user_achievement = UserAchievement(
-                    user_id=user_id,
-                    achievement_id=achievement.id,
-                    progress=achievement.requirement_value,
-                    is_completed=True,
-                    earned_at=datetime.utcnow()
-                )
-                db.session.add(user_achievement)
-
-                # Award XP and coins
-                if achievement.xp_reward > 0:
-                    user.add_xp(achievement.xp_reward)
-                if achievement.coin_reward > 0:
-                    user.coins += achievement.coin_reward
-
-                # Award item if specified
-                if achievement.item_reward_id:
-                    existing_item = UserInventory.query.filter_by(
-                        user_id=user_id,
-                        item_id=achievement.item_reward_id
-                    ).first()
-
-                    if not existing_item:
-                        reward_item = UserInventory(
-                            user_id=user_id,
-                            item_id=achievement.item_reward_id
-                        )
-                        db.session.add(reward_item)
-
-                newly_earned.append(achievement.serialize())
-
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': f'Checked achievements, {len(newly_earned)} newly earned',
-            'newly_earned': newly_earned,
-            'user_level': user.level,
-            'user_xp': user.xp,
-            'user_coins': user.coins
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error checking achievements: {str(e)}'
-        }), 500
-
-
-@api.route('/inventory/stats', methods=['GET'])
-@jwt_required()
-def get_inventory_stats():
-    """Get inventory and achievement statistics"""
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-
-        # Inventory stats
-        total_items = UserInventory.query.filter_by(user_id=user_id).count()
-        equipped_items = UserInventory.query.filter_by(
-            user_id=user_id, is_equipped=True).count()
-        favorite_items = UserInventory.query.filter_by(
-            user_id=user_id, is_favorite=True).count()
-
-        # Category breakdown
-        category_stats = db.session.query(
-            InventoryItem.category,
-            db.func.count(UserInventory.id).label('count')
-        ).join(UserInventory).filter(
-            UserInventory.user_id == user_id
-        ).group_by(InventoryItem.category).all()
-
-        # Achievement stats
-        total_achievements = Achievement.query.filter_by(
-            is_active=True).count()
-        completed_achievements = UserAchievement.query.filter_by(
-            user_id=user_id,
-            is_completed=True
-        ).count()
-
-        # User overview
-        user_stats = {
-            'level': user.level,
-            'xp': user.xp,
-            'coins': user.coins,
-            'total_playtime': user.total_playtime,
-            'streak_days': user.streak_days
-        }
-
-        return jsonify({
-            'success': True,
-            'stats': {
-                'user': user_stats,
-                'inventory': {
-                    'total_items': total_items,
-                    'equipped_items': equipped_items,
-                    'favorite_items': favorite_items,
-                    'categories': {cat: count for cat, count in category_stats}
-                },
-                'achievements': {
-                    'total_achievements': total_achievements,
-                    'completed_achievements': completed_achievements,
-                    'completion_rate': round((completed_achievements / total_achievements * 100), 2) if total_achievements > 0 else 0
-                }
-            }
-        }), 200
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching stats: {str(e)}'
-        }), 500
-
-
-# ===============================
-# USER PROFILE ENDPOINTS
-# ===============================
-
-@api.route('/profile', methods=['GET'])
-@jwt_required()
-def get_user_profile():
-    """Get complete user profile with stats"""
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
-
-        # Get user statistics
-        total_tasks = Task.query.filter_by(user_id=user_id).count()
-        completed_tasks = Task.query.filter_by(
-            user_id=user_id, is_completed=True).count()
-        total_games = Game.query.filter_by(user_id=user_id).count()
-        completed_games = Game.query.filter_by(
-            user_id=user_id).filter(Game.progress >= 100).count()
-        total_items = UserInventory.query.filter_by(user_id=user_id).count()
-        total_achievements = UserAchievement.query.filter_by(
-            user_id=user_id, is_completed=True).count()
-
-        profile_data = user.serialize()
-        profile_data['stats'] = {
-            'tasks': {
-                'total': total_tasks,
-                'completed': completed_tasks,
-                'completion_rate': round((completed_tasks / total_tasks * 100), 2) if total_tasks > 0 else 0
-            },
-            'games': {
-                'total': total_games,
-                'completed': completed_games,
-                'completion_rate': round((completed_games / total_games * 100), 2) if total_games > 0 else 0
-            },
-            'inventory': {
-                'total_items': total_items
-            },
-            'achievements': {
-                'total': total_achievements
-            }
-        }
-
-        return jsonify({
-            'success': True,
-            'profile': profile_data
-        }), 200
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching profile: {str(e)}'
-        }), 500
-
-
-@api.route('/profile', methods=['PUT'])
-@jwt_required()
-def update_user_profile():
-    """Update user profile information"""
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        data = request.get_json()
-
-        if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
-
-        # Update avatar fields if provided
-        avatar_fields = [
-            'avatar_style', 'avatar_seed', 'avatar_background_color',
-            'avatar_theme', 'avatar_mood'
-        ]
-
-        for field in avatar_fields:
-            if field in data:
-                setattr(user, field, data[field])
-
-        user.updated_at = datetime.utcnow()
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Profile updated successfully',
-            'profile': user.serialize()
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error updating profile: {str(e)}'
         }), 500

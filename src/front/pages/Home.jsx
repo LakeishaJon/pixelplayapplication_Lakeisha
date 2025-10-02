@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { logout, getUserData, requireAuth } from '../utils/auth';
 import '../styles/Home.css'; 
 
 const Home = () => {
   const navigate = useNavigate();
   const [isLoaded, setIsLoaded] = useState(false);
+  const user = getUserData();
 
   useEffect(() => {
+    // Check authentication on component mount
+    requireAuth('/login');
     setIsLoaded(true);
   }, []);
 
   const handleNavigation = (path) => {
     navigate(path);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/login';
   };
 
   const features = [
@@ -74,6 +83,9 @@ const Home = () => {
             <span className="logo-text">PixelPlay</span>
           </div>
           <div className="nav-actions">
+            {user && (
+              <span className="welcome-text">Welcome, {user.name || user.email}!</span>
+            )}
             <button 
               className="nav-button nav-button-secondary"
               onClick={() => handleNavigation('/dashboard')}
@@ -85,6 +97,12 @@ const Home = () => {
               onClick={() => handleNavigation('/games')}
             >
               Play Now
+            </button>
+            <button 
+              className="nav-button nav-button-logout"
+              onClick={handleLogout}
+            >
+              Logout
             </button>
           </div>
         </div>

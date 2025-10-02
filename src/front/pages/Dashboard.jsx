@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getUserData, logout, requireAuth } from '../utils/auth';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  
+const user = getUserData();
+<span>Welcome, {user?.name}!</span>
 
   const [userStats, setUserStats] = useState({
     level: 1,

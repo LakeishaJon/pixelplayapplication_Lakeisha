@@ -117,7 +117,7 @@ const PixelPlayGameHub = () => {
             unlockLevel: 3,
             playerCount: '1-2 players',
             exercises: [
-                { name: 'Ninja Preparation', duration: 40, instruction: 'Prepare your ninja stance!' },
+                { name: 'Ninja Preparation', duration: 10, instruction: 'Prepare your ninja stance!' },
                 { name: 'Jump Training', duration: 60, instruction: 'Practice high ninja jumps!' },
                 { name: 'Duck Training', duration: 50, instruction: 'Master the art of ducking!' },
                 { name: 'Punch Power', duration: 55, instruction: 'Develop ninja punch strength!' },
