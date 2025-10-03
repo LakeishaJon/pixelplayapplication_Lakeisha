@@ -3,7 +3,7 @@ Authentication Blueprint - Handles Google OAuth2 and Traditional Login with JWT
 """
 import os
 from datetime import datetime
-from flask import Blueprint, request, jsonify, redirect, url_for
+from flask import Blueprint, request, jsonify, redirect, url_for, current_app
 from flask_jwt_extended import (
     jwt_required, create_access_token,
     get_jwt_identity, create_refresh_token, get_jwt
@@ -23,16 +23,28 @@ blacklisted_tokens = set()
 def init_oauth(app):
     """Initialize OAuth with app context"""
     oauth.init_app(app)
-    
+
+    # Verify environment variables
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+
+    if not client_id or not client_secret:
+        print("WARNING: Google OAuth credentials not found in environment variables")
+        return None
+
+    print(f"Initializing Google OAuth with Client ID: {client_id[:20]}...")
+
     google = oauth.register(
         name='google',
-        client_id=os.getenv('GOOGLE_CLIENT_ID'),
-        client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+        client_id=client_id,
+        client_secret=client_secret,
         server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
         client_kwargs={
             'scope': 'openid email profile'
         }
     )
+
+    print("Google OAuth initialized successfully")
     return google
 
 
@@ -76,10 +88,8 @@ def register():
                 'message': 'Email already registered'
             }), 409
 
-        # Create user using model's __init__ (handles password hashing)
+        # Create user
         new_user = User(email=email, password=password)
-        
-        # Set default values
         new_user.level = 1
         new_user.xp = 0
         new_user.coins = 100
@@ -109,6 +119,7 @@ def register():
 
     except Exception as e:
         db.session.rollback()
+        print(f"Registration error: {str(e)}")
         return jsonify({
             'success': False,
             'message': f'Registration error: {str(e)}'
@@ -133,14 +144,12 @@ def login():
         # Find user
         user = User.query.filter_by(email=email).first()
 
-        # Use model's check_password method
         if not user or not user.check_password(password):
             return jsonify({
                 'success': False,
                 'message': 'Invalid email or password'
             }), 401
 
-        # Check if user is active
         if not user.is_active:
             return jsonify({
                 'success': False,
@@ -171,6 +180,7 @@ def login():
         }), 200
 
     except Exception as e:
+        print(f"Login error: {str(e)}")
         return jsonify({
             'success': False,
             'message': f'Login error: {str(e)}'
@@ -185,12 +195,38 @@ def login():
 def google_login():
     """Initiate Google OAuth login"""
     try:
+        if not hasattr(oauth, 'google'):
+            return jsonify({
+                'success': False,
+                'message': 'Google OAuth not configured.'
+            }), 500
+        # Generate redirect URI
         redirect_uri = url_for('auth.google_callback', _external=True)
+
+         # Use Codespaces URL if available
+        codespace_name = os.getenv('CODESPACE_NAME', '')
+        if codespace_name:
+            redirect_uri = f"https://{codespace_name}-3001.app.github.dev/api/auth/google-callback"
+        else:
+            redirect_uri = url_for('auth.google_callback', _external=True)
+
+        # Debug: Print the redirect URI
+        print(f"Google OAuth redirect URI: {redirect_uri}")
+        print(f"Make sure this EXACT URI is in your Google Cloud Console authorized redirect URIs")
+
         return oauth.google.authorize_redirect(redirect_uri)
-    except Exception as e:
+
+    except AttributeError as e:
+        print(f"OAuth not initialized: {str(e)}")
         return jsonify({
             'success': False,
-            'message': 'OAuth initialization failed'
+            'message': 'Google OAuth not initialized'
+        }), 500
+    except Exception as e:
+        print(f"OAuth error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'OAuth initialization failed: {str(e)}'
         }), 500
 
 
@@ -198,45 +234,65 @@ def google_login():
 def google_callback():
     """Handle Google OAuth callback"""
     try:
-        # Get token and parse user info
+        print("Google callback received")
+
+        # Check if OAuth is configured
+        if not hasattr(oauth, 'google'):
+            raise Exception('Google OAuth not configured')
+
+        # Get token from Google
         token = oauth.google.authorize_access_token()
+        print(f"Token received: {bool(token)}")
+
+        # Get user info
         user_info = token.get('userinfo')
+        print(f"User info: {user_info}")
 
         if not user_info or not user_info.get('email'):
             frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
-            return redirect(f"{frontend_url}/login?error=Could not get email from Google")
+            return redirect(f"{frontend_url}/login?error=no_email")
 
         email = user_info.get('email')
         name = user_info.get('name', email.split('@')[0])
+
+        print(f"Processing login for: {email}")
 
         # Check if user exists
         user = User.query.filter_by(email=email).first()
 
         if not user:
-            # Create new user (use random password for OAuth users)
+            # Create new user
+            print(f"Creating new user: {email}")
             user = User(email=email, password=os.urandom(24).hex())
             user.level = 1
             user.xp = 0
             user.coins = 100
             user.is_active = True
             user.avatar_seed = name
-            
+
             db.session.add(user)
             db.session.commit()
+            print(f"User created successfully")
 
         # Update last activity
         user.last_activity = datetime.utcnow()
         db.session.commit()
 
-        # Create tokens
+        # Create JWT tokens
         access_token = create_access_token(identity=user.id)
         refresh_token = create_refresh_token(identity=user.id)
+
+        print(f"Tokens created, redirecting to frontend")
 
         # Redirect to frontend with tokens
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
         return redirect(f"{frontend_url}/auth/callback?access_token={access_token}&refresh_token={refresh_token}")
 
     except Exception as e:
+        print(f"Google callback error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
         frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
         return redirect(f"{frontend_url}/login?error={str(e)}")
 
@@ -260,13 +316,14 @@ def refresh():
             }), 404
 
         new_token = create_access_token(identity=user_id)
-        
+
         return jsonify({
             'success': True,
             'access_token': new_token
         }), 200
 
     except Exception as e:
+        print(f"Token refresh error: {str(e)}")
         return jsonify({
             'success': False,
             'message': f'Token refresh error: {str(e)}'
@@ -280,12 +337,13 @@ def logout():
     try:
         jti = get_jwt()['jti']
         blacklisted_tokens.add(jti)
-        
+
         return jsonify({
             'success': True,
             'message': 'Logged out successfully'
         }), 200
     except Exception as e:
+        print(f"Logout error: {str(e)}")
         return jsonify({
             'success': False,
             'message': f'Logout error: {str(e)}'
@@ -379,9 +437,9 @@ def update_profile():
             }), 400
 
         # Update avatar fields
-        avatar_fields = ['avatar_style', 'avatar_seed', 'avatar_background_color', 
-                        'avatar_theme', 'avatar_mood']
-        
+        avatar_fields = ['avatar_style', 'avatar_seed', 'avatar_background_color',
+                         'avatar_theme', 'avatar_mood']
+
         for field in avatar_fields:
             if field in data:
                 setattr(user, field, data[field])
@@ -427,21 +485,18 @@ def change_password():
                 'message': 'Current and new password required'
             }), 400
 
-        # Verify current password using model's method
         if not user.check_password(current_password):
             return jsonify({
                 'success': False,
                 'message': 'Current password is incorrect'
             }), 401
 
-        # Validate new password
         if len(new_password) < 8:
             return jsonify({
                 'success': False,
                 'message': 'Password must be at least 8 characters'
             }), 400
 
-        # Update password using model's method
         user.set_password(new_password)
         db.session.commit()
 

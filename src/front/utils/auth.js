@@ -1,7 +1,7 @@
 // auth.js - Authentication utility functions for PixelPlay
 
 const API_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
 // Token storage keys
 const TOKEN_KEY = "pixelplay_token";
@@ -29,14 +29,14 @@ export const getRefreshToken = () => {
 
 /**
  * Store authentication tokens
- * @param {string} token - JWT access token
+ * @param {string} accessToken - JWT access token
  * @param {string} refreshToken - JWT refresh token (optional)
  * @param {boolean} remember - Whether to use localStorage (true) or sessionStorage (false)
  */
-export const setAuthTokens = (token, refreshToken = null, remember = false) => {
+export const setAuthTokens = (accessToken, refreshToken, remember = false) => {
   const storage = remember ? localStorage : sessionStorage;
-
-  storage.setItem(TOKEN_KEY, token);
+  
+  storage.setItem(TOKEN_KEY, accessToken);
   if (refreshToken) {
     storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   }
@@ -328,7 +328,7 @@ export const authenticatedFetch = async (url, options = {}) => {
  */
 export const getCurrentUser = async () => {
   try {
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/profile`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/auth/profile`);
     const data = await response.json();
 
     if (data.success) {
@@ -350,7 +350,7 @@ export const getCurrentUser = async () => {
  */
 export const updateUserProfile = async (profileData) => {
   try {
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/profile`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/auth/profile`, {
       method: "PUT",
       body: JSON.stringify(profileData),
     });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout, getUserData, requireAuth } from '../utils/auth';
-import '../styles/Home.css'; 
+import '../styles/Home.css';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -86,19 +86,19 @@ const Home = () => {
             {user && (
               <span className="welcome-text">Welcome, {user.name || user.email}!</span>
             )}
-            <button 
+            <button
               className="nav-button nav-button-secondary"
               onClick={() => handleNavigation('/dashboard')}
             >
               Dashboard
             </button>
-            <button 
+            <button
               className="nav-button nav-button-primary"
               onClick={() => handleNavigation('/games')}
             >
               Play Now
             </button>
-            <button 
+            <button
               className="nav-button nav-button-logout"
               onClick={handleLogout}
             >
@@ -116,18 +116,18 @@ const Home = () => {
               Welcome to PixelPlay
             </h1>
             <p className="hero-subtitle">
-              Turn fitness into an adventure with gamified workouts, 
-              avatar customization, and fun challenges that make 
+              Turn fitness into an adventure with gamified workouts,
+              avatar customization, and fun challenges that make
               staying healthy exciting.
             </p>
             <div className="hero-actions">
-              <button 
+              <button
                 className="cta-button cta-primary"
                 onClick={() => handleNavigation('/story-creator')}
               >
                 Start Your Journey
               </button>
-              <button 
+              <button
                 className="cta-button cta-secondary"
                 onClick={() => handleNavigation('/dashboard')}
               >
@@ -177,7 +177,7 @@ const Home = () => {
           </div>
           <div className="features-grid">
             {features.map((feature, index) => (
-              <div 
+              <div
                 key={feature.id}
                 className={`feature-card feature-card-${index + 1}`}
                 onClick={() => handleNavigation(feature.path)}
@@ -215,7 +215,7 @@ const Home = () => {
           <p className="cta-text">
             Join thousands of users who have transformed their fitness routine into an exciting game.
           </p>
-          <button 
+          <button
             className="cta-button cta-large"
             onClick={() => handleNavigation('/story-creator')}
           >

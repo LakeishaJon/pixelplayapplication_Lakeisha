@@ -10,6 +10,7 @@ import AvatarEditorPage from "./pages/AvatarEditorPage";
 import AvatarInventory from "./pages/AvatarInventory";
 import InventoryPage from "./pages/InventoryPage";
 import StoryCreator from "./pages/StoryCreator";
+import AuthCallback from './pages/AuthCallback';
 
 // Create the router configuration
 const router = createBrowserRouter([
@@ -80,6 +81,10 @@ const router = createBrowserRouter([
             <StoryCreator />
           </ProtectedRoute>
         ),
+      },
+      {
+    path: 'auth/callback',
+    element: <AuthCallback />
       },
       {
         path: "*",
