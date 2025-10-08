@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateAvatarSVG } from '../utils/avatarUtils';
 import '../styles/Avatar.css';
 
-const AvatarDisplay = ({ 
-  avatar, 
-  size = 120, 
-  showLevel = false, 
+const AvatarDisplay = ({
+  avatar,
+  size = 120,
+  showLevel = false,
   level = 1,
   showBorder = true,
   borderColor = '#8B5CF6',
@@ -17,44 +17,95 @@ const AvatarDisplay = ({
   onCustomize
 }) => {
   const [error, setError] = useState(null);
+  const [avatarSvg, setAvatarSvg] = useState(null);
 
-  // Generate avatar safely
-  const avatarSvg = useMemo(() => {
-    if (!avatar || !avatar.style) {
-      setError('Invalid avatar configuration');
-      return null;
+  // CRITICAL FIX: Use useEffect instead of useMemo to ensure updates
+  useEffect(() => {
+    // Validate avatar has minimum required fields
+    if (!avatar) {
+      console.warn('⚠️ AvatarDisplay: No avatar provided');
+      setError('No avatar data');
+      setAvatarSvg(null);
+      return;
+    }
+
+    if (!avatar.style) {
+      console.warn('⚠️ AvatarDisplay: Avatar missing style property');
+      setError('No style selected');
+      setAvatarSvg(null);
+      return;
     }
 
     try {
+      console.log('🎨 Generating avatar SVG for:', avatar);
       const svg = generateAvatarSVG(avatar);
-      setError(null);
-      return svg;
-    } catch (err) {
-      console.error('Error generating avatar:', err);
-      setError('Error generating avatar');
-      return null;
-    }
-  }, [avatar]);
 
-  // Error fallback
+      if (!svg) {
+        throw new Error('generateAvatarSVG returned null');
+      }
+
+      setAvatarSvg(svg);
+      setError(null);
+      console.log('✅ Avatar SVG generated successfully');
+    } catch (err) {
+      console.error('❌ Error generating avatar:', err);
+      setError('Error generating avatar');
+      setAvatarSvg(null);
+    }
+  }, [
+    avatar,
+    // Watch specific properties to ensure React detects changes
+    avatar?.style,
+    avatar?.hair,
+    avatar?.clothing,
+    avatar?.accessories,
+    avatar?.skinColor,
+    avatar?.hairColor,
+    avatar?.clothingColor,
+    avatar?._updateTimestamp, // Our force-update timestamp
+    JSON.stringify(avatar) // Fallback: stringify to catch any deep changes
+  ]);
+
+  // Error fallback with helpful message
   if (error) {
     return (
-      <div 
+      <div
         className={`avatar-display error ${className}`}
-        style={{ width: size, height: size }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: showBorder ? '50%' : '8px',
+          border: showBorder ? `3px solid ${borderColor}` : 'none',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(239, 68, 68, 0.1)',
+          color: '#DC2626',
+          fontSize: size * 0.15,
+          fontWeight: '600',
+          textAlign: 'center',
+          padding: '1rem'
+        }}
       >
-        <div className="avatar-error-message">❌ {error}</div>
+        <div style={{ fontSize: size * 0.3, marginBottom: '0.5rem' }}>⚠️</div>
+        <div>{error}</div>
+        {error === 'No style selected' && (
+          <div style={{ fontSize: size * 0.1, marginTop: '0.5rem', opacity: 0.7 }}>
+            Choose a style to begin
+          </div>
+        )}
       </div>
     );
   }
 
-  // Empty fallback
+  // Loading/Empty fallback
   if (!avatarSvg) {
     return (
-      <div 
+      <div
         className={`avatar-display fallback ${className}`}
-        style={{ 
-          width: size, 
+        style={{
+          width: size,
           height: size,
           backgroundColor: '#f0f0f0',
           borderRadius: showBorder ? '50%' : '8px',
@@ -63,21 +114,27 @@ const AvatarDisplay = ({
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: size * 0.3,
-          cursor: onClick ? 'pointer' : 'default'
+          cursor: onClick ? 'pointer' : 'default',
+          position: 'relative'
         }}
         onClick={onClick}
       >
-        👤
+        <div style={{ textAlign: 'center' }}>
+          <div>👤</div>
+          <div style={{ fontSize: size * 0.1, marginTop: '0.5rem', color: '#6B7280' }}>
+            Loading...
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={`avatar-display-container ${className}`}>
-      <div 
+      <div
         className={`avatar-display ${onClick ? 'clickable' : ''}`}
-        style={{ 
-          width: size, 
+        style={{
+          width: size,
           height: size,
           borderRadius: showBorder ? '50%' : '8px',
           border: showBorder ? `3px solid ${borderColor}` : 'none',
@@ -89,7 +146,7 @@ const AvatarDisplay = ({
         onClick={onClick}
       >
         {/* Avatar SVG */}
-        <div 
+        <div
           className="avatar-svg"
           style={{
             width: '100%',
@@ -100,10 +157,10 @@ const AvatarDisplay = ({
           }}
           dangerouslySetInnerHTML={{ __html: avatarSvg }}
         />
-        
+
         {/* Level Badge */}
         {showLevel && (
-          <div 
+          <div
             className="level-badge"
             style={{
               position: 'absolute',
@@ -152,7 +209,7 @@ const AvatarDisplay = ({
 
       {/* Avatar Name */}
       {showName && name && (
-        <div 
+        <div
           className="avatar-name"
           style={{
             marginTop: '8px',

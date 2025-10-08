@@ -5,8 +5,9 @@ import '../styles/AvatarEditorPage.css';
 const ItemSelector = ({ 
   title, 
   category, 
-  currentValue, 
-  currentAvatarConfig, 
+  currentValue,
+  availableItems = [], // NEW: Support for available items from AvatarEditor
+  currentAvatarConfig, // OPTIONAL: For backward compatibility
   onChange 
 }) => {
   
@@ -14,30 +15,31 @@ const ItemSelector = ({
   console.log(`ItemSelector - ${title}:`, {
     category,
     currentValue,
-    currentAvatarConfig,
-    style: currentAvatarConfig?.style
+    availableItems,
+    hasConfig: !!currentAvatarConfig
   });
 
-  if (!currentAvatarConfig?.style || !category) {
-    console.warn('ItemSelector: Missing required props', { style: currentAvatarConfig?.style, category });
-    return (
-      <div className="item-selector">
-        <div className="no-options-message">
-          <p>Missing configuration for {title}</p>
-        </div>
-      </div>
-    );
+  // CRITICAL FIX: Determine options source
+  let options = [];
+  
+  // If availableItems is provided (new way), use it
+  if (availableItems && availableItems.length > 0) {
+    options = availableItems;
+  } 
+  // Otherwise, use the old way with currentAvatarConfig
+  else if (currentAvatarConfig?.style) {
+    options = getStyleOptions(currentAvatarConfig.style, category);
   }
 
-  // Get options for this category and style
-  const options = getStyleOptions(currentAvatarConfig.style, category);
-  
   if (!options || options.length === 0) {
-    console.warn(`No options found for ${currentAvatarConfig.style} -> ${category}`);
+    console.warn(`No options found for ${category}`);
     return (
       <div className="item-selector">
         <div className="no-options-message">
-          <p>No {title.toLowerCase()} options available for {currentAvatarConfig.style} style.</p>
+          <p>No {title.toLowerCase()} options available.</p>
+          <p style={{ fontSize: '0.85em', color: '#666' }}>
+            Try leveling up to unlock more options!
+          </p>
         </div>
       </div>
     );
@@ -45,22 +47,17 @@ const ItemSelector = ({
 
   console.log(`Found ${options.length} options for ${category}:`, options);
 
+  // CRITICAL FIX: Simplified option click handler
   const handleOptionClick = (optionValue) => {
-    console.log(`Selecting ${category}: ${optionValue}`);
-    
-    // Create updated avatar config
-    const updatedConfig = {
-      ...currentAvatarConfig,
-      options: {
-        ...currentAvatarConfig.options,
-        [category]: [optionValue] // DiceBear expects arrays for options
-      }
-    };
-    
-    console.log('Updated config:', updatedConfig);
+    console.log(`🎯 Selecting ${category}: ${optionValue}`);
     
     if (onChange) {
-      onChange(updatedConfig);
+      // IMPORTANT: Just pass the value, not the entire config
+      // The parent component (AvatarEditor) handles the structure
+      onChange(optionValue);
+      console.log(`✅ Called onChange with value:`, optionValue);
+    } else {
+      console.error('❌ No onChange handler provided!');
     }
   };
 
@@ -87,7 +84,8 @@ const ItemSelector = ({
   const isColorCategory = (category) => {
     const colorCategories = [
       'backgroundColor', 'hairColor', 'shirtColor', 'clotheColor', 
-      'skin', 'skinTone', 'eyeColor', 'facialHairColor'
+      'skin', 'skinTone', 'eyeColor', 'facialHairColor', 'skinColor',
+      'clothingColor', 'accessoryColor'
     ];
     return colorCategories.includes(category);
   };
@@ -141,10 +139,17 @@ const ItemSelector = ({
     <div className="item-selector">
       <div className="selector-section">
         <h4 className="selector-title">{title}</h4>
-        <div className="options-count">{options.length} options</div>
+        <div className="options-count">
+          {options.length} option{options.length !== 1 ? 's' : ''} available
+        </div>
         
         {/* COMPACT BUTTON GRID */}
-        <div className="option-buttons-grid">
+        <div className="option-buttons-grid" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+          gap: '0.75rem',
+          marginTop: '1rem'
+        }}>
           {options.map((option) => {
             const isSelected = currentValue === option;
             const label = formatLabel(option);
@@ -155,14 +160,44 @@ const ItemSelector = ({
                 className={`option-button ${isSelected ? 'selected' : ''} ${isColor ? 'color-option' : ''}`}
                 onClick={() => handleOptionClick(option)}
                 title={`${label} - Click to select`}
+                style={{
+                  padding: '0.75rem',
+                  border: isSelected ? '3px solid #8B5CF6' : '2px solid #E5E7EB',
+                  borderRadius: '10px',
+                  background: isSelected ? 'rgba(139, 92, 246, 0.1)' : 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: isSelected ? '700' : '500',
+                  color: isSelected ? '#8B5CF6' : '#2D3748'
+                }}
               >
                 {isColor && (
                   <div 
                     className="color-preview"
-                    style={{ backgroundColor: getColorValue(option) }}
+                    style={{ 
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      backgroundColor: getColorValue(option),
+                      border: '2px solid rgba(0,0,0,0.1)'
+                    }}
                   />
                 )}
-                <span className="option-label">{label}</span>
+                <span className="option-label" style={{
+                  textAlign: 'center',
+                  fontSize: '0.85rem',
+                  lineHeight: '1.2'
+                }}>
+                  {label}
+                </span>
+                {isSelected && (
+                  <span style={{ fontSize: '1.2rem' }}>✓</span>
+                )}
               </button>
             );
           })}
@@ -170,9 +205,27 @@ const ItemSelector = ({
         
         {/* Show current selection */}
         {currentValue && (
-          <div className="current-selection">
-            <span className="selection-label">Current:</span>
-            <span className="selection-value">{formatLabel(currentValue)}</span>
+          <div className="current-selection" style={{
+            marginTop: '1rem',
+            padding: '0.75rem',
+            background: 'rgba(139, 92, 246, 0.05)',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <span className="selection-label" style={{
+              fontWeight: '600',
+              color: '#6B7280'
+            }}>
+              Current Selection:
+            </span>
+            <span className="selection-value" style={{
+              fontWeight: '700',
+              color: '#8B5CF6'
+            }}>
+              {formatLabel(currentValue)}
+            </span>
           </div>
         )}
       </div>
