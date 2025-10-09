@@ -51,17 +51,17 @@ const Home = () => {
     {
       id: 'progress',
       title: 'Track Progress',
-      description: 'Monitor your fitness journey and achievements',
+      description: 'Complete daily tasks and play mini-games',
       icon: '📈',
-      path: '/dashboard',
+      path: '/habit-tracker',
       gradient: 'from-green-400 to-blue-500'
     },
     {
       id: 'rewards',
       title: 'Your Rewards',
-      description: 'Earn rewards after completing workouts',
+      description: 'Unlock and collect awesome fitness rewards',
       icon: '🏆',
-      path: '/rewards',
+      path: '/reward-store',
       gradient: 'from-orange-400 to-red-500'
     }
   ];
@@ -238,7 +238,8 @@ const Home = () => {
             <button onClick={() => handleNavigation('/games')}>Games</button>
             <button onClick={() => handleNavigation('/dashboard')}>Dashboard</button>
             <button onClick={() => handleNavigation('/avatar-editor')}>Avatar</button>
-            <button onClick={() => handleNavigation('/inventory')}>Collection</button>
+            <button onClick={() => handleNavigation('/habit-tracker')}>Track Progress</button>
+            <button onClick={() => handleNavigation('/reward-store')}>Rewards</button>
           </div>
         </div>
       </footer>

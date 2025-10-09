@@ -8,7 +8,7 @@ const Navigation = ({ currentPage, onNavigate }) => {
   const { currentAvatar, userStats } = useAvatar();
 
   const navItems = [
-    { id: 'dashboard', label: 'Home', icon: '🏠' },
+    { id: 'dashboard', label: 'Home', icon: '📊' },
     { id: 'editor', label: 'Editor', icon: '🎨' },
     { id: 'inventory', label: 'Collection', icon: '🎒' }
   ];

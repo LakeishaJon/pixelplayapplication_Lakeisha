@@ -1,10 +1,201 @@
+# src/api/routes.py
+"""
+API routes for PixelPlay application.
+Handles authentication, game management, inventory, and achievements.
+"""
+
 from flask import Flask, request, jsonify, url_for, Blueprint
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token
 from werkzeug.security import generate_password_hash, check_password_hash
-from api.models import db, User, Task, Game, InventoryItem, UserInventory, Achievement, UserAchievement
 
+# ✅ FIXED: Import from correct location (your models.py is in src/api/models.py)
+from api.models import db, User, Task, Game, InventoryItem, UserInventory, Achievement, UserAchievement, UserGameStats, GameSession
+
+# ✅ FIXED: Only ONE blueprint needed
 api = Blueprint('api', __name__)
+
+
+# ===============================
+# GAME STATS ENDPOINTS (Added to existing api blueprint)
+# ===============================
+
+@api.route('/api/users/<int:user_id>/stats', methods=['GET'])
+@jwt_required()
+def get_user_stats(user_id):
+    """Get user's game statistics"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Verify user can only access their own stats
+        if current_user_id != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Get user stats
+        stats = UserGameStats.query.filter_by(user_id=user_id).first()
+        
+        if not stats:
+            # Create default stats if none exist
+            stats = UserGameStats(user_id=user_id)
+            db.session.add(stats)
+            db.session.commit()
+        
+        # Calculate weekly streak
+        weekly_streak = calculate_weekly_streak(user_id)
+        stats.weekly_streak = weekly_streak
+        db.session.commit()
+        
+        return jsonify({
+            'level': stats.level,
+            'xp': stats.xp,
+            'total_games_played': stats.total_games_played,
+            'weekly_streak': stats.weekly_streak,
+            'unlocked_games': stats.unlocked_games or ['dance', 'yoga', 'memory-match'],
+            'completed_games': stats.completed_games or [],
+            'favorite_games': stats.favorite_games or []
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching user stats: {e}")
+        return jsonify({'error': 'Failed to fetch stats'}), 500
+
+
+@api.route('/api/users/<int:user_id>/stats', methods=['PUT'])
+@jwt_required()
+def update_user_stats(user_id):
+    """Update user statistics after completing a game"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        if current_user_id != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        data = request.json
+        game_id = data.get('game_id')
+        xp_earned = data.get('xp_earned', 0)
+        score = data.get('score', 0)
+        duration_minutes = data.get('duration_minutes', 0)
+        completed = data.get('completed', False)
+        
+        # Get or create user stats
+        stats = UserGameStats.query.filter_by(user_id=user_id).first()
+        if not stats:
+            stats = UserGameStats(user_id=user_id)
+            db.session.add(stats)
+        
+        # Update stats
+        leveled_up = stats.add_xp(xp_earned)
+        stats.total_games_played += 1
+        
+        # Unlock new games if leveled up
+        if leveled_up:
+            unlock_games_for_level(stats, stats.level)
+        
+        # Mark game as completed
+        if completed and game_id:
+            stats.complete_game(game_id)
+        
+        # Record game session
+        session = GameSession(
+            user_id=user_id,
+            game_id=game_id,
+            xp_earned=xp_earned,
+            score=score,
+            duration_minutes=duration_minutes,
+            completed=completed
+        )
+        db.session.add(session)
+        
+        # Update streak
+        weekly_streak = calculate_weekly_streak(user_id)
+        stats.weekly_streak = weekly_streak
+        
+        # Update user's main stats too
+        user = User.query.get(user_id)
+        if user:
+            user.add_xp(xp_earned)
+            user.last_activity = datetime.utcnow()
+            user.total_playtime += duration_minutes
+        
+        db.session.commit()
+        
+        response = {
+            'level': stats.level,
+            'xp': stats.xp,
+            'total_games_played': stats.total_games_played,
+            'weekly_streak': stats.weekly_streak,
+            'completed_games': stats.completed_games,
+            'unlocked_games': stats.unlocked_games
+        }
+        
+        if leveled_up:
+            response['level_up'] = True
+            response['new_level'] = stats.level
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating user stats: {e}")
+        return jsonify({'error': 'Failed to update stats'}), 500
+
+
+# ===== HELPER FUNCTIONS =====
+def calculate_weekly_streak(user_id):
+    """Calculate how many consecutive days user has played this week"""
+    try:
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        sessions = GameSession.query.filter(
+            GameSession.user_id == user_id,
+            GameSession.played_at >= seven_days_ago
+        ).order_by(GameSession.played_at.desc()).all()
+        
+        if not sessions:
+            return 0
+        
+        # Count unique days played
+        unique_days = set()
+        for session in sessions:
+            day = session.played_at.date()
+            unique_days.add(day)
+        
+        # Calculate streak
+        today = datetime.utcnow().date()
+        streak = 0
+        current_day = today
+        
+        for i in range(7):
+            if current_day in unique_days:
+                streak += 1
+                current_day -= timedelta(days=1)
+            else:
+                break
+        
+        return streak
+        
+    except Exception as e:
+        print(f"Error calculating streak: {e}")
+        return 0
+
+
+def unlock_games_for_level(stats, level):
+    """Unlock games based on user level"""
+    level_unlocks = {
+        2: ['sports', 'sequence-memory'],
+        3: ['ninja', 'lightning-ladders'],
+        4: ['rhythm', 'shadow-punch', 'adventure'],
+        5: ['magic'],
+        6: ['superhero']
+    }
+    
+    for unlock_level, games in level_unlocks.items():
+        if level >= unlock_level:
+            for game in games:
+                stats.unlock_game(game)
 
 
 # ===============================
@@ -213,13 +404,11 @@ def get_gamehub_games():
             # Add user-specific data
             game_data['is_unlocked'] = user.level >= game_data['unlock_level']
             game_data['progress'] = user_game.progress if user_game else 0
-            game_data['is_completed'] = user_game.is_completed(
-            ) if user_game else False
+            game_data['is_completed'] = user_game.is_completed() if user_game else False
             game_data['personal_best'] = user_game.personal_best if user_game else 0
             game_data['times_played'] = user_game.times_played if user_game else 0
             game_data['is_favorite'] = user_game.is_favorite if user_game else False
-            game_data['last_played'] = user_game.last_played.isoformat(
-            ) if user_game and user_game.last_played else None
+            game_data['last_played'] = user_game.last_played.isoformat() if user_game and user_game.last_played else None
 
         return jsonify({
             'success': True,
@@ -247,21 +436,15 @@ def start_game_session():
         data = request.get_json()
 
         if not data or not data.get('game_id'):
-            return jsonify({
-                'success': False,
-                'message': 'Game ID is required'
-            }), 400
+            return jsonify({'success': False, 'message': 'Game ID is required'}), 400
 
         game_id = data['game_id']
         user = User.query.get(user_id)
 
         if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        # Game unlock levels (matches frontend)
+        # Game unlock levels
         game_unlock_levels = {
             'dance': 1, 'yoga': 1, 'sports': 2, 'ninja': 3,
             'rhythm': 4, 'adventure': 4, 'lightning-ladders': 3,
@@ -282,7 +465,6 @@ def start_game_session():
             game = Game(name=game_id, user_id=user_id, progress=0)
             db.session.add(game)
 
-        # Update last played timestamp
         game.last_played = datetime.utcnow()
         db.session.commit()
 
@@ -299,10 +481,7 @@ def start_game_session():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error starting game: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error starting game: {str(e)}'}), 500
 
 
 @api.route('/gamehub/complete-game', methods=['POST'])
@@ -327,10 +506,7 @@ def complete_game_session():
 
         user = User.query.get(user_id)
         if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
         # Get or create game record
         game = Game.query.filter_by(name=game_id, user_id=user_id).first()
@@ -391,10 +567,7 @@ def complete_game_session():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error completing game: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error completing game: {str(e)}'}), 500
 
 
 @api.route('/gamehub/favorites', methods=['POST'])
@@ -406,10 +579,7 @@ def toggle_favorite_game():
         data = request.get_json()
 
         if not data or not data.get('game_id'):
-            return jsonify({
-                'success': False,
-                'message': 'Game ID is required'
-            }), 400
+            return jsonify({'success': False, 'message': 'Game ID is required'}), 400
 
         game_id = data['game_id']
 
@@ -432,10 +602,7 @@ def toggle_favorite_game():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error updating favorites: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error updating favorites: {str(e)}'}), 500
 
 
 @api.route('/gamehub/stats', methods=['GET'])
@@ -447,18 +614,14 @@ def get_gamehub_stats():
         user = User.query.get(user_id)
 
         if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
         # Get user's game statistics
         user_games = Game.query.filter_by(user_id=user_id).all()
         total_games_played = len(user_games)
         completed_games = len([g for g in user_games if g.progress >= 100])
         total_playtime = sum(game.total_time for game in user_games)
-        avg_progress = sum(game.progress for game in user_games) / \
-            len(user_games) if user_games else 0
+        avg_progress = sum(game.progress for game in user_games) / len(user_games) if user_games else 0
 
         return jsonify({
             'success': True,
@@ -475,10 +638,7 @@ def get_gamehub_stats():
         }), 200
 
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching stats: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error fetching stats: {str(e)}'}), 500
 
 
 # ===============================
@@ -491,22 +651,17 @@ def get_user_inventory():
     """Get all inventory items owned by the authenticated user"""
     try:
         user_id = get_jwt_identity()
-
-        # Optional query parameters
         category = request.args.get('category')
         equipped_only = request.args.get('equipped', type=bool)
 
-        # Build query
-        query = UserInventory.query.filter_by(
-            user_id=user_id).join(InventoryItem)
+        query = UserInventory.query.filter_by(user_id=user_id).join(InventoryItem)
 
         if category:
             query = query.filter(InventoryItem.category == category)
         if equipped_only:
             query = query.filter(UserInventory.is_equipped == True)
 
-        inventory_items = query.order_by(
-            UserInventory.acquired_at.desc()).all()
+        inventory_items = query.order_by(UserInventory.acquired_at.desc()).all()
 
         return jsonify({
             'success': True,
@@ -515,10 +670,7 @@ def get_user_inventory():
         }), 200
 
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching inventory: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error fetching inventory: {str(e)}'}), 500
 
 
 @api.route('/inventory/available', methods=['GET'])
@@ -530,20 +682,11 @@ def get_available_items():
         user = User.query.get(user_id)
 
         if not user:
-            return jsonify({
-                'success': False,
-                'message': 'User not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        # Get all available items
-        available_items = InventoryItem.query.filter_by(
-            is_active=True, is_unlockable=True).all()
+        available_items = InventoryItem.query.filter_by(is_active=True, is_unlockable=True).all()
+        owned_item_ids = [inv.item_id for inv in UserInventory.query.filter_by(user_id=user_id).all()]
 
-        # Get user's owned items
-        owned_item_ids = [
-            inv.item_id for inv in UserInventory.query.filter_by(user_id=user_id).all()]
-
-        # Categorize items
         result = {'owned': [], 'affordable': [], 'locked': []}
 
         for item in available_items:
@@ -570,10 +713,7 @@ def get_available_items():
         }), 200
 
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching available items: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error fetching available items: {str(e)}'}), 500
 
 
 @api.route('/inventory/purchase/<int:item_id>', methods=['POST'])
@@ -586,17 +726,11 @@ def purchase_item(item_id):
         item = InventoryItem.query.get(item_id)
 
         if not user or not item:
-            return jsonify({
-                'success': False,
-                'message': 'User or item not found'
-            }), 404
+            return jsonify({'success': False, 'message': 'User or item not found'}), 404
 
         # Check if user already owns this item
         if UserInventory.query.filter_by(user_id=user_id, item_id=item_id).first():
-            return jsonify({
-                'success': False,
-                'message': 'Item already owned'
-            }), 409
+            return jsonify({'success': False, 'message': 'Item already owned'}), 409
 
         # Validate requirements
         if user.level < item.level_required:
@@ -627,10 +761,7 @@ def purchase_item(item_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error purchasing item: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error purchasing item: {str(e)}'}), 500
 
 
 # ===============================
@@ -644,10 +775,7 @@ def get_user_achievements():
     try:
         user_id = get_jwt_identity()
 
-        # Get all achievements
         all_achievements = Achievement.query.filter_by(is_active=True).all()
-
-        # Get user's achievement progress
         user_achievements = {
             ua.achievement_id: ua
             for ua in UserAchievement.query.filter_by(user_id=user_id).all()
@@ -659,8 +787,7 @@ def get_user_achievements():
             achievement_data = achievement.serialize()
             achievement_data['user_progress'] = user_progress.progress if user_progress else 0
             achievement_data['is_completed'] = user_progress.is_completed if user_progress else False
-            achievement_data['earned_at'] = user_progress.earned_at.isoformat(
-            ) if user_progress and user_progress.earned_at else None
+            achievement_data['earned_at'] = user_progress.earned_at.isoformat() if user_progress and user_progress.earned_at else None
             result.append(achievement_data)
 
         return jsonify({
@@ -671,7 +798,4 @@ def get_user_achievements():
         }), 200
 
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching achievements: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error fetching achievements: {str(e)}'}), 500

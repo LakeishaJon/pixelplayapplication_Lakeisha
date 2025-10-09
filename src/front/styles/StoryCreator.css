@@ -1,6 +1,6 @@
 .story-creator-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  background-image: linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7);
   display: flex;
   flex-direction: column;
 }

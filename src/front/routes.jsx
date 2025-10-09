@@ -9,6 +9,8 @@ import GameHub from "./components/GameHub";
 import AvatarEditorPage from "./pages/AvatarEditorPage";
 import AvatarInventory from "./pages/AvatarInventory";
 import InventoryPage from "./pages/InventoryPage";
+import HabitTracker from "./pages/HabitTracker";
+import RewardStore from "./pages/RewardStore";
 import StoryCreator from "./pages/StoryCreator";
 import AuthCallback from './pages/AuthCallback';
 
@@ -75,6 +77,22 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "habit-tracker",
+        element: (
+          <ProtectedRoute>
+            <HabitTracker />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "reward-store",
+        element: (
+          <ProtectedRoute>
+            <RewardStore />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "story-creator",
         element: (
           <ProtectedRoute>
@@ -83,8 +101,8 @@ const router = createBrowserRouter([
         ),
       },
       {
-    path: 'auth/callback',
-    element: <AuthCallback />
+        path: 'auth/callback',
+        element: <AuthCallback />
       },
       {
         path: "*",
