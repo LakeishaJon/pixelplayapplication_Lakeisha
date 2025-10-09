@@ -799,3 +799,122 @@ def get_user_achievements():
 
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error fetching achievements: {str(e)}'}), 500
+    
+@api.route('/api/habits/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_user_habits(user_id):
+    """Get user's habit tracker data"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Verify user can only access their own habits
+        if current_user_id != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Get or create habit tracker data
+        from datetime import datetime, date
+        
+        # Check if we have stored habit data (you can store this in a new model or use existing fields)
+        # For now, we'll use a simple approach with User fields
+        # You may want to create a separate HabitTracker model for better organization
+        
+        # Get today's date
+        today = date.today().isoformat()
+        
+        # Check if data needs to be reset (new day)
+        if hasattr(user, 'habit_last_reset') and user.habit_last_reset != today:
+            # Reset daily data but keep streak if all tasks were completed yesterday
+            if hasattr(user, 'habit_completed_tasks') and len(user.habit_completed_tasks or []) == 6:
+                user.habit_streak_days = (user.habit_streak_days or 0) + 1
+            else:
+                user.habit_streak_days = 0
+            
+            user.habit_completed_tasks = []
+            user.habit_daily_points = 0
+            user.habit_game_states = {}
+            user.habit_last_reset = today
+            db.session.commit()
+        
+        return jsonify({
+            'daily_points': getattr(user, 'habit_daily_points', 0),
+            'completed_tasks': getattr(user, 'habit_completed_tasks', []),
+            'last_reset_date': getattr(user, 'habit_last_reset', today),
+            'streak_days': getattr(user, 'habit_streak_days', 0),
+            'game_states': getattr(user, 'habit_game_states', {})
+        }), 200
+        
+    except Exception as e:
+        print(f"Error fetching user habits: {e}")
+        return jsonify({'error': 'Failed to fetch habits'}), 500
+
+
+@api.route('/api/habits/<int:user_id>/complete', methods=['POST'])
+@jwt_required()
+def complete_habit_task(user_id):
+    """Complete a habit task and update points/streak"""
+    try:
+        current_user_id = get_jwt_identity()
+        
+        # Verify user can only update their own habits
+        if current_user_id != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        data = request.json
+        routine_id = data.get('routine_id')
+        points_earned = data.get('points_earned', 10)
+        all_completed = data.get('all_completed', False)
+        
+        if not routine_id:
+            return jsonify({'error': 'routine_id is required'}), 400
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Initialize fields if they don't exist
+        if not hasattr(user, 'habit_completed_tasks') or user.habit_completed_tasks is None:
+            user.habit_completed_tasks = []
+        if not hasattr(user, 'habit_daily_points') or user.habit_daily_points is None:
+            user.habit_daily_points = 0
+        if not hasattr(user, 'habit_streak_days') or user.habit_streak_days is None:
+            user.habit_streak_days = 0
+        
+        # Check if already completed
+        completed_tasks = user.habit_completed_tasks or []
+        if routine_id in completed_tasks:
+            return jsonify({'error': 'Task already completed'}), 400
+        
+        # Update completed tasks
+        completed_tasks.append(routine_id)
+        user.habit_completed_tasks = completed_tasks
+        
+        # Update points
+        user.habit_daily_points = (user.habit_daily_points or 0) + points_earned
+        
+        # Update total user XP as well
+        user.add_xp(points_earned)
+        
+        # If all tasks completed, update streak
+        if all_completed:
+            # Streak will be updated on next day's reset
+            # This ensures streak counts full days, not partial completions
+            pass
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'daily_points': user.habit_daily_points,
+            'completed_tasks': user.habit_completed_tasks,
+            'streak_days': user.habit_streak_days,
+            'total_xp': user.xp
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error completing habit task: {e}")
+        return jsonify({'error': 'Failed to complete task'}), 500

@@ -67,17 +67,17 @@ const PixelPlayGameHub = () => {
     const [showVoiceSettings, setShowVoiceSettings] = useState(false);
 
     // User state
-   const [user, setUser] = useState(null);
-   const [userStats, setUserStats] = useState({
-    level: 1,
-    xp: 0,
-    totalGamesPlayed: 0,
-    weeklyStreak: 0,
-    unlockedGames: ['dance', 'yoga', 'memory-match'],
-    completedGames: [],
-    favoriteGames: []
+    const [user, setUser] = useState(null);
+    const [userStats, setUserStats] = useState({
+        level: 1,
+        xp: 0,
+        totalGamesPlayed: 0,
+        weeklyStreak: 0,
+        unlockedGames: ['dance', 'yoga', 'memory-match'],
+        completedGames: [],
+        favoriteGames: []
     });
-   const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
 
     // Refs
     const currentAudioRef = useRef(null);
@@ -624,7 +624,7 @@ const PixelPlayGameHub = () => {
         }
     };
 
-    const handleExerciseComplete = () => {
+    const handleExerciseComplete = async () => {
         if (!selectedGame || !selectedGame.exercises) return;
         setScore(prev => prev + 10);
         setStreakCount(prev => prev + 1);
@@ -634,7 +634,7 @@ const PixelPlayGameHub = () => {
         } else {
             stopBackgroundMusic();
             setGameState('completed');
-             // Update user stats
+            // Update user stats
             const xpEarned = selectedGame.xpReward + (streakCount * 5);
             await updateUserStats(selectedGame.id, xpEarned);
         }
@@ -765,106 +765,106 @@ const PixelPlayGameHub = () => {
     });
 
     // Load authenticated user data
-useEffect(() => {
-    const loadUserData = async () => {
-        try {
-            // Get authenticated user
-            const authUser = getUserData();
-            if (!authUser) {
-                console.error('No authenticated user found');
-                window.location.href = '/login';
-                return;
-            }
-            
-            setUser(authUser);
-
-            // Fetch user stats from backend
-            const response = await fetch(`/api/users/${authUser.id}/stats`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+    useEffect(() => {
+        const loadUserData = async () => {
+            try {
+                // Get authenticated user
+                const authUser = getUserData();
+                if (!authUser) {
+                    console.error('No authenticated user found');
+                    window.location.href = '/login';
+                    return;
                 }
+
+                setUser(authUser);
+
+                // Fetch user stats from backend
+                const response = await fetch(`/api/users/${authUser.id}/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    setUserStats({
+                        level: stats.level || 1,
+                        xp: stats.xp || 0,
+                        totalGamesPlayed: stats.total_games_played || 0,
+                        weeklyStreak: stats.weekly_streak || 0,
+                        unlockedGames: stats.unlocked_games || ['dance', 'yoga', 'memory-match'],
+                        completedGames: stats.completed_games || [],
+                        favoriteGames: stats.favorite_games || []
+                    });
+                } else {
+                    console.error('Failed to fetch user stats');
+                    // Use default stats
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadUserData();
+    }, []);
+
+    // Update user stats after completing a game
+    const updateUserStats = async (gameId, xpEarned) => {
+        if (!user) return;
+
+        try {
+            const response = await fetch(`/api/users/${user.id}/stats`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify({
+                    game_id: gameId,
+                    xp_earned: xpEarned,
+                    completed: true
+                })
             });
 
             if (response.ok) {
-                const stats = await response.json();
+                const updatedStats = await response.json();
                 setUserStats({
-                    level: stats.level || 1,
-                    xp: stats.xp || 0,
-                    totalGamesPlayed: stats.total_games_played || 0,
-                    weeklyStreak: stats.weekly_streak || 0,
-                    unlockedGames: stats.unlocked_games || ['dance', 'yoga', 'memory-match'],
-                    completedGames: stats.completed_games || [],
-                    favoriteGames: stats.favorite_games || []
+                    level: updatedStats.level,
+                    xp: updatedStats.xp,
+                    totalGamesPlayed: updatedStats.total_games_played,
+                    weeklyStreak: updatedStats.weekly_streak,
+                    completedGames: updatedStats.completed_games,
+                    unlockedGames: updatedStats.unlocked_games,
+                    favoriteGames: updatedStats.favorite_games || []
                 });
-            } else {
-                console.error('Failed to fetch user stats');
-                // Use default stats
             }
         } catch (error) {
-            console.error('Error loading user data:', error);
-        } finally {
-            setLoading(false);
+            console.error('Error updating stats:', error);
         }
-    };
-
-    loadUserData();
-}, []);
-
-// Update user stats after completing a game
-const updateUserStats = async (gameId, xpEarned) => {
-    if (!user) return;
-    
-    try {
-        const response = await fetch(`/api/users/${user.id}/stats`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-            },
-            body: JSON.stringify({
-                game_id: gameId,
-                xp_earned: xpEarned,
-                completed: true
-            })
-        });
-
-        if (response.ok) {
-            const updatedStats = await response.json();
-            setUserStats({
-                level: updatedStats.level,
-                xp: updatedStats.xp,
-                totalGamesPlayed: updatedStats.total_games_played,
-                weeklyStreak: updatedStats.weekly_streak,
-                completedGames: updatedStats.completed_games,
-                unlockedGames: updatedStats.unlocked_games,
-                favoriteGames: updatedStats.favorite_games || []
-            });
-        }
-    } catch (error) {
-        console.error('Error updating stats:', error);
-    }
     };
 
     // Loading state
-if (loading) {
-    return (
-        <div style={{
-            minHeight: '100vh',
-            background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '1.5rem',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-        }}>
-            <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎮</div>
-                <div>Loading your game data...</div>
+    if (loading) {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7);',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '1.5rem',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            }}>
+                <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎮</div>
+                    <div>Loading your game data...</div>
+                </div>
             </div>
-        </div>
-    );
-}
+        );
+    }
 
     // ===== RENDER VIEWS =====
 
@@ -872,7 +872,7 @@ if (loading) {
         return (
             <div style={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
+                background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7);',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             }}>
                 {/* Navigation Bar */}
@@ -1447,7 +1447,7 @@ if (loading) {
         return (
             <div style={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7);',
                 padding: '20px',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             }}>
@@ -1563,7 +1563,7 @@ if (loading) {
         return (
             <div style={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7);',
                 padding: '20px',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
             }}>
@@ -1695,7 +1695,7 @@ if (loading) {
         return (
             <div style={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
+                background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7);',
                 color: 'white',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 padding: '1rem'
@@ -1846,7 +1846,7 @@ if (loading) {
         return (
             <div style={{
                 minHeight: '100vh',
-                background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
+                background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7);',
                 color: 'white',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 padding: '1rem',
@@ -1884,7 +1884,7 @@ if (loading) {
                             <Star style={{ color: '#fbbf24', width: '2rem', height: '2rem' }} />
                             <div>
                                 <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
-                                    +{userStats.selectedGame.xpReward + (streakCount * 5)} XP
+                                    +{selectedGame.xpReward + (streakCount * 5)} XP
                                 </div>
                                 <div style={{ fontSize: '0.9rem', opacity: '0.8' }}>Experience Gained</div>
                             </div>

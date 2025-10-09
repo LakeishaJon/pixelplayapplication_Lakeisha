@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ ADDED THIS
-import '../styles/HabitTracker.css';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Home, LayoutDashboard } from 'lucide-react';
+import { getUserData } from '../utils/auth'; // Import auth utility
 
 const HabitTracker = () => {
-  const navigate = useNavigate(); // ✅ ADDED THIS
+  const navigate = useNavigate();
+  
+  // User state
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   const [gameData, setGameData] = useState({
     dailyPoints: 0,
@@ -18,7 +23,6 @@ const HabitTracker = () => {
   const [memoryGame, setMemoryGame] = useState({});
   const [timeUntilReset, setTimeUntilReset] = useState('');
 
-  // ✅ ADDED: Navigation handler
   const handleNavigation = (path) => {
     console.log('Navigating to:', path);
     try {
@@ -134,54 +138,88 @@ const HabitTracker = () => {
     }
   ];
 
+  // Load authenticated user and their habit data
   useEffect(() => {
-    initApp();
+    loadUserData();
     const interval = setInterval(updateTimeUntilMidnight, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    if (gameData.lastResetDate) {
-      checkForDailyReset();
+  const loadUserData = async () => {
+    try {
+      // Get authenticated user
+      const authUser = getUserData();
+      if (!authUser) {
+        console.error('No authenticated user found');
+        navigate('/login');
+        return;
+      }
+      
+      setUser(authUser);
+
+      // ✅ TEMPORARY: Load from localStorage
+      const savedData = localStorage.getItem(`habitTracker_${authUser.id}`);
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        setGameData({
+          dailyPoints: data.dailyPoints || 0,
+          completedTasks: data.completedTasks || [],
+          lastResetDate: data.lastResetDate || getCurrentDateString(),
+          streakDays: data.streakDays || 0,
+          gameStates: data.gameStates || {}
+        });
+      } else {
+        // Initialize with default data
+        const currentDate = getCurrentDateString();
+        setGameData(prev => ({
+          ...prev,
+          lastResetDate: currentDate
+        }));
+      }
+
+      /* 🔧 UNCOMMENT THIS AFTER ADDING BACKEND ROUTES:
+      
+      // Fetch user's habit tracker data from backend
+      const response = await fetch(`/api/habits/${authUser.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGameData({
+          dailyPoints: data.daily_points || 0,
+          completedTasks: data.completed_tasks || [],
+          lastResetDate: data.last_reset_date || getCurrentDateString(),
+          streakDays: data.streak_days || 0,
+          gameStates: data.game_states || {}
+        });
+      } else {
+        // Initialize with default data
+        const currentDate = getCurrentDateString();
+        setGameData(prev => ({
+          ...prev,
+          lastResetDate: currentDate
+        }));
+      }
+      
+      */ // End of backend code - uncomment after setup
+      
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+    
+    updateTimeUntilMidnight();
+  };
 
   const getCurrentDateString = () => {
     const now = new Date();
     return now.getFullYear() + '-' +
       String(now.getMonth() + 1).padStart(2, '0') + '-' +
       String(now.getDate()).padStart(2, '0');
-  };
-
-  const initApp = () => {
-    const currentDate = getCurrentDateString();
-    setGameData(prev => {
-      if (!prev.lastResetDate) {
-        return { ...prev, lastResetDate: currentDate };
-      }
-      return prev;
-    });
-    updateTimeUntilMidnight();
-  };
-
-  const checkForDailyReset = () => {
-    const currentDate = getCurrentDateString();
-    if (gameData.lastResetDate && gameData.lastResetDate !== currentDate) {
-      setGameData(prev => {
-        const allTasksCompleted = prev.completedTasks.length === routines.length;
-        return {
-          ...prev,
-          streakDays: allTasksCompleted ? prev.streakDays + 1 : 0,
-          completedTasks: [],
-          dailyPoints: 0,
-          gameStates: {},
-          lastResetDate: currentDate
-        };
-      });
-      setSequenceProgress({});
-      setActiveTimers({});
-      setMemoryGame({});
-    }
   };
 
   const updateTimeUntilMidnight = () => {
@@ -204,26 +242,100 @@ const HabitTracker = () => {
     }));
   };
 
-  const completeTask = (routineId) => {
-    if (gameData.completedTasks.includes(routineId)) return;
-    const isGameCompleted = gameData.gameStates[routineId]?.completed;
-    if (!isGameCompleted) {
-      alert('Complete the activity first! 🎮');
+  const completeTask = async (routineId) => {
+    if (!user) {
+      alert('Please log in to save your progress!');
       return;
     }
 
-    setGameData(prev => {
-      const newCompletedTasks = [...prev.completedTasks, routineId];
-      const newDailyPoints = prev.dailyPoints + 10;
-      if (newCompletedTasks.length === routines.length) {
-        setTimeout(() => alert('🎉 All tasks completed! 🎉'), 500);
-      }
-      return {
-        ...prev,
+    if (gameData.completedTasks.includes(routineId)) return;
+    
+    // ✅ UNLOCKED: No game completion required!
+    // Users can complete tasks directly
+
+    const newCompletedTasks = [...gameData.completedTasks, routineId];
+    const newDailyPoints = gameData.dailyPoints + 10;
+    const allTasksCompleted = newCompletedTasks.length === routines.length;
+
+    // Update local state immediately for instant UI feedback
+    setGameData(prev => ({
+      ...prev,
+      completedTasks: newCompletedTasks,
+      dailyPoints: newDailyPoints
+    }));
+
+    // ✅ TEMPORARY: Working without backend
+    // Remove this section and uncomment backend code below after setting up API
+    
+    // Save to localStorage for now
+    try {
+      const savedData = {
+        dailyPoints: newDailyPoints,
         completedTasks: newCompletedTasks,
-        dailyPoints: newDailyPoints
+        streakDays: gameData.streakDays,
+        lastResetDate: gameData.lastResetDate
       };
-    });
+      localStorage.setItem(`habitTracker_${user.id}`, JSON.stringify(savedData));
+      
+      if (allTasksCompleted) {
+        setTimeout(() => alert('🎉 All tasks completed! Great job! 🎉'), 500);
+      }
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+    }
+
+    /* 🔧 UNCOMMENT THIS AFTER ADDING BACKEND ROUTES:
+    
+    // Save to backend
+    try {
+      const response = await fetch(`/api/habits/${user.id}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({
+          routine_id: routineId,
+          points_earned: 10,
+          all_completed: allTasksCompleted
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Update with confirmed data from backend
+        setGameData(prev => ({
+          ...prev,
+          dailyPoints: data.daily_points,
+          completedTasks: data.completed_tasks,
+          streakDays: data.streak_days
+        }));
+
+        if (allTasksCompleted) {
+          setTimeout(() => alert('🎉 All tasks completed! You earned a streak day! 🎉'), 500);
+        }
+      } else {
+        // Revert on error
+        setGameData(prev => ({
+          ...prev,
+          completedTasks: prev.completedTasks.filter(id => id !== routineId),
+          dailyPoints: prev.dailyPoints - 10
+        }));
+        alert('Failed to save progress. Please try again!');
+      }
+    } catch (error) {
+      console.error('Error completing task:', error);
+      // Revert on error
+      setGameData(prev => ({
+        ...prev,
+        completedTasks: prev.completedTasks.filter(id => id !== routineId),
+        dailyPoints: prev.dailyPoints - 10
+      }));
+      alert('Failed to save progress. Please try again!');
+    }
+    
+    */ // End of backend code - uncomment after setup
   };
 
   const showQuote = (routineId) => {
@@ -401,15 +513,15 @@ const HabitTracker = () => {
         const timerActive = activeTimers[routine.id];
         return (
           <div className="game-area">
-            <div className="timer-display">
-              {timerActive ? formatTime(timerActive) : '2:00'}
+            <div className={`timer-display ${!timerActive && gameData.gameStates[routine.id]?.completed ? 'complete' : ''}`}>
+              {timerActive ? formatTime(timerActive) : gameData.gameStates[routine.id]?.completed ? '✅ Complete!' : '2:00'}
             </div>
             <button
               className="game-button"
               onClick={() => startTimer(routine.id)}
               disabled={timerActive || gameData.gameStates[routine.id]?.completed}
             >
-              {timerActive ? 'Brushing...' : 'Start Timer'}
+              {timerActive ? 'Brushing...' : gameData.gameStates[routine.id]?.completed ? 'Done!' : 'Start Timer'}
             </button>
           </div>
         );
@@ -508,132 +620,364 @@ const HabitTracker = () => {
     return Math.round((completed / total) * 100);
   };
 
-  return (
-    <div className="container">
-      {/* ✅ FIXED: Navigation Bar with working buttons */}
+  if (loading) {
+    return (
       <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '15px 30px',
-        marginBottom: '20px'
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1.5rem',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}>
-        <div 
-          style={{
-            color: 'white',
-            fontSize: '24px',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer'
-          }}
-          onClick={() => handleNavigation('/')}
-        >
-          <span>🎮</span>
-          <span>Pixel Play</span>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📋</div>
+          <div>Loading your routines...</div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
+      {/* Navigation Bar - GameHub Style */}
+      <nav style={{
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        padding: '0.75rem 0',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <div style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 2rem'
+        }}>
           <button
             style={{
-              background: 'white',
-              color: '#a855f7',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 1rem',
+              background: 'rgba(139, 92, 246, 0.1)',
+              color: '#8B5CF6',
               border: 'none',
-              padding: '10px 20px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               fontWeight: '600',
               cursor: 'pointer',
-              fontSize: '14px'
-            }}
-            onClick={() => handleNavigation('/')}
-          >
-            🏠 Home
-          </button>
-          <button
-            style={{
-              background: 'white',
-              color: '#a855f7',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '10px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              fontSize: '14px'
+              fontSize: '0.875rem'
             }}
             onClick={() => handleNavigation('/dashboard')}
           >
-            📊 Dashboard
+            <ArrowLeft size={20} />
+            <span>Back</span>
           </button>
-        </div>
-      </div>
 
-      <div className="header">
-        <h1>🌟 My Routine Tracker 🌟</h1>
-        <p>Complete tasks, play games, and earn points!</p>
-
-        <div className="points-container">
-          <div className="points-display">
-            <h3>Today's Points</h3>
-            <div className="points-number">{gameData.dailyPoints}</div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '1.25rem',
+            fontWeight: '700',
+            color: '#1F2937'
+          }}>
+            <span style={{ fontSize: '1.5rem' }}>📋</span>
+            <span style={{ color: '#8B5CF6' }}>Routine Tracker</span>
           </div>
-          <div className="points-display streak-display">
-            <h3>🔥 Streak</h3>
-            <div className="points-number">{gameData.streakDays}</div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem'
+          }}>
+            <button
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'rgba(139, 92, 246, 0.1)',
+                color: '#8B5CF6',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.875rem'
+              }}
+              onClick={() => handleNavigation('/')}
+            >
+              <Home size={18} />
+              <span>Home</span>
+            </button>
+            <button
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'rgba(139, 92, 246, 0.1)',
+                color: '#8B5CF6',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontSize: '0.875rem'
+              }}
+              onClick={() => handleNavigation('/dashboard')}
+            >
+              <LayoutDashboard size={18} />
+              <span>Dashboard</span>
+            </button>
           </div>
         </div>
+      </nav>
 
-        <div className="time-display">{timeUntilReset}</div>
-      </div>
+      {/* Main Content */}
+      <main style={{
+        maxWidth: '1400px',
+        margin: '0 auto',
+        padding: '2rem'
+      }}>
+        {/* Header Section */}
+        <section style={{ marginBottom: '2rem' }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '24px',
+            padding: '2rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <h1 style={{
+              fontSize: '2.5rem',
+              fontWeight: '800',
+              color: '#1F2937',
+              margin: '0 0 0.5rem 0'
+            }}>🌟 My Routine Tracker 🌟</h1>
+            <p style={{
+              fontSize: '1.125rem',
+              color: '#6B7280',
+              margin: '0 0 1.5rem 0'
+            }}>Complete tasks, play games, and earn points!</p>
 
-      <div className="main-content">
-        <div className="routine-grid">
-          {routines.map(routine => {
-            const isCompleted = gameData.completedTasks.includes(routine.id);
-            const isGameCompleted = gameData.gameStates[routine.id]?.completed;
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '1rem',
+              flexWrap: 'wrap',
+              marginBottom: '1rem'
+            }}>
+              <span style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                color: 'white',
+                borderRadius: '20px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+              }}>
+                ⭐ {gameData.dailyPoints} Points Today
+              </span>
+              <span style={{
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                color: 'white',
+                borderRadius: '20px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+              }}>
+                🔥 {gameData.streakDays} Day Streak
+              </span>
+            </div>
 
-            return (
-              <div
-                key={routine.id}
-                className={`routine-card ${isCompleted ? 'completed' : ''} ${isGameCompleted ? 'game-ready' : ''}`}
-              >
-                <div className="routine-icon">{routine.icon}</div>
-                <div className="routine-title">{routine.title}</div>
-                <div className="routine-description">{routine.description}</div>
-
-                <div className="game-section">
-                  <div className="game-title">{routine.title} Game</div>
-                  {renderGameContent(routine)}
-                </div>
-
-                <button
-                  className={`complete-button ${isCompleted ? 'completed' : ''} ${isGameCompleted && !isCompleted ? 'ready' : ''}`}
-                  onClick={() => completeTask(routine.id)}
-                  disabled={isCompleted}
-                >
-                  {isCompleted ? 'Completed! ✅' :
-                    isGameCompleted ? 'Ready to Complete! 🎯' :
-                      'Complete Task'}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="progress-section">
-          <h2>Daily Progress</h2>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${getProgress()}%` }}>
-              {getProgress()}%
+            <div style={{
+              fontSize: '0.875rem',
+              color: '#9CA3AF',
+              fontWeight: '500'
+            }}>
+              {timeUntilReset}
             </div>
           </div>
-          <p>
-            {gameData.completedTasks.length === 0 ? "Let's start your daily routine! 🌟" :
-              gameData.completedTasks.length < routines.length ?
-                `${routines.length - gameData.completedTasks.length} more to go! 💪` :
-                `🎉 Perfect! You earned ${gameData.dailyPoints} points! 🎉`}
-          </p>
-        </div>
-      </div>
+        </section>
+
+        {/* Routine Cards Grid */}
+        <section style={{ marginBottom: '2rem' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+            gap: '1.5rem'
+          }}>
+            {routines.map(routine => {
+              const isCompleted = gameData.completedTasks.includes(routine.id);
+
+              return (
+                <div
+                  key={routine.id}
+                  style={{
+                    position: 'relative',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    borderRadius: '20px',
+                    border: isCompleted ? '2px solid #10B981' : '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{routine.icon}</div>
+                    <h3 style={{
+                      fontSize: '1.5rem',
+                      fontWeight: '700',
+                      color: '#1F2937',
+                      margin: '0 0 0.75rem 0'
+                    }}>{routine.title}</h3>
+                    <p style={{
+                      color: '#6B7280',
+                      margin: '0 0 1.5rem 0',
+                      lineHeight: '1.5',
+                      fontSize: '0.9rem'
+                    }}>{routine.description}</p>
+
+                    <div style={{
+                      background: '#F9FAFB',
+                      borderRadius: '15px',
+                      padding: '1rem',
+                      marginBottom: '1rem',
+                      border: '2px solid #E5E7EB'
+                    }}>
+                      <div style={{ 
+                        fontSize: '0.875rem', 
+                        color: '#6B7280', 
+                        textAlign: 'center',
+                        fontWeight: '600',
+                        marginBottom: '0.5rem'
+                      }}>
+                        Optional Activity
+                      </div>
+                      {renderGameContent(routine)}
+                    </div>
+
+                    <button
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '16px',
+                        fontWeight: '700',
+                        fontSize: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        border: 'none',
+                        cursor: isCompleted ? 'not-allowed' : 'pointer',
+                        background: isCompleted
+                          ? 'linear-gradient(135deg, #10B981, #059669)'
+                          : 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                        color: 'white',
+                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                        opacity: isCompleted ? 0.8 : 1
+                      }}
+                      onClick={() => completeTask(routine.id)}
+                      disabled={isCompleted}
+                    >
+                      {isCompleted ? '✅ Completed!' : '✨ Complete Task!'}
+                    </button>
+                  </div>
+
+                  {isCompleted && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '1rem',
+                      right: '1rem',
+                      width: '2.5rem',
+                      height: '2.5rem',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      background: '#10B981',
+                      fontSize: '1.25rem'
+                    }}>
+                      ✓
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Progress Section */}
+        <section>
+          <div style={{
+            background: 'linear-gradient(135deg, #a855f7, #E32BED, #fb923c)',
+            borderRadius: '24px',
+            padding: '2rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <h2 style={{
+              fontSize: '2rem',
+              fontWeight: '800',
+              color: '#1F2937',
+              margin: '0 0 1.5rem 0'
+            }}>Daily Progress</h2>
+
+            <div style={{
+              background: '#F3F4F6',
+              borderRadius: '15px',
+              height: '35px',
+              margin: '0 0 1.5rem 0',
+              overflow: 'hidden',
+              position: 'relative',
+              border: '2px solid #E5E7EB'
+            }}>
+              <div style={{
+                background: 'linear-gradient(90deg, #8B5CF6, #EC4899)',
+                height: '100%',
+                borderRadius: '13px',
+                transition: 'width 0.5s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '800',
+                color: 'white',
+                width: `${getProgress()}%`,
+                minWidth: getProgress() > 0 ? '40px' : '0',
+                boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
+              }}>
+                {getProgress()}%
+              </div>
+            </div>
+
+            <p style={{
+              fontSize: '1.125rem',
+              color: '#6B7280',
+              fontWeight: '600',
+              margin: 0
+            }}>
+              {gameData.completedTasks.length === 0 ? "Let's start your daily routine! 🌟" :
+                gameData.completedTasks.length < routines.length ?
+                  `${routines.length - gameData.completedTasks.length} more to go! 💪` :
+                  `🎉 Perfect! You earned ${gameData.dailyPoints} points! 🎉`}
+            </p>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

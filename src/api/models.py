@@ -5,6 +5,7 @@ Includes User, Task, Game, Inventory, and Achievement systems.
 """
 
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import JSON
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -42,6 +43,14 @@ class User(db.Model):
     avatar_theme = db.Column(
         db.String(50), default="superhero", nullable=False)
     avatar_mood = db.Column(db.String(20), default="happy", nullable=False)
+
+    # Habit Tracker fields
+    habit_daily_points = db.Column(db.Integer, default=0)
+    habit_completed_tasks = db.Column(
+        JSON, default=list)  # List of routine IDs
+    habit_last_reset = db.Column(db.String(10))  # Date string 'YYYY-MM-DD'
+    habit_streak_days = db.Column(db.Integer, default=0)
+    habit_game_states = db.Column(JSON, default=dict)  # Store game states
 
     # Gaming stats
     total_playtime = db.Column(
@@ -513,37 +522,42 @@ class UserAchievement(db.Model):
 # Add these TWO new models to your EXISTING src/models.py file
 # Add them at the end, before the closing of the file
 
+
 class UserGameStats(db.Model):
     """
     User game statistics model for tracking game progress and achievements.
     Linked to GameHub for personalized gaming experience.
     """
     __tablename__ = 'user_game_stats'
-    
+
     # Primary key
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # Foreign key to User
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
+
     # Game statistics
     level = db.Column(db.Integer, default=1, nullable=False)
     xp = db.Column(db.Integer, default=0, nullable=False)
     total_games_played = db.Column(db.Integer, default=0, nullable=False)
     weekly_streak = db.Column(db.Integer, default=0, nullable=False)
-    
+
     # Game data stored as JSON
-    unlocked_games = db.Column(db.JSON, default=['dance', 'yoga', 'memory-match'], nullable=False)
+    unlocked_games = db.Column(
+        db.JSON, default=['dance', 'yoga', 'memory-match'], nullable=False)
     completed_games = db.Column(db.JSON, default=[], nullable=False)
     favorite_games = db.Column(db.JSON, default=[], nullable=False)
-    
+
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+    created_at = db.Column(
+        db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
+                           onupdate=datetime.utcnow, nullable=False)
+
     # Relationship
-    user = db.relationship('User', backref=db.backref('game_stats_data', uselist=False))
-    
+    user = db.relationship('User', backref=db.backref(
+        'game_stats_data', uselist=False))
+
     def __init__(self, user_id):
         self.user_id = user_id
         self.level = 1
@@ -555,7 +569,7 @@ class UserGameStats(db.Model):
         self.favorite_games = []
         self.created_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
-    
+
     def serialize(self):
         """Convert to dictionary for JSON responses"""
         return {
@@ -571,18 +585,18 @@ class UserGameStats(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
-    
+
     def add_xp(self, amount):
         """Add XP and check for level up"""
         self.xp += amount
         old_level = self.level
         new_level = (self.xp // 100) + 1  # Level up every 100 XP
-        
+
         if new_level > old_level:
             self.level = new_level
             return True  # Level up occurred
         return False
-    
+
     def unlock_game(self, game_id):
         """Unlock a new game"""
         if game_id not in self.unlocked_games:
@@ -591,7 +605,7 @@ class UserGameStats(db.Model):
             self.unlocked_games = unlocked
             return True
         return False
-    
+
     def complete_game(self, game_id):
         """Mark a game as completed"""
         if game_id not in self.completed_games:
@@ -600,7 +614,7 @@ class UserGameStats(db.Model):
             self.completed_games = completed
             return True
         return False
-    
+
     def toggle_favorite(self, game_id):
         """Toggle favorite status for a game"""
         favorites = self.favorite_games or []
@@ -610,7 +624,7 @@ class UserGameStats(db.Model):
             favorites.append(game_id)
         self.favorite_games = favorites
         return game_id in favorites
-    
+
     def __repr__(self):
         return f'<UserGameStats user_id={self.user_id} level={self.level}>'
 
@@ -621,26 +635,27 @@ class GameSession(db.Model):
     Used for calculating streaks and analyzing play patterns.
     """
     __tablename__ = 'game_sessions'
-    
+
     # Primary key
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # Foreign key to User
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
+
     # Session details
     game_id = db.Column(db.String(50), nullable=False)
     xp_earned = db.Column(db.Integer, default=0, nullable=False)
     score = db.Column(db.Integer, default=0, nullable=False)
     duration_minutes = db.Column(db.Integer, default=0, nullable=False)
     completed = db.Column(db.Boolean, default=False, nullable=False)
-    
+
     # Timestamp
     played_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    
+
     # Relationship
-    user = db.relationship('User', backref=db.backref('game_sessions_data', lazy=True))
-    
+    user = db.relationship('User', backref=db.backref(
+        'game_sessions_data', lazy=True))
+
     def __init__(self, user_id, game_id, xp_earned=0, score=0, duration_minutes=0, completed=False):
         self.user_id = user_id
         self.game_id = game_id
@@ -649,7 +664,7 @@ class GameSession(db.Model):
         self.duration_minutes = duration_minutes
         self.completed = completed
         self.played_at = datetime.utcnow()
-    
+
     def serialize(self):
         """Convert to dictionary for JSON responses"""
         return {
@@ -662,6 +677,6 @@ class GameSession(db.Model):
             'completed': self.completed,
             'played_at': self.played_at.isoformat() if self.played_at else None
         }
-    
+
     def __repr__(self):
         return f'<GameSession user_id={self.user_id} game_id={self.game_id}>'
