@@ -5,9 +5,9 @@ import '../styles/Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  
-const user = getUserData();
-<span>Welcome, {user?.name}!</span>
+
+  const user = getUserData();
+  <span>Welcome, {user?.name}!</span>
 
   const [userStats, setUserStats] = useState({
     level: 1,
@@ -255,28 +255,59 @@ const user = getUserData();
         </section>
 
         {/* Progress Section */}
-        <section className="progress-section">
-          <h2 className="section-title">Your Progress</h2>
-          <div className="progress-card">
+        <section className="progress-section" style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}>
+          <div
+            className="progress-card"
+            style={{
+              background: 'linear-gradient(135deg, #a855f7, #E32BED, #fb923c)',
+              borderRadius: '24px',
+              padding: '2rem',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
+              color: '#fff',
+              width: '100%',
+              maxWidth: '800px',
+            }}
+          >
+            <h2 className="section-title" style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: '700' }}>
+              Your Progress
+            </h2>
+
             <div className="progress-info">
-              <div className="progress-level">
+              <div className="progress-level" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', marginBottom: '1rem' }}>
                 <span>Level {userStats.level}</span>
                 <span>{userStats.points} XP</span>
               </div>
-              <div className="progress-bar-container">
-                <div className="progress-bar">
+
+              <div className="progress-bar-container" style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '10px', height: '12px', overflow: 'hidden', marginBottom: '0.75rem' }}>
+                <div
+                  className="progress-bar"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '10px',
+                  }}
+                >
                   <div
                     className="progress-fill"
-                    style={{ width: `${(userStats.points % 100)}%` }}
+                    style={{
+                      width: `${userStats.points % 100}%`,
+                      background: 'rgba(255, 255, 255, 0.9)',
+                      height: '100%',
+                      transition: 'width 0.5s ease-in-out',
+                    }}
                   ></div>
                 </div>
-                <span className="progress-text">
-                  Next Level: {100 - (userStats.points % 100)} XP to go
-                </span>
               </div>
+
+              <span className="progress-text" style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                Next Level: {100 - (userStats.points % 100)} XP to go
+              </span>
             </div>
           </div>
         </section>
+
 
       </main>
     </div>

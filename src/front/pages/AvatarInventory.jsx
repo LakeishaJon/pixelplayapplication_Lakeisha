@@ -4,7 +4,29 @@ import AvatarDisplay from '../components/AvatarDisplay';
 import '../styles/AvatarInventory.css';
 
 const AvatarInventory = ({ onNavigate }) => {
-  const { savedAvatars, inventory, userStats } = useAvatar();
+  const { savedAvatars, inventory, userStats, setCurrentAvatar } = useAvatar();
+
+  console.log('🎨 AvatarInventory Context Data:', {
+    savedAvatars,
+    inventory,
+    userStats
+  });
+
+  // Handle using an avatar
+  const handleUseAvatar = (avatar) => {
+    console.log('✅ Setting current avatar:', avatar.name);
+    if (setCurrentAvatar) {
+      setCurrentAvatar(avatar.settings);
+      alert(`Now using avatar: ${avatar.name}! 🎨`);
+    }
+  };
+
+  // Handle editing an avatar
+  const handleEditAvatar = (avatar) => {
+    console.log('✏️ Editing avatar:', avatar.name);
+    // Could pass avatar data to editor through context or navigation state
+    onNavigate('editor', avatar);
+  };
 
   return (
     <div className="avatar-inventory-page">
@@ -32,9 +54,9 @@ const AvatarInventory = ({ onNavigate }) => {
         {/* Saved Avatars Section */}
         <div className="saved-avatars-section">
           <div className="section-card">
-            <h2>Saved Avatars</h2>
+            <h2>💼 Saved Avatars</h2>
 
-            {savedAvatars.length === 0 ? (
+            {!savedAvatars || savedAvatars.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">👤</div>
                 <h3>No Saved Avatars Yet</h3>
@@ -43,7 +65,7 @@ const AvatarInventory = ({ onNavigate }) => {
                   className="create-avatar-btn"
                   onClick={() => onNavigate('editor')}
                 >
-                  Create Your First Avatar
+                  ✨ Create Your First Avatar
                 </button>
               </div>
             ) : (
@@ -63,22 +85,24 @@ const AvatarInventory = ({ onNavigate }) => {
                       <p className="avatar-date">
                         Created {new Date(avatar.createdAt).toLocaleDateString()}
                       </p>
+                      {avatar.settings?.style && (
+                        <span className="avatar-style-badge">
+                          {avatar.settings.style}
+                        </span>
+                      )}
                     </div>
                     <div className="avatar-actions">
                       <button
                         className="action-btn use-btn"
-                        onClick={() => {
-                          // Logic to set this as current avatar would go here
-                          console.log('Using avatar:', avatar.name);
-                        }}
+                        onClick={() => handleUseAvatar(avatar)}
                       >
-                        Use Avatar
+                        ✅ Use Avatar
                       </button>
                       <button
                         className="action-btn edit-btn"
-                        onClick={() => onNavigate('editor')}
+                        onClick={() => handleEditAvatar(avatar)}
                       >
-                        Edit
+                        ✏️ Edit
                       </button>
                     </div>
                   </div>
@@ -91,39 +115,47 @@ const AvatarInventory = ({ onNavigate }) => {
         {/* Inventory Items Section */}
         <div className="inventory-items-section">
           <div className="section-card">
-            <h2>Inventory Items</h2>
+            <h2>🎒 Inventory Items</h2>
 
-            {Object.keys(inventory).length === 0 ||
-              Object.values(inventory).every(items => items.length === 0) ? (
+            {!inventory || Object.keys(inventory).length === 0 ||
+              Object.values(inventory).every(items => !items || items.length === 0) ? (
               <div className="empty-state">
                 <div className="empty-icon">📦</div>
                 <h3>No Items Yet</h3>
                 <p>Complete workouts and level up to unlock new items!</p>
+                <button
+                  className="start-workout-btn"
+                  onClick={() => onNavigate('dashboard')}
+                >
+                  💪 Start Working Out
+                </button>
               </div>
             ) : (
               <div className="inventory-grid">
-                {Object.entries(inventory).map(([category, items]) => (
-                  <div key={category} className="category-card">
-                    <div className="category-header">
-                      <h3>{category.charAt(0).toUpperCase() + category.slice(1)}</h3>
-                      <span className="item-count">{items.length} items</span>
-                    </div>
+                {Object.entries(inventory).map(([category, items]) => {
+                  // Skip empty categories
+                  if (!items || items.length === 0) return null;
 
-                    {items.length === 0 ? (
-                      <div className="category-empty">
-                        <p>No {category} items yet</p>
+                  return (
+                    <div key={category} className="category-card">
+                      <div className="category-header">
+                        <h3>
+                          {getCategoryIcon(category)}{' '}
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </h3>
+                        <span className="item-count">{items.length} items</span>
                       </div>
-                    ) : (
+
                       <div className="items-list">
                         {items.map((item, index) => (
-                          <div key={index} className="item-chip">
-                            {item}
+                          <div key={`${category}-${index}`} className="item-chip">
+                            <span className="item-name">{formatItemName(item)}</span>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -132,23 +164,38 @@ const AvatarInventory = ({ onNavigate }) => {
         {/* Stats Section */}
         <div className="stats-section">
           <div className="section-card">
-            <h2>Collection Stats</h2>
+            <h2>📊 Collection Stats</h2>
             <div className="stats-grid">
               <div className="stat-item">
-                <div className="stat-number">{savedAvatars.length}</div>
+                <div className="stat-icon">👤</div>
+                <div className="stat-number">{savedAvatars?.length || 0}</div>
                 <div className="stat-label">Saved Avatars</div>
               </div>
               <div className="stat-item">
+                <div className="stat-icon">📦</div>
                 <div className="stat-number">
-                  {Object.values(inventory).reduce((total, items) => total + items.length, 0)}
+                  {inventory
+                    ? Object.values(inventory).reduce(
+                        (total, items) => total + (items?.length || 0),
+                        0
+                      )
+                    : 0}
                 </div>
                 <div className="stat-label">Total Items</div>
               </div>
               <div className="stat-item">
-                <div className="stat-number">{Object.keys(inventory).length}</div>
+                <div className="stat-icon">🏷️</div>
+                <div className="stat-number">
+                  {inventory
+                    ? Object.keys(inventory).filter(
+                        key => inventory[key] && inventory[key].length > 0
+                      ).length
+                    : 0}
+                </div>
                 <div className="stat-label">Categories</div>
               </div>
               <div className="stat-item">
+                <div className="stat-icon">⭐</div>
                 <div className="stat-number">{userStats?.level || 1}</div>
                 <div className="stat-label">Current Level</div>
               </div>
@@ -174,6 +221,33 @@ const AvatarInventory = ({ onNavigate }) => {
       </div>
     </div>
   );
+};
+
+// Helper function to get category icons
+const getCategoryIcon = (category) => {
+  const iconMap = {
+    'tops': '👕',
+    'clothing': '👕',
+    'accessories': '👑',
+    'hats': '🎩',
+    'glasses': '👓',
+    'hairColor': '💇',
+    'facialHair': '🧔',
+    'clotheColor': '🎨',
+    'backgroundColor': '🌈',
+    'default': '📦'
+  };
+  return iconMap[category] || iconMap.default;
+};
+
+// Helper function to format item names nicely
+const formatItemName = (item) => {
+  if (!item) return 'Unknown Item';
+  
+  return String(item)
+    .replace(/([A-Z])/g, ' $1') // Add spaces before capital letters
+    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+    .trim();
 };
 
 export default AvatarInventory;

@@ -13,7 +13,10 @@ import {
   lorelei
 } from '@dicebear/collection';
 
-// Updated DiceBear avatar styles configuration with working options
+// ============================================
+// 🎨 AVATAR STYLES CONFIGURATION
+// ============================================
+
 export const AVATAR_STYLES = {
   micah: {
     name: 'Friendly Kids',
@@ -166,12 +169,81 @@ export const AVATAR_STYLES = {
     }
   },
 
+  lorelei: {
+    name: 'Lorelei',
+    style: lorelei,
+    description: 'Elegant and artistic character designs',
+    kidFriendly: true,
+    customOptions: {
+      backgroundColor: ['ffd93d', '6bcf7f', 'a8e6cf', 'ff8b94', 'c7ceea'],
+      hair: ['variant01', 'variant02', 'variant03', 'variant04'],
+      eyes: ['variant01', 'variant02', 'variant03']
+    }
   }
+};
 
-// Generate avatar SVG string using local DiceBear library
-export const generateAvatarSVG = (avatarConfig) => {
-  console.log('Generating avatar with config:', avatarConfig);
+// ============================================
+// 🔍 STYLE OPTIONS FUNCTIONS (With Smart Error Handling)
+// ============================================
+
+/**
+ * Get available options for a specific style and category
+ * Returns empty array if category doesn't exist (no errors!)
+ */
+export const getStyleOptions = (styleName, category) => {
+  const style = AVATAR_STYLES[styleName];
   
+  if (!style || !style.customOptions[category]) {
+    console.log(`ℹ️ Note: "${category}" is not available for "${styleName}" style`);
+    return [];
+  }
+  
+  const options = style.customOptions[category];
+  return options || [];
+};
+
+/**
+ * Check if a style supports a specific option category
+ */
+export const hasStyleOption = (styleName, category) => {
+  const options = getStyleOptions(styleName, category);
+  return options.length > 0;
+};
+
+/**
+ * Get all available option categories for a style
+ */
+export const getAvailableCategories = (styleName) => {
+  const style = AVATAR_STYLES[styleName];
+  
+  if (!style) {
+    console.warn(`Style "${styleName}" not found`);
+    return [];
+  }
+  
+  return Object.keys(style.customOptions);
+};
+
+/**
+ * Get all available styles
+ */
+export const getAvailableStyles = () => {
+  return Object.keys(AVATAR_STYLES).map(key => ({
+    id: key,
+    name: AVATAR_STYLES[key].name,
+    description: AVATAR_STYLES[key].description,
+    kidFriendly: AVATAR_STYLES[key].kidFriendly
+  }));
+};
+
+// ============================================
+// 🎨 AVATAR GENERATION
+// ============================================
+
+/**
+ * Generate avatar SVG string from configuration
+ */
+export const generateAvatarSVG = (avatarConfig) => {
   if (!avatarConfig || !avatarConfig.style || !AVATAR_STYLES[avatarConfig.style]) {
     console.warn('Invalid avatar config:', avatarConfig);
     return null;
@@ -180,7 +252,7 @@ export const generateAvatarSVG = (avatarConfig) => {
   try {
     const styleConfig = AVATAR_STYLES[avatarConfig.style];
     
-    // Prepare options object for DiceBear
+    // Prepare options for DiceBear
     const options = {
       seed: avatarConfig.seed || 'default'
     };
@@ -200,13 +272,8 @@ export const generateAvatarSVG = (avatarConfig) => {
       });
     }
     
-    console.log('DiceBear options:', options);
-    
     const avatar = createAvatar(styleConfig.style, options);
-    const svgString = avatar.toString();
-    
-    console.log('Generated SVG length:', svgString.length);
-    return svgString;
+    return avatar.toString();
     
   } catch (error) {
     console.error('Error generating avatar SVG:', error);
@@ -214,36 +281,16 @@ export const generateAvatarSVG = (avatarConfig) => {
   }
 };
 
-// Get available options for a specific style and category
-export const getStyleOptions = (styleName, category) => {
-  console.log(`Getting options for ${styleName} -> ${category}`);
-  
-  const style = AVATAR_STYLES[styleName];
-  if (!style || !style.customOptions[category]) {
-    console.warn(`No options found for ${styleName} -> ${category}`);
-    return [];
-  }
-  
-  const options = style.customOptions[category];
-  console.log(`Found ${options.length} options:`, options);
-  return options;
-};
+// ============================================
+// ⚙️ CONFIGURATION HELPERS
+// ============================================
 
-// Get all available styles
-export const getAvailableStyles = () => {
-  return Object.keys(AVATAR_STYLES).map(key => ({
-    id: key,
-    name: AVATAR_STYLES[key].name,
-    description: AVATAR_STYLES[key].description,
-    kidFriendly: AVATAR_STYLES[key].kidFriendly
-  }));
-};
-
-// Create default avatar configuration for a style
+/**
+ * Create a default avatar configuration with smart defaults
+ */
 export const createDefaultAvatarConfig = (styleName, userId = 'default') => {
-  console.log(`Creating default config for ${styleName} with user ${userId}`);
-  
   const style = AVATAR_STYLES[styleName];
+  
   if (!style) {
     console.error(`Unknown style: ${styleName}`);
     return null;
@@ -341,47 +388,132 @@ export const createDefaultAvatarConfig = (styleName, userId = 'default') => {
     }
   });
 
-  const config = {
+  return {
     style: styleName,
     seed: `${userId}-${styleName}-${Date.now()}`,
     options: defaultOptions
   };
-  
-  console.log('Created default config:', config);
-  return config;
 };
 
-// Update avatar config with new option
+/**
+ * Update a specific option in avatar config
+ */
 export const updateAvatarOption = (currentConfig, category, value) => {
-  console.log(`Updating ${category} to ${value}`);
-  
   if (!validateAvatarConfig(currentConfig)) {
     console.error('Invalid current config for update');
     return currentConfig;
   }
   
-  const updatedConfig = {
+  return {
     ...currentConfig,
     options: {
       ...currentConfig.options,
       [category]: Array.isArray(value) ? value : [value]
     }
   };
-  
-  console.log('Updated config:', updatedConfig);
-  return updatedConfig;
 };
 
-// Validate avatar configuration
+/**
+ * Validate avatar configuration
+ */
 export const validateAvatarConfig = (config) => {
   if (!config || !config.style || !AVATAR_STYLES[config.style]) {
-    console.warn('Invalid avatar config:', config);
     return false;
   }
   return true;
 };
 
-// Legacy function compatibility for existing code
+// ============================================
+// 🎯 THEME CONFIGURATIONS
+// ============================================
+
+/**
+ * Generate theme-based configuration suggestions
+ */
+export const generateThemeConfig = (theme) => {
+  const themes = {
+    fitness: {
+      preferredStyles: ['micah', 'avataaars', 'adventurer'],
+      colors: ['34d399', '3b82f6', 'f59e0b'],
+      clothing: ['hoodie', 'crew', 'blazer']
+    },
+    fun: {
+      preferredStyles: ['bigSmile', 'pixelArt', 'croodles'],
+      colors: ['fb7185', 'fbbf24', 'c084fc'],
+      clothing: ['hoodie', 'overall']
+    },
+    creative: {
+      preferredStyles: ['openPeeps', 'croodles', 'lorelei'],
+      colors: ['a8e6cf', 'ffdfbf', 'c0aede'],
+      clothing: ['blazer', 'sweater']
+    },
+    professional: {
+      preferredStyles: ['personas', 'avataaars', 'miniavs'],
+      colors: ['2196f3', '4caf50', '9c27b0'],
+      clothing: ['blazer', 'shirt']
+    }
+  };
+  
+  return themes[theme] || themes.fitness;
+};
+
+// ============================================
+// 🐛 DEBUG UTILITIES
+// ============================================
+
+/**
+ * Debug avatar generation
+ */
+export const debugAvatarGeneration = (styleName) => {
+  console.group(`🐛 Debug Avatar Generation: ${styleName}`);
+  
+  const config = createDefaultAvatarConfig(styleName, 'debug-user');
+  console.log('Default config:', config);
+  
+  const svg = generateAvatarSVG(config);
+  console.log('Generated SVG:', svg ? '✅ Success' : '❌ Failed');
+  
+  if (svg) {
+    console.log('SVG preview (first 200 chars):', svg.substring(0, 200));
+  }
+  
+  console.groupEnd();
+  return { config, svg };
+};
+
+/**
+ * Get summary of all styles and their options
+ */
+export const getStylesSummary = () => {
+  return Object.keys(AVATAR_STYLES).map(styleName => ({
+    name: styleName,
+    displayName: AVATAR_STYLES[styleName].name,
+    categories: getAvailableCategories(styleName),
+    totalOptions: Object.values(AVATAR_STYLES[styleName].customOptions)
+      .reduce((sum, opts) => sum + opts.length, 0)
+  }));
+};
+
+// ============================================
+// 🔄 BACKWARD COMPATIBILITY ALIASES
+// ============================================
+
+/**
+ * Alias for backward compatibility
+ * Same as createDefaultAvatarConfig
+ */
+export const createDefaultConfig = createDefaultAvatarConfig;
+
+/**
+ * Get available options for a style (alternative name)
+ */
+export const getAvailableOptionsForStyle = (styleName) => {
+  return getAvailableCategories(styleName);
+};
+
+/**
+ * Legacy function for items based on level
+ */
 export const getItemsForLevel = (level) => {
   const baseItems = {
     hair: ['short01', 'long01', 'curly'],
@@ -403,44 +535,4 @@ export const getItemsForLevel = (level) => {
   }
 
   return baseItems;
-};
-
-export const generateThemeConfig = (theme) => {
-  const themes = {
-    fitness: {
-      preferredStyles: ['micah', 'avataaars', 'adventurer'],
-      colors: ['34d399', '3b82f6', 'f59e0b'],
-      clothing: ['hoodie', 'crew', 'blazer']
-    },
-    fun: {
-      preferredStyles: ['bigSmile', 'thumbs', 'pixelArt'],
-      colors: ['fb7185', 'fbbf24', 'c084fc'],
-      clothing: ['hoodie', 'overall']
-    },
-    creative: {
-      preferredStyles: ['openPeeps', 'croodles', 'lorelei'],
-      colors: ['a8e6cf', 'ffdfbf', 'c0aede'],
-      clothing: ['blazer', 'sweater']
-    }
-  };
-
-  return themes[theme] || themes.fitness;
-};
-
-// Debug function to test avatar generation
-export const debugAvatarGeneration = (styleName) => {
-  console.group(`Debug Avatar Generation: ${styleName}`);
-  
-  const config = createDefaultAvatarConfig(styleName, 'debug-user');
-  console.log('Default config:', config);
-  
-  const svg = generateAvatarSVG(config);
-  console.log('Generated SVG:', svg ? 'Success' : 'Failed');
-  
-  if (svg) {
-    console.log('SVG preview (first 200 chars):', svg.substring(0, 200));
-  }
-  
-  console.groupEnd();
-  return { config, svg };
 };

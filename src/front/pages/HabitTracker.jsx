@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Home, LayoutDashboard } from 'lucide-react';
-import { getUserData } from '../utils/auth'; // Import auth utility
+import { getUserData } from '../utils/auth';
 
 const HabitTracker = () => {
   const navigate = useNavigate();
-  
-  // User state
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [gameData, setGameData] = useState({
     dailyPoints: 0,
     completedTasks: [],
@@ -21,7 +20,62 @@ const HabitTracker = () => {
   const [sequenceProgress, setSequenceProgress] = useState({});
   const [activeTimers, setActiveTimers] = useState({});
   const [memoryGame, setMemoryGame] = useState({});
+  const [mathAnswers, setMathAnswers] = useState({});
   const [timeUntilReset, setTimeUntilReset] = useState('');
+
+  // 🎨 Consistent button styles
+  const gameButtonStyle = {
+    width: '100%',
+    padding: '0.75rem 1.5rem',
+    borderRadius: '20px',
+    fontWeight: '700',
+    fontSize: '0.95rem',
+    border: 'none',
+    cursor: 'pointer',
+    background: 'linear-gradient(135deg, #EC4899, #8B5CF6)',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)',
+    transition: 'all 0.3s ease',
+    marginTop: '0.5rem'
+  };
+
+  const gameButtonDisabledStyle = {
+    ...gameButtonStyle,
+    background: '#D1D5DB',
+    cursor: 'not-allowed',
+    boxShadow: 'none',
+    opacity: 0.6
+  };
+
+  const quizOptionStyle = {
+    width: '100%',
+    padding: '0.75rem 1rem',
+    borderRadius: '16px',
+    fontWeight: '600',
+    fontSize: '0.9rem',
+    border: '2px solid #E5E7EB',
+    background: 'white',
+    color: '#1F2937',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    marginTop: '0.5rem',
+    textAlign: 'left'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.75rem 1rem',
+    borderRadius: '16px',
+    fontWeight: '600',
+    fontSize: '1.1rem',
+    border: '2px solid #E5E7EB',
+    background: 'white',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginTop: '0.5rem',
+    marginBottom: '0.5rem',
+    outline: 'none'
+  };
 
   const handleNavigation = (path) => {
     console.log('Navigating to:', path);
@@ -135,10 +189,25 @@ const HabitTracker = () => {
           "Water helps carry nutrients to your cells! 🚚"
         ]
       }
+    },
+    {
+      id: 'tidy-toys',
+      title: 'Tidy Up Toys',
+      icon: '🧸',
+      description: 'Solve a fun math problem about organizing!',
+      gameType: 'math',
+      gameData: {
+        problems: [
+          { question: "If you have 12 toys and put 4 in each box, how many boxes do you need?", answer: 3 },
+          { question: "You have 15 books. You put 5 on each shelf. How many shelves?", answer: 3 },
+          { question: "8 toy cars + 7 toy trucks = ? total vehicles", answer: 15 },
+          { question: "If you clean for 10 minutes and rest for 5, then clean 8 more minutes, how many minutes did you clean total?", answer: 18 },
+          { question: "You have 20 blocks. You use 8 to build a tower. How many blocks are left?", answer: 12 }
+        ]
+      }
     }
   ];
 
-  // Load authenticated user and their habit data
   useEffect(() => {
     loadUserData();
     const interval = setInterval(updateTimeUntilMidnight, 60000);
@@ -147,17 +216,15 @@ const HabitTracker = () => {
 
   const loadUserData = async () => {
     try {
-      // Get authenticated user
       const authUser = getUserData();
       if (!authUser) {
         console.error('No authenticated user found');
         navigate('/login');
         return;
       }
-      
+
       setUser(authUser);
 
-      // ✅ TEMPORARY: Load from localStorage
       const savedData = localStorage.getItem(`habitTracker_${authUser.id}`);
       if (savedData) {
         const data = JSON.parse(savedData);
@@ -169,49 +236,18 @@ const HabitTracker = () => {
           gameStates: data.gameStates || {}
         });
       } else {
-        // Initialize with default data
         const currentDate = getCurrentDateString();
         setGameData(prev => ({
           ...prev,
           lastResetDate: currentDate
         }));
       }
-
-      /* 🔧 UNCOMMENT THIS AFTER ADDING BACKEND ROUTES:
-      
-      // Fetch user's habit tracker data from backend
-      const response = await fetch(`/api/habits/${authUser.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setGameData({
-          dailyPoints: data.daily_points || 0,
-          completedTasks: data.completed_tasks || [],
-          lastResetDate: data.last_reset_date || getCurrentDateString(),
-          streakDays: data.streak_days || 0,
-          gameStates: data.game_states || {}
-        });
-      } else {
-        // Initialize with default data
-        const currentDate = getCurrentDateString();
-        setGameData(prev => ({
-          ...prev,
-          lastResetDate: currentDate
-        }));
-      }
-      
-      */ // End of backend code - uncomment after setup
-      
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
       setLoading(false);
     }
-    
+
     updateTimeUntilMidnight();
   };
 
@@ -249,25 +285,17 @@ const HabitTracker = () => {
     }
 
     if (gameData.completedTasks.includes(routineId)) return;
-    
-    // ✅ UNLOCKED: No game completion required!
-    // Users can complete tasks directly
 
     const newCompletedTasks = [...gameData.completedTasks, routineId];
     const newDailyPoints = gameData.dailyPoints + 10;
     const allTasksCompleted = newCompletedTasks.length === routines.length;
 
-    // Update local state immediately for instant UI feedback
     setGameData(prev => ({
       ...prev,
       completedTasks: newCompletedTasks,
       dailyPoints: newDailyPoints
     }));
 
-    // ✅ TEMPORARY: Working without backend
-    // Remove this section and uncomment backend code below after setting up API
-    
-    // Save to localStorage for now
     try {
       const savedData = {
         dailyPoints: newDailyPoints,
@@ -276,66 +304,13 @@ const HabitTracker = () => {
         lastResetDate: gameData.lastResetDate
       };
       localStorage.setItem(`habitTracker_${user.id}`, JSON.stringify(savedData));
-      
+
       if (allTasksCompleted) {
         setTimeout(() => alert('🎉 All tasks completed! Great job! 🎉'), 500);
       }
     } catch (error) {
       console.error('Error saving to localStorage:', error);
     }
-
-    /* 🔧 UNCOMMENT THIS AFTER ADDING BACKEND ROUTES:
-    
-    // Save to backend
-    try {
-      const response = await fetch(`/api/habits/${user.id}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        },
-        body: JSON.stringify({
-          routine_id: routineId,
-          points_earned: 10,
-          all_completed: allTasksCompleted
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Update with confirmed data from backend
-        setGameData(prev => ({
-          ...prev,
-          dailyPoints: data.daily_points,
-          completedTasks: data.completed_tasks,
-          streakDays: data.streak_days
-        }));
-
-        if (allTasksCompleted) {
-          setTimeout(() => alert('🎉 All tasks completed! You earned a streak day! 🎉'), 500);
-        }
-      } else {
-        // Revert on error
-        setGameData(prev => ({
-          ...prev,
-          completedTasks: prev.completedTasks.filter(id => id !== routineId),
-          dailyPoints: prev.dailyPoints - 10
-        }));
-        alert('Failed to save progress. Please try again!');
-      }
-    } catch (error) {
-      console.error('Error completing task:', error);
-      // Revert on error
-      setGameData(prev => ({
-        ...prev,
-        completedTasks: prev.completedTasks.filter(id => id !== routineId),
-        dailyPoints: prev.dailyPoints - 10
-      }));
-      alert('Failed to save progress. Please try again!');
-    }
-    
-    */ // End of backend code - uncomment after setup
   };
 
   const showQuote = (routineId) => {
@@ -350,11 +325,11 @@ const HabitTracker = () => {
     const routine = routines.find(r => r.id === routineId);
     let timeLeft = routine.gameData.duration;
     setActiveTimers(prev => ({ ...prev, [routineId]: timeLeft }));
-    
+
     const interval = setInterval(() => {
       timeLeft--;
       setActiveTimers(prev => ({ ...prev, [routineId]: timeLeft }));
-      
+
       if (timeLeft <= 0) {
         clearInterval(interval);
         setActiveTimers(prev => {
@@ -487,6 +462,45 @@ const HabitTracker = () => {
     }
   };
 
+  // 🆕 NEW: Math problem handler
+  const checkMathAnswer = (routineId) => {
+    const routine = routines.find(r => r.id === routineId);
+    const currentProblemIndex = gameData.gameStates[routineId]?.currentProblem || 0;
+    const problem = routine.gameData.problems[currentProblemIndex];
+    const userAnswer = parseInt(mathAnswers[routineId] || '');
+
+    if (isNaN(userAnswer)) {
+      alert('Please enter a number! 🔢');
+      return;
+    }
+
+    if (userAnswer === problem.answer) {
+      const nextProblemIndex = currentProblemIndex + 1;
+
+      if (nextProblemIndex >= routine.gameData.problems.length) {
+        alert('🎉 Perfect! You\'re a math star! ⭐');
+        enableTaskCompletion(routineId);
+        setMathAnswers(prev => ({ ...prev, [routineId]: '' }));
+      } else {
+        setGameData(prev => ({
+          ...prev,
+          gameStates: {
+            ...prev.gameStates,
+            [routineId]: {
+              ...prev.gameStates[routineId],
+              currentProblem: nextProblemIndex,
+              score: (prev.gameStates[routineId]?.score || 0) + 1
+            }
+          }
+        }));
+        setMathAnswers(prev => ({ ...prev, [routineId]: '' }));
+        alert('Correct! Next problem... 🎯');
+      }
+    } else {
+      alert(`Not quite! Try again! Hint: The answer is ${problem.answer > userAnswer ? 'bigger' : 'smaller'} 💡`);
+    }
+  };
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -494,17 +508,26 @@ const HabitTracker = () => {
   };
 
   const renderGameContent = (routine) => {
+    const isGameCompleted = gameData.gameStates[routine.id]?.completed;
+
     switch (routine.gameType) {
       case 'quote':
         return (
-          <div className="game-area">
-            <div className="quote-display">Click to get your daily inspiration!</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontSize: '0.9rem',
+              color: '#6B7280',
+              marginBottom: '0.75rem',
+              lineHeight: '1.5'
+            }}>
+              Click to get your daily inspiration!
+            </div>
             <button
-              className="game-button"
+              style={isGameCompleted ? gameButtonDisabledStyle : gameButtonStyle}
               onClick={() => showQuote(routine.id)}
-              disabled={gameData.gameStates[routine.id]?.completed}
+              disabled={isGameCompleted}
             >
-              Get My Quote! ✨
+              {isGameCompleted ? '✅ Quote Received!' : 'Get My Quote! ✨'}
             </button>
           </div>
         );
@@ -512,16 +535,22 @@ const HabitTracker = () => {
       case 'timer':
         const timerActive = activeTimers[routine.id];
         return (
-          <div className="game-area">
-            <div className={`timer-display ${!timerActive && gameData.gameStates[routine.id]?.completed ? 'complete' : ''}`}>
-              {timerActive ? formatTime(timerActive) : gameData.gameStates[routine.id]?.completed ? '✅ Complete!' : '2:00'}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontSize: '2.5rem',
+              fontWeight: '800',
+              color: timerActive ? '#EC4899' : isGameCompleted ? '#10B981' : '#8B5CF6',
+              marginBottom: '0.75rem',
+              fontFamily: 'monospace'
+            }}>
+              {timerActive ? formatTime(timerActive) : isGameCompleted ? '✅ Complete!' : '2:00'}
             </div>
             <button
-              className="game-button"
+              style={timerActive || isGameCompleted ? gameButtonDisabledStyle : gameButtonStyle}
               onClick={() => startTimer(routine.id)}
-              disabled={timerActive || gameData.gameStates[routine.id]?.completed}
+              disabled={timerActive || isGameCompleted}
             >
-              {timerActive ? 'Brushing...' : gameData.gameStates[routine.id]?.completed ? 'Done!' : 'Start Timer'}
+              {timerActive ? 'Brushing... 🪥' : isGameCompleted ? '✅ Done!' : 'Start Timer ⏱️'}
             </button>
           </div>
         );
@@ -530,14 +559,38 @@ const HabitTracker = () => {
         const currentQuestionIndex = gameData.gameStates[routine.id]?.currentQuestion || 0;
         const question = routine.gameData.questions[currentQuestionIndex];
         return (
-          <div className="game-area">
-            <div className="quiz-question">{question.question}</div>
+          <div>
+            <div style={{
+              fontSize: '0.95rem',
+              fontWeight: '600',
+              color: '#1F2937',
+              marginBottom: '0.75rem',
+              lineHeight: '1.5'
+            }}>
+              {question.question}
+            </div>
             {question.options.map((option, index) => (
               <button
                 key={index}
-                className="quiz-option"
+                style={{
+                  ...quizOptionStyle,
+                  opacity: isGameCompleted ? 0.6 : 1,
+                  cursor: isGameCompleted ? 'not-allowed' : 'pointer'
+                }}
                 onClick={() => selectQuizAnswer(routine.id, index)}
-                disabled={gameData.gameStates[routine.id]?.completed}
+                disabled={isGameCompleted}
+                onMouseEnter={(e) => {
+                  if (!isGameCompleted) {
+                    e.target.style.borderColor = '#EC4899';
+                    e.target.style.background = '#FDF2F8';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isGameCompleted) {
+                    e.target.style.borderColor = '#E5E7EB';
+                    e.target.style.background = 'white';
+                  }
+                }}
               >
                 {option}
               </button>
@@ -548,15 +601,38 @@ const HabitTracker = () => {
       case 'sequence':
         const progress = sequenceProgress[routine.id] || 0;
         return (
-          <div className="game-area">
-            <div className="sequence-progress">Step {progress + 1} of {routine.gameData.steps.length}</div>
+          <div>
+            <div style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#8B5CF6',
+              marginBottom: '0.75rem',
+              textAlign: 'center'
+            }}>
+              Step {progress + 1} of {routine.gameData.steps.length}
+            </div>
             {routine.gameData.steps.map((step, index) => (
               <button
                 key={index}
-                className="quiz-option"
+                style={{
+                  ...quizOptionStyle,
+                  opacity: isGameCompleted ? 0.6 : index < progress ? 0.5 : 1,
+                  cursor: isGameCompleted ? 'not-allowed' : 'pointer'
+                }}
                 onClick={() => selectStep(routine.id, index)}
-                disabled={gameData.gameStates[routine.id]?.completed}
-                style={{ opacity: index < progress ? 0.5 : 1 }}
+                disabled={isGameCompleted}
+                onMouseEnter={(e) => {
+                  if (!isGameCompleted) {
+                    e.target.style.borderColor = '#8B5CF6';
+                    e.target.style.background = '#F5F3FF';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isGameCompleted) {
+                    e.target.style.borderColor = '#E5E7EB';
+                    e.target.style.background = 'white';
+                  }
+                }}
               >
                 {step.icon} {step.text}
               </button>
@@ -568,25 +644,61 @@ const HabitTracker = () => {
         const game = memoryGame[routine.id];
         if (!game) {
           return (
-            <div className="game-area">
-              <button className="game-button" onClick={() => initMemoryGame(routine.id)}>
-                Start Memory Game
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#6B7280',
+                marginBottom: '0.75rem'
+              }}>
+                Match all the pairs!
+              </div>
+              <button
+                style={gameButtonStyle}
+                onClick={() => initMemoryGame(routine.id)}
+              >
+                Start Memory Game 🧠
               </button>
             </div>
           );
         }
         return (
-          <div className="game-area">
-            <div className="memory-grid">
+          <div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '0.5rem',
+              marginBottom: '0.75rem'
+            }}>
               {game.cards.map((card, index) => (
                 <button
                   key={index}
-                  className="memory-card"
+                  style={{
+                    aspectRatio: '1',
+                    borderRadius: '12px',
+                    border: '2px solid #E5E7EB',
+                    background: game.matchedCards.includes(index)
+                      ? 'linear-gradient(135deg, #10B981, #059669)'
+                      : 'white',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: game.flippedCards.includes(index) || game.matchedCards.includes(index)
+                      ? '0 4px 8px rgba(0,0,0,0.1)'
+                      : 'none'
+                  }}
                   onClick={() => flipMemoryCard(routine.id, index)}
                 >
                   {game.flippedCards.includes(index) || game.matchedCards.includes(index) ? card : '❓'}
                 </button>
               ))}
+            </div>
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#6B7280',
+              textAlign: 'center',
+              fontWeight: '600'
+            }}>
+              Attempts: {game.attempts}
             </div>
           </div>
         );
@@ -594,23 +706,83 @@ const HabitTracker = () => {
       case 'counter':
         const waterCount = gameData.gameStates[routine.id]?.waterCount || 0;
         return (
-          <div className="game-area">
-            <div className="water-display">
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontSize: '1.5rem',
+              marginBottom: '0.5rem',
+              minHeight: '2rem'
+            }}>
               {'🥤'.repeat(waterCount)}{'⚪'.repeat(routine.gameData.target - waterCount)}
-              <br />{waterCount} / {routine.gameData.target} cups
+            </div>
+            <div style={{
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              color: '#6B7280',
+              marginBottom: '0.75rem'
+            }}>
+              {waterCount} / {routine.gameData.target} cups
             </div>
             <button
-              className="game-button"
+              style={waterCount >= routine.gameData.target ? gameButtonDisabledStyle : gameButtonStyle}
               onClick={() => addWaterGlass(routine.id)}
               disabled={waterCount >= routine.gameData.target}
             >
-              Add Glass 💧
+              {waterCount >= routine.gameData.target ? '✅ Goal Reached!' : 'Add Glass 💧'}
             </button>
           </div>
         );
 
+      // 🆕 NEW: Math game case
+      case 'math':
+        const currentProblemIndex = gameData.gameStates[routine.id]?.currentProblem || 0;
+        const problem = routine.gameData.problems[currentProblemIndex];
+        return (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontSize: '0.95rem',
+              fontWeight: '600',
+              color: '#1F2937',
+              marginBottom: '0.75rem',
+              lineHeight: '1.5'
+            }}>
+              {problem.question}
+            </div>
+            <input
+              type="number"
+              style={{
+                ...inputStyle,
+                borderColor: isGameCompleted ? '#D1D5DB' : '#E5E7EB'
+              }}
+              value={mathAnswers[routine.id] || ''}
+              onChange={(e) => setMathAnswers(prev => ({ ...prev, [routine.id]: e.target.value }))}
+              placeholder="Type your answer..."
+              disabled={isGameCompleted}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !isGameCompleted) {
+                  checkMathAnswer(routine.id);
+                }
+              }}
+            />
+            <button
+              style={isGameCompleted ? gameButtonDisabledStyle : gameButtonStyle}
+              onClick={() => checkMathAnswer(routine.id)}
+              disabled={isGameCompleted}
+            >
+              {isGameCompleted ? '✅ Solved!' : 'Check Answer 🔢'}
+            </button>
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#6B7280',
+              marginTop: '0.5rem',
+              fontWeight: '600'
+            }}>
+              Problem {currentProblemIndex + 1} of {routine.gameData.problems.length}
+            </div>
+          </div>
+        );
+
       default:
-        return <div className="game-area">Fun activity!</div>;
+        return <div style={{ textAlign: 'center', color: '#6B7280' }}>Fun activity!</div>;
     }
   };
 
@@ -646,7 +818,6 @@ const HabitTracker = () => {
       background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      {/* Navigation Bar - GameHub Style */}
       <nav style={{
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
@@ -743,13 +914,11 @@ const HabitTracker = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main style={{
         maxWidth: '1400px',
         margin: '0 auto',
         padding: '2rem'
       }}>
-        {/* Header Section */}
         <section style={{ marginBottom: '2rem' }}>
           <div style={{
             background: 'rgba(255, 255, 255, 0.95)',
@@ -813,7 +982,6 @@ const HabitTracker = () => {
           </div>
         </section>
 
-        {/* Routine Cards Grid */}
         <section style={{ marginBottom: '2rem' }}>
           <div style={{
             display: 'grid',
@@ -857,9 +1025,9 @@ const HabitTracker = () => {
                       marginBottom: '1rem',
                       border: '2px solid #E5E7EB'
                     }}>
-                      <div style={{ 
-                        fontSize: '0.875rem', 
-                        color: '#6B7280', 
+                      <div style={{
+                        fontSize: '0.875rem',
+                        color: '#6B7280',
                         textAlign: 'center',
                         fontWeight: '600',
                         marginBottom: '0.5rem'
@@ -920,7 +1088,6 @@ const HabitTracker = () => {
           </div>
         </section>
 
-        {/* Progress Section */}
         <section>
           <div style={{
             background: 'linear-gradient(135deg, #a855f7, #E32BED, #fb923c)',

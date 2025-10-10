@@ -400,7 +400,7 @@
 }
 
 .progress-card {
-  background: rgba(216, 214, 214, 0.95);
+  background: linear-gradient(135deg, #a855f7, #E32BED, #fb923c);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 2rem;
@@ -432,7 +432,7 @@
 
 .progress-bar {
   height: 12px;
-  background: #e093c9;
+  background: #dad4d8;
   border-radius: 6px;
   overflow: hidden;
   position: relative;
@@ -440,7 +440,7 @@
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #8B5CF6, #EC4899);
+  background: linear-gradient(135deg, #e6c154, #ea8b31);
   border-radius: 6px;
   transition: width 0.5s ease;
   position: relative;
@@ -453,7 +453,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(170, 147, 233, 0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(233, 224, 147, 0.4), transparent);
   animation: shimmer 2s infinite;
 }
 
@@ -471,7 +471,7 @@
 /* Loading State */
 .dashboard-loading {
   min-height: 100vh;
-  background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+  background: linear-gradient(135deg,#e6c154, #ea8b31 100%);
   display: flex;
   flex-direction: column;
   align-items: center;

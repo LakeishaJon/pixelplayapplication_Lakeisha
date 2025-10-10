@@ -2,74 +2,83 @@ import React from 'react';
 import { getStyleOptions, generateAvatarSVG } from '../utils/avatarUtils';
 import '../styles/AvatarEditorPage.css';
 
+/**
+ * ItemSelector Component
+ * Displays available options for avatar customization
+ * Works with DiceBear avatar library options
+ */
 const ItemSelector = ({ 
   title, 
   category, 
   currentValue,
-  availableItems = [], // NEW: Support for available items from AvatarEditor
-  currentAvatarConfig, // OPTIONAL: For backward compatibility
+  availableItems = [],
+  currentAvatarConfig,
   onChange 
 }) => {
   
   // Debug logging
-  console.log(`ItemSelector - ${title}:`, {
+  console.log(`🎨 ItemSelector - ${title}:`, {
     category,
     currentValue,
-    availableItems,
+    hasAvailableItems: availableItems.length > 0,
     hasConfig: !!currentAvatarConfig
   });
 
-  // CRITICAL FIX: Determine options source
+  // Determine options source
   let options = [];
   
-  // If availableItems is provided (new way), use it
   if (availableItems && availableItems.length > 0) {
+    // Use provided available items (new way)
     options = availableItems;
-  } 
-  // Otherwise, use the old way with currentAvatarConfig
-  else if (currentAvatarConfig?.style) {
+  } else if (currentAvatarConfig?.style) {
+    // Fall back to style-based options (old way)
     options = getStyleOptions(currentAvatarConfig.style, category);
   }
 
+  // Show helpful message if no options available
   if (!options || options.length === 0) {
-    console.warn(`No options found for ${category}`);
     return (
       <div className="item-selector">
-        <div className="no-options-message">
-          <p>No {title.toLowerCase()} options available.</p>
-          <p style={{ fontSize: '0.85em', color: '#666' }}>
-            Try leveling up to unlock more options!
+        <div className="no-options-message" style={{
+          padding: '2rem',
+          textAlign: 'center',
+          background: '#F9FAFB',
+          borderRadius: '12px',
+          border: '2px dashed #E5E7EB'
+        }}>
+          <p style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#6B7280' }}>
+            No {title.toLowerCase()} options available.
+          </p>
+          <p style={{ fontSize: '0.85rem', color: '#9CA3AF' }}>
+            Try selecting a different avatar style or level up to unlock more options!
           </p>
         </div>
       </div>
     );
   }
 
-  console.log(`Found ${options.length} options for ${category}:`, options);
+  console.log(`✅ Found ${options.length} options for ${category}`);
 
-  // CRITICAL FIX: Simplified option click handler
+  // Handle option selection
   const handleOptionClick = (optionValue) => {
-    console.log(`🎯 Selecting ${category}: ${optionValue}`);
+    console.log(`🎯 Selected ${category}: ${optionValue}`);
     
     if (onChange) {
-      // IMPORTANT: Just pass the value, not the entire config
-      // The parent component (AvatarEditor) handles the structure
       onChange(optionValue);
-      console.log(`✅ Called onChange with value:`, optionValue);
+      console.log(`✅ onChange called with:`, optionValue);
     } else {
       console.error('❌ No onChange handler provided!');
     }
   };
 
-  // Helper to format option labels nicely
+  // Format option labels nicely
   const formatLabel = (option) => {
     if (!option) return 'None';
     
     return String(option)
-      .replace(/([A-Z])/g, ' $1') // Add spaces before capital letters
-      .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
       .replace(/\b\w+\b/g, word => {
-        // Handle specific cases
         const lowerWord = word.toLowerCase();
         if (lowerWord === 'nohair') return 'No Hair';
         if (lowerWord === 'longhair') return 'Long Hair';
@@ -80,56 +89,112 @@ const ItemSelector = ({
       .trim();
   };
 
-  // Helper to determine if option represents a color
+  // Check if category is color-related
   const isColorCategory = (category) => {
     const colorCategories = [
-      'backgroundColor', 'hairColor', 'shirtColor', 'clotheColor', 
-      'skin', 'skinTone', 'eyeColor', 'facialHairColor', 'skinColor',
-      'clothingColor', 'accessoryColor'
+      'backgroundColor',
+      'hairColor',
+      'shirtColor',
+      'clotheColor',
+      'skin',
+      'skinTone',
+      'eyeColor',
+      'facialHairColor',
+      'skinColor',
+      'clothingColor',
+      'accessoryColor'
     ];
     return colorCategories.includes(category);
   };
 
-  // Helper to get color value for display
+  // Get color value for preview
   const getColorValue = (option) => {
     if (!option) return '#CCCCCC';
     
     const colorMap = {
       // Hair colors
-      'Auburn': '#A52A2A', 'Black': '#2C1B18', 'Blonde': '#F5DEB3', 'BlondeGolden': '#FFD700',
-      'Brown': '#8B4513', 'BrownDark': '#654321', 'PastelPink': '#FFB6C1', 'Platinum': '#E5E4E2',
-      'Red': '#FF0000', 'SilverGray': '#C0C0C0',
+      'Auburn': '#A52A2A',
+      'Black': '#2C1B18',
+      'Blonde': '#F5DEB3',
+      'BlondeGolden': '#FFD700',
+      'Brown': '#8B4513',
+      'BrownDark': '#654321',
+      'PastelPink': '#FFB6C1',
+      'Platinum': '#E5E4E2',
+      'Red': '#FF0000',
+      'SilverGray': '#C0C0C0',
       
       // Micah style colors (hex without #)
-      '2d3748': '#2d3748', '744210': '#744210', 'f59e0b': '#f59e0b', 'ef4444': '#ef4444',
-      '8b5cf6': '#8b5cf6', '06b6d4': '#06b6d4', '10b981': '#10b981',
+      '2d3748': '#2d3748',
+      '744210': '#744210',
+      'f59e0b': '#f59e0b',
+      'ef4444': '#ef4444',
+      '8b5cf6': '#8b5cf6',
+      '06b6d4': '#06b6d4',
+      '10b981': '#10b981',
       
       // Skin colors
-      'Tanned': '#D2B48C', 'Yellow': '#F1C27D', 'Pale': '#F8E6CC', 'Light': '#F5DEB3',
-      'DarkBrown': '#8B4513', 'light': '#F5DEB3', 'medium': '#D2B48C', 'dark': '#8B4513',
+      'Tanned': '#D2B48C',
+      'Yellow': '#F1C27D',
+      'Pale': '#F8E6CC',
+      'Light': '#F5DEB3',
+      'DarkBrown': '#8B4513',
+      'light': '#F5DEB3',
+      'medium': '#D2B48C',
+      'dark': '#8B4513',
       
       // Background colors
-      'b6e3f4': '#b6e3f4', 'c084fc': '#c084fc', 'fb7185': '#fb7185', 'fbbf24': '#fbbf24',
-      '34d399': '#34d399', 'f472b6': '#f472b6', '60a5fa': '#60a5fa',
-      '65C9FF': '#65C9FF', 'FC909F': '#FC909F', 'FFAF7A': '#FFAF7A', 'BEAAE2': '#BEAAE2',
-      '93EDC7': '#93EDC7', 'FFD93D': '#FFD93D',
+      'b6e3f4': '#b6e3f4',
+      'c084fc': '#c084fc',
+      'fb7185': '#fb7185',
+      'fbbf24': '#fbbf24',
+      '34d399': '#34d399',
+      'f472b6': '#f472b6',
+      '60a5fa': '#60a5fa',
+      '65C9FF': '#65C9FF',
+      'FC909F': '#FC909F',
+      'FFAF7A': '#FFAF7A',
+      'BEAAE2': '#BEAAE2',
+      '93EDC7': '#93EDC7',
+      'FFD93D': '#FFD93D',
       
       // Basic colors
-      'blue': '#0000FF', 'green': '#008000', 'red': '#FF0000', 'orange': '#FFA500',
-      'yellow': '#FFFF00', 'purple': '#800080', 'pink': '#FFC0CB', 'black': '#000000',
-      'white': '#FFFFFF', 'brown': '#A52A2A', 'gray': '#808080', 'blonde': '#F5DEB3',
+      'blue': '#0000FF',
+      'green': '#008000',
+      'red': '#FF0000',
+      'orange': '#FFA500',
+      'yellow': '#FFFF00',
+      'purple': '#800080',
+      'pink': '#FFC0CB',
+      'black': '#000000',
+      'white': '#FFFFFF',
+      'brown': '#A52A2A',
+      'gray': '#808080',
+      'blonde': '#F5DEB3',
       
       // Clothing colors
-      'Blue01': '#4A90E2', 'Blue02': '#5BA7F7', 'Blue03': '#96CCF0', 'Gray01': '#9B9B9B',
-      'Gray02': '#C5C5C5', 'Heather': '#B0B0B0', 'PastelBlue': '#87CEEB', 'PastelGreen': '#98FB98',
-      'PastelOrange': '#FFB347', 'PastelRed': '#FFB6C1', 'PastelYellow': '#FFFF9F', 'Pink': '#FF69B4',
+      'Blue01': '#4A90E2',
+      'Blue02': '#5BA7F7',
+      'Blue03': '#96CCF0',
+      'Gray01': '#9B9B9B',
+      'Gray02': '#C5C5C5',
+      'Heather': '#B0B0B0',
+      'PastelBlue': '#87CEEB',
+      'PastelGreen': '#98FB98',
+      'PastelOrange': '#FFB347',
+      'PastelRed': '#FFB6C1',
+      'PastelYellow': '#FFFF9F',
+      'Pink': '#FF69B4',
       
       // Shirt colors (micah style)
-      '3b82f6': '#3b82f6', 'ef4444': '#ef4444', '10b981': '#10b981', 'f59e0b': '#f59e0b',
-      '8b5cf6': '#8b5cf6', 'ec4899': '#ec4899'
+      '3b82f6': '#3b82f6',
+      'ef4444': '#ef4444',
+      '10b981': '#10b981',
+      'f59e0b': '#f59e0b',
+      '8b5cf6': '#8b5cf6',
+      'ec4899': '#ec4899'
     };
     
-    // Return mapped color, try as hex, or default
     return colorMap[option] || (option.startsWith('#') ? option : `#${option}`) || '#CCCCCC';
   };
 
@@ -139,11 +204,15 @@ const ItemSelector = ({
     <div className="item-selector">
       <div className="selector-section">
         <h4 className="selector-title">{title}</h4>
-        <div className="options-count">
+        <div className="options-count" style={{
+          fontSize: '0.875rem',
+          color: '#6B7280',
+          marginBottom: '0.5rem'
+        }}>
           {options.length} option{options.length !== 1 ? 's' : ''} available
         </div>
         
-        {/* COMPACT BUTTON GRID */}
+        {/* Options Grid */}
         <div className="option-buttons-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
@@ -175,6 +244,18 @@ const ItemSelector = ({
                   fontWeight: isSelected ? '700' : '500',
                   color: isSelected ? '#8B5CF6' : '#2D3748'
                 }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = '#8B5CF6';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = '#E5E7EB';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
               >
                 {isColor && (
                   <div 
@@ -184,7 +265,8 @@ const ItemSelector = ({
                       height: '40px',
                       borderRadius: '8px',
                       backgroundColor: getColorValue(option),
-                      border: '2px solid rgba(0,0,0,0.1)'
+                      border: '2px solid rgba(0,0,0,0.1)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                     }}
                   />
                 )}
@@ -196,14 +278,17 @@ const ItemSelector = ({
                   {label}
                 </span>
                 {isSelected && (
-                  <span style={{ fontSize: '1.2rem' }}>✓</span>
+                  <span style={{ 
+                    fontSize: '1.2rem',
+                    color: '#8B5CF6'
+                  }}>✓</span>
                 )}
               </button>
             );
           })}
         </div>
         
-        {/* Show current selection */}
+        {/* Current Selection Display */}
         {currentValue && (
           <div className="current-selection" style={{
             marginTop: '1rem',
@@ -216,13 +301,15 @@ const ItemSelector = ({
           }}>
             <span className="selection-label" style={{
               fontWeight: '600',
-              color: '#6B7280'
+              color: '#6B7280',
+              fontSize: '0.875rem'
             }}>
               Current Selection:
             </span>
             <span className="selection-value" style={{
               fontWeight: '700',
-              color: '#8B5CF6'
+              color: '#8B5CF6',
+              fontSize: '0.875rem'
             }}>
               {formatLabel(currentValue)}
             </span>

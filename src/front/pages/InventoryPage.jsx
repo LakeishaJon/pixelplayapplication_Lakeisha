@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAvatar } from '../Contexts/AvatarContext';
+import { getAuthToken, getAuthHeaders, isAuthenticated } from '../utils/auth';
 import "../styles/InventoryPage.css";
 
 const InventoryPage = () => {
@@ -14,9 +15,8 @@ const InventoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // API Base URL - adjust this to match your backend
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
-
+  // API Base URL - matches your auth.js
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
   const handleNavigateToDashboard = () => {
     navigate('/dashboard');
@@ -30,24 +30,29 @@ const InventoryPage = () => {
     navigate('/');
   };
 
-  // Helper function to get auth token
-  const getAuthToken = () => {
-    return localStorage.getItem('token') || sessionStorage.getItem('token');
+  // ✅ FIXED: Using your auth.js functions
+  const checkAuthentication = () => {
+    if (!isAuthenticated()) {
+      console.error('❌ User not authenticated, redirecting to login...');
+      setError('Please log in to view your inventory.');
+      setLoading(false);
+      setTimeout(() => navigate('/login'), 2000);
+      return false;
+    }
+    return true;
   };
 
-  // Helper function to handle API errors
+  // Handle API errors
   const handleApiError = (response) => {
     if (response.status === 401) {
-      // Token expired, clear storage and redirect to login
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
       setError('Session expired. Please log in again.');
+      setTimeout(() => navigate('/login'), 2000);
       return;
     }
     throw new Error(`HTTP error! status: ${response.status}`);
   };
 
-  // Helper function to get category background colors
+  // Helper to get category background colors
   const getCategoryBackgroundColor = (category, rarity = 'common') => {
     const colorMap = {
       clothing: {
@@ -78,7 +83,7 @@ const InventoryPage = () => {
     return colorMap[category]?.[rarity] || colorMap.default[rarity];
   };
 
-  // Helper function to get item icon based on category and name
+  // Helper to get item icon
   const getItemIcon = (category, name) => {
     const iconMap = {
       clothing: {
@@ -119,37 +124,46 @@ const InventoryPage = () => {
     return categoryIcons[nameKey] || categoryIcons.default;
   };
 
-  // Fetch inventory data from API
+  // ✅ FIXED: Using auth.js getAuthHeaders()
   const fetchInventory = async () => {
     try {
       setLoading(true);
       setError(null);
-      const token = getAuthToken();
 
-      if (!token) {
-        setError('No authentication token found. Please log in.');
+      // Check authentication first
+      if (!checkAuthentication()) {
         return;
       }
 
+      const token = getAuthToken();
+      console.log('📡 Fetching inventory from:', `${API_BASE_URL}/api/inventory`);
+      console.log('🔑 Token exists:', !!token);
+
       const response = await fetch(`${API_BASE_URL}/api/inventory`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        method: 'GET',
+        headers: getAuthHeaders(), // ✅ Using your auth.js function
       });
 
+      console.log('📥 Response status:', response.status);
+
       if (!response.ok) {
-        handleApiError(response);
+        if (response.status === 401) {
+          handleApiError(response);
+          return;
+        }
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ API Error:', errorData);
+        setError(errorData.message || 'Failed to fetch inventory');
         return;
       }
 
       const data = await response.json();
+      console.log('✅ Inventory data received:', data);
 
-      if (data.success) {
-        // Transform API data to match component expectations
+      if (data.success && data.inventory) {
         const transformedItems = data.inventory.map(item => ({
           id: item.id,
-          inventoryId: item.id, // Store the UserInventory ID for API calls
+          inventoryId: item.id,
           itemId: item.item.id,
           name: item.item.name,
           category: item.item.category,
@@ -168,35 +182,39 @@ const InventoryPage = () => {
           acquired_at: item.acquired_at
         }));
 
+        console.log('✅ Transformed items:', transformedItems);
         setInventoryItems(transformedItems);
       } else {
-        setError(data.message || 'Failed to fetch inventory');
+        console.warn('⚠️ Unexpected data format:', data);
+        setError(data.message || 'Invalid inventory data format');
       }
     } catch (err) {
-      console.error('Error fetching inventory:', err);
-      setError('Failed to load inventory data');
+      console.error('❌ Error fetching inventory:', err);
+      setError(`Failed to load inventory: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch achievements data from API
+  // Fetch achievements
   const fetchAchievements = async () => {
     try {
-      const token = getAuthToken();
-      if (!token) return;
+      if (!checkAuthentication()) {
+        return;
+      }
+
+      console.log('📡 Fetching achievements...');
 
       const response = await fetch(`${API_BASE_URL}/api/achievements`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        method: 'GET',
+        headers: getAuthHeaders(), // ✅ Using your auth.js function
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          // Transform achievements data
+        console.log('✅ Achievements data:', data);
+
+        if (data.success && data.achievements) {
           const transformedAchievements = data.achievements.map(achievement => ({
             id: achievement.id,
             name: achievement.name,
@@ -211,11 +229,11 @@ const InventoryPage = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching achievements:', error);
+      console.error('❌ Error fetching achievements:', error);
     }
   };
 
-  // Helper function for achievement icons
+  // Helper for achievement icons
   const getAchievementIcon = (name) => {
     const iconMap = {
       'first': '🎯',
@@ -234,18 +252,16 @@ const InventoryPage = () => {
     return iconMap[nameKey] || '🏅';
   };
 
-  // Handle equipping items via API
+  // Handle equipping items
   const handleEquipItem = async (inventoryId) => {
     try {
-      const token = getAuthToken();
-      if (!token) return;
+      if (!checkAuthentication()) {
+        return;
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/inventory/${inventoryId}/equip`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(), // ✅ Using your auth.js function
       });
 
       if (!response.ok) {
@@ -256,32 +272,28 @@ const InventoryPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Update local state to reflect the change
         setInventoryItems(prev => prev.map(item =>
           item.inventoryId === inventoryId
             ? { ...item, equipped: !item.equipped }
             : item
         ));
-      } else {
-        console.error('Failed to equip item:', data.message);
+        console.log('✅ Item equipped successfully');
       }
     } catch (error) {
-      console.error('Error equipping item:', error);
+      console.error('❌ Error equipping item:', error);
     }
   };
 
-  // Handle favoriting items via API
+  // Handle favoriting items
   const handleFavoriteItem = async (inventoryId) => {
     try {
-      const token = getAuthToken();
-      if (!token) return;
+      if (!checkAuthentication()) {
+        return;
+      }
 
       const response = await fetch(`${API_BASE_URL}/api/inventory/${inventoryId}/favorite`, {
         method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: getAuthHeaders(), // ✅ Using your auth.js function
       });
 
       if (!response.ok) {
@@ -292,34 +304,36 @@ const InventoryPage = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Update local state to reflect the change
         setInventoryItems(prev => prev.map(item =>
           item.inventoryId === inventoryId
             ? { ...item, favorite: !item.favorite }
             : item
         ));
-      } else {
-        console.error('Failed to favorite item:', data.message);
+        console.log('✅ Item favorited successfully');
       }
     } catch (error) {
-      console.error('Error favoriting item:', error);
+      console.error('❌ Error favoriting item:', error);
     }
   };
 
-  // Filter inventory items based on category and search
+  // Filter inventory items
   const filteredItems = inventoryItems.filter(item => {
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  // Load data when component mounts
+  // Load data on mount
   useEffect(() => {
-    fetchInventory();
-    fetchAchievements();
+    console.log('🔍 Checking authentication on mount...');
+
+    if (checkAuthentication()) {
+      fetchInventory();
+      fetchAchievements();
+    }
   }, []);
 
-  // Render inventory items with loading/error states
+  // Render inventory items
   const renderInventoryItems = () => {
     if (loading) {
       return (
@@ -333,10 +347,16 @@ const InventoryPage = () => {
     if (error) {
       return (
         <div className="error-container">
-          <p>❌ {error}</p>
-          <button onClick={fetchInventory} className="retry-btn">
-            🔄 Try Again
-          </button>
+          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>❌</p>
+          <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>{error}</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button onClick={fetchInventory} className="retry-btn">
+              🔄 Try Again
+            </button>
+            <button onClick={() => navigate('/login')} className="login-btn">
+              🔐 Go to Login
+            </button>
+          </div>
         </div>
       );
     }
@@ -344,7 +364,8 @@ const InventoryPage = () => {
     if (filteredItems.length === 0) {
       return (
         <div className="empty-container">
-          <p>
+          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</p>
+          <p style={{ fontSize: '1.2rem' }}>
             {searchTerm
               ? 'No items match your search. Try adjusting your filters.'
               : 'No items found. Start working out to earn awesome gear!'
@@ -400,7 +421,10 @@ const InventoryPage = () => {
     <div className="achievements-list">
       {achievements.length === 0 ? (
         <div className="empty-container">
-          <p>No achievements yet. Keep working out to unlock them!</p>
+          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</p>
+          <p style={{ fontSize: '1.2rem' }}>
+            No achievements yet. Keep working out to unlock them!
+          </p>
         </div>
       ) : (
         achievements.map(achievement => (
@@ -508,7 +532,7 @@ const InventoryPage = () => {
           </button>
         </div>
 
-        {/* Secondary Navigation and Search (for My Items) */}
+        {/* Secondary Controls */}
         {activeTab === 'myItems' && (
           <div className="secondary-controls">
             <div className="category-tabs">
@@ -544,14 +568,14 @@ const InventoryPage = () => {
           </div>
         )}
 
-
+        {/* Tab Content */}
         <div className="tab-content">
           {activeTab === 'myItems' && renderInventoryItems()}
           {activeTab === 'shop' && renderShop()}
           {activeTab === 'achievements' && renderAchievements()}
         </div>
 
-
+        {/* Bottom Navigation */}
         <div className="bottom-navigation">
           <div className="nav-buttons">
             <button
