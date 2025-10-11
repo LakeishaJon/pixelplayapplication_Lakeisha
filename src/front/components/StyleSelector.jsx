@@ -16,19 +16,20 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
       console.log('✨ Style already selected:', newStyle);
       return;
     }
-    
+
     console.log('✨ Changing style from', currentStyle, 'to', newStyle);
-    
+
     // Log the new style options for debugging
     const styleConfig = AVATAR_STYLES[newStyle];
     if (styleConfig) {
       console.group(`🎨 Debug: ${styleConfig.name} Options`);
-      Object.entries(styleConfig.customOptions).forEach(([category, options]) => {
+      // 🔧 FIX: Changed from customOptions to availableOptions
+      Object.entries(styleConfig.availableOptions || {}).forEach(([category, options]) => {
         console.log(`${category}:`, options);
       });
       console.groupEnd();
     }
-    
+
     if (onChange) {
       // CRITICAL FIX: Just pass the style string, not entire config
       // Let the parent component handle creating the full config
@@ -48,7 +49,7 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
       <div className="selector-section">
         <h4 className="selector-title">Avatar Style</h4>
         <div className="options-count">{styles.length} styles available</div>
-        
+
         {/* COMPACT BUTTON GRID */}
         <div className="option-buttons-grid" style={{
           display: 'grid',
@@ -59,7 +60,7 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
           {styles.map(styleKey => {
             const style = AVATAR_STYLES[styleKey];
             const isSelected = currentStyle === styleKey;
-            
+
             return (
               <button
                 key={styleKey}
@@ -88,7 +89,7 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
                 }}>
                   {formatStyleName(styleKey)}
                 </span>
-                
+
                 {/* Kid-friendly badge */}
                 {style.kidFriendly && (
                   <span className="kid-badge" style={{
@@ -100,17 +101,17 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
                     👶
                   </span>
                 )}
-                
+
                 {/* Selected checkmark */}
                 {isSelected && (
-                  <span style={{ 
+                  <span style={{
                     fontSize: '1.5rem',
                     color: '#8B5CF6'
                   }}>
                     ✓
                   </span>
                 )}
-                
+
                 {/* Description on hover */}
                 <div style={{
                   fontSize: '0.75rem',
@@ -130,7 +131,7 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
             );
           })}
         </div>
-        
+
         {/* Show current selection */}
         {currentStyle && AVATAR_STYLES[currentStyle] && (
           <div className="current-selection" style={{
@@ -157,7 +158,7 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
             </span>
           </div>
         )}
-        
+
         {/* Show available customizations for current style */}
         {currentStyle && AVATAR_STYLES[currentStyle] && (
           <div className="style-info" style={{
@@ -179,7 +180,8 @@ const StyleSelector = ({ currentStyle, currentConfig, onChange }) => {
               flexWrap: 'wrap',
               gap: '0.5rem'
             }}>
-              {Object.keys(AVATAR_STYLES[currentStyle].customOptions).map(category => (
+              {/* 🔧 FIX: Changed from customOptions to availableOptions */}
+              {Object.keys(AVATAR_STYLES[currentStyle].availableOptions || {}).map(category => (
                 <span key={category} className="category-tag" style={{
                   padding: '0.4rem 0.8rem',
                   background: 'white',

@@ -7,7 +7,7 @@ Handles fetching and updating user game statistics and sessions.
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
-from models import db, User, UserGameStats, GameSession
+from api.models import db, User, UserGameStats, GameSession
 
 game_stats_bp = Blueprint('game_stats', __name__)
 

@@ -1,7 +1,7 @@
 # 🎮 Initialize Item Catalog
 # Run this once to populate the item catalog
 
-from models import db, ItemCatalog
+from api.models import db, ItemCatalog
 from flask import current_app
 
 def init_catalog():

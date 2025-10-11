@@ -203,7 +203,7 @@ def google_login():
         # Generate redirect URI
         redirect_uri = url_for('auth.google_callback', _external=True)
 
-         # Use Codespaces URL if available
+        # Use Codespaces URL if available
         codespace_name = os.getenv('CODESPACE_NAME', '')
         if codespace_name:
             redirect_uri = f"https://{codespace_name}-3001.app.github.dev/api/auth/google-callback"

@@ -222,7 +222,7 @@ const AvatarEditor = () => {
             gap: '1rem'
           }}>
             <AvatarDisplay
-              avatar={previewAvatar}
+              config={previewAvatar}
               size={200}
               showLevel={true}
               level={userStats?.level || 1}

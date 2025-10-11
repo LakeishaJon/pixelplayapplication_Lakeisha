@@ -283,7 +283,7 @@ const AvatarEditorPage = () => {
             {previewAvatar ? (
               <div className="avatar-display-container">
                 <AvatarDisplay
-                  avatar={previewAvatar}
+                  config={previewAvatar}
                   size={180}
                   showLevel={true}
                   level={userStats?.level || 1}

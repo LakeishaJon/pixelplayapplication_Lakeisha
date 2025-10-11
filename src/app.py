@@ -11,7 +11,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 # Import database
-from models import db
+from api.models import db
 
 # Import custom modules
 from api.utils import APIException, generate_sitemap
@@ -21,7 +21,6 @@ from api.commands import setup_commands
 from api.auth import auth, init_oauth
 
 # Import avatar-related blueprints
-# ✅ FIXED: Added 'api.' prefix
 from api.avatar_routes import avatar_bp, items_bp, progress_bp, presets_bp
 
 # ===============================
@@ -40,7 +39,6 @@ static_file_dir = os.path.join(os.path.dirname(
 # APPLICATION FACTORY
 # ===============================
 
-# ✅ FIXED: Removed config_class parameter since we're not using it
 def create_app():
     """
     Creates and configures the Flask application.
@@ -164,7 +162,6 @@ def create_app():
     # Register main API routes (games, stories, profile)
     app.register_blueprint(api, url_prefix='/api')
 
-    # ✅ FIXED: Removed url_prefix since it's already defined in the blueprints
     # Register avatar-related routes
     app.register_blueprint(avatar_bp)
     app.register_blueprint(items_bp)
@@ -304,15 +301,23 @@ def create_app():
 
 
 # ===============================
+# CREATE APP INSTANCE FOR FLASK CLI
+# ===============================
+
+# 🔥 THIS LINE IS CRITICAL! 🔥
+# Flask CLI commands (like "flask db migrate") need this line
+# It MUST be outside the "if __name__ == '__main__':" block
+app = create_app()
+
+
+# ===============================
 # RUN THE APP
 # ===============================
 
 if __name__ == '__main__':
-    # Create the application
-    app = create_app()
-
+    # The app is already created above, so we just use it directly
     # Use port 5000 (IMPORTANT: Must match Google OAuth redirect URI!)
-    PORT = int(os.environ.get('PORT', 5000))
+    PORT = int(os.environ.get('PORT', 3001))
 
     print("=" * 50)
     print("🎮 PixelPlay Fitness App Starting!")
