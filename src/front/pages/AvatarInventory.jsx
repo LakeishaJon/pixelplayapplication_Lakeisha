@@ -4,12 +4,25 @@ import AvatarDisplay from '../components/AvatarDisplay';
 import '../styles/AvatarInventory.css';
 
 const AvatarInventory = ({ onNavigate }) => {
-  const { savedAvatars, inventory, userStats, setCurrentAvatar } = useAvatar();
+  const {
+    savedAvatars,
+    inventory,
+    backendInventory,  // NEW: From backend API
+    achievements,       // NEW: From backend API
+    userStats,
+    setCurrentAvatar,
+    isLoading,
+    syncError,
+    refreshData
+  } = useAvatar();
 
   console.log('🎨 AvatarInventory Context Data:', {
     savedAvatars,
     inventory,
-    userStats
+    backendInventory,
+    achievements,
+    userStats,
+    isLoading
   });
 
   // Handle using an avatar
@@ -24,9 +37,20 @@ const AvatarInventory = ({ onNavigate }) => {
   // Handle editing an avatar
   const handleEditAvatar = (avatar) => {
     console.log('✏️ Editing avatar:', avatar.name);
-    // Could pass avatar data to editor through context or navigation state
     onNavigate('editor', avatar);
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="avatar-inventory-page">
+        <div className="loading-state">
+          <div className="loading-spinner">🔄</div>
+          <h3>Loading your collection...</h3>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="avatar-inventory-page">
@@ -45,9 +69,22 @@ const AvatarInventory = ({ onNavigate }) => {
               <div className="level-text">Level {userStats?.level || 1}</div>
               <div className="xp-text">⭐ {userStats?.points || 0} XP</div>
             </div>
+            {syncError && (
+              <button onClick={refreshData} className="refresh-btn" title="Retry loading data">
+                🔄 Retry
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {syncError && (
+        <div className="error-banner">
+          <span>⚠️ Could not load data from server</span>
+          <button onClick={refreshData} className="retry-btn">Try Again</button>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="inventory-content">
@@ -112,13 +149,12 @@ const AvatarInventory = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Inventory Items Section */}
+        {/* Backend Inventory Items Section */}
         <div className="inventory-items-section">
           <div className="section-card">
-            <h2>🎒 Inventory Items</h2>
+            <h2>🎒 Inventory Items (From Database)</h2>
 
-            {!inventory || Object.keys(inventory).length === 0 ||
-              Object.values(inventory).every(items => !items || items.length === 0) ? (
+            {!backendInventory || backendInventory.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">📦</div>
                 <h3>No Items Yet</h3>
@@ -132,8 +168,78 @@ const AvatarInventory = ({ onNavigate }) => {
               </div>
             ) : (
               <div className="inventory-grid">
+                {backendInventory.map((item, index) => (
+                  <div key={index} className="inventory-item-card">
+                    <div className="item-icon">{item.icon || '📦'}</div>
+                    <div className="item-details">
+                      <h4>{item.name}</h4>
+                      <p className="item-category">{item.category}</p>
+                      {item.is_equipped && (
+                        <span className="equipped-badge">✓ Equipped</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Achievements Section */}
+        <div className="achievements-section">
+          <div className="section-card">
+            <h2>🏆 Achievements</h2>
+
+            {!achievements || achievements.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🏆</div>
+                <h3>No Achievements Yet</h3>
+                <p>Keep working out to unlock achievements!</p>
+              </div>
+            ) : (
+              <div className="achievements-grid">
+                {achievements.map((achievement, index) => (
+                  <div
+                    key={index}
+                    className={`achievement-card ${achievement.is_completed ? 'completed' : 'locked'}`}
+                  >
+                    <div className="achievement-icon">
+                      {achievement.is_completed ? '🏆' : '🔒'}
+                    </div>
+                    <div className="achievement-info">
+                      <h4>{achievement.name}</h4>
+                      <p>{achievement.description}</p>
+                      {achievement.is_completed && achievement.earned_at && (
+                        <p className="earned-date">
+                          Earned: {new Date(achievement.earned_at).toLocaleDateString()}
+                        </p>
+                      )}
+                      {!achievement.is_completed && (
+                        <div className="progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${achievement.user_progress || 0}%` }}
+                          />
+                          <span className="progress-text">
+                            {achievement.user_progress || 0}% Complete
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Local Inventory (Fallback) */}
+        {inventory && Object.keys(inventory).length > 0 && (
+          <div className="local-inventory-section">
+            <div className="section-card">
+              <h2>📦 Local Items</h2>
+              <div className="inventory-grid">
                 {Object.entries(inventory).map(([category, items]) => {
-                  // Skip empty categories
                   if (!items || items.length === 0) return null;
 
                   return (
@@ -157,9 +263,9 @@ const AvatarInventory = ({ onNavigate }) => {
                   );
                 })}
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Stats Section */}
         <div className="stats-section">
@@ -173,26 +279,15 @@ const AvatarInventory = ({ onNavigate }) => {
               </div>
               <div className="stat-item">
                 <div className="stat-icon">📦</div>
-                <div className="stat-number">
-                  {inventory
-                    ? Object.values(inventory).reduce(
-                        (total, items) => total + (items?.length || 0),
-                        0
-                      )
-                    : 0}
-                </div>
-                <div className="stat-label">Total Items</div>
+                <div className="stat-number">{backendInventory?.length || 0}</div>
+                <div className="stat-label">Inventory Items</div>
               </div>
               <div className="stat-item">
-                <div className="stat-icon">🏷️</div>
+                <div className="stat-icon">🏆</div>
                 <div className="stat-number">
-                  {inventory
-                    ? Object.keys(inventory).filter(
-                        key => inventory[key] && inventory[key].length > 0
-                      ).length
-                    : 0}
+                  {achievements?.filter(a => a.is_completed).length || 0}
                 </div>
-                <div className="stat-label">Categories</div>
+                <div className="stat-label">Achievements</div>
               </div>
               <div className="stat-item">
                 <div className="stat-icon">⭐</div>
@@ -243,10 +338,10 @@ const getCategoryIcon = (category) => {
 // Helper function to format item names nicely
 const formatItemName = (item) => {
   if (!item) return 'Unknown Item';
-  
+
   return String(item)
-    .replace(/([A-Z])/g, ' $1') // Add spaces before capital letters
-    .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
     .trim();
 };
 

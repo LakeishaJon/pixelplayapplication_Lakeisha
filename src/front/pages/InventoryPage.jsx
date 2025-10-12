@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAvatar } from '../Contexts/AvatarContext';
-import { getAuthToken, getAuthHeaders, isAuthenticated } from '../utils/auth';
+import { isAuthenticated, authenticatedFetch } from '../utils/auth'; // ✅ Use authenticatedFetch!
 import "../styles/InventoryPage.css";
 
 const InventoryPage = () => {
@@ -15,8 +15,8 @@ const InventoryPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // API Base URL - matches your auth.js
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  // ✅ FIXED: Correct port!
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
   const handleNavigateToDashboard = () => {
     navigate('/dashboard');
@@ -30,8 +30,9 @@ const InventoryPage = () => {
     navigate('/');
   };
 
-  // ✅ FIXED: Using your auth.js functions
+  // Check authentication
   const checkAuthentication = () => {
+    console.log('🔐 Checking authentication...');
     if (!isAuthenticated()) {
       console.error('❌ User not authenticated, redirecting to login...');
       setError('Please log in to view your inventory.');
@@ -39,17 +40,8 @@ const InventoryPage = () => {
       setTimeout(() => navigate('/login'), 2000);
       return false;
     }
+    console.log('✅ User is authenticated');
     return true;
-  };
-
-  // Handle API errors
-  const handleApiError = (response) => {
-    if (response.status === 401) {
-      setError('Session expired. Please log in again.');
-      setTimeout(() => navigate('/login'), 2000);
-      return;
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
   };
 
   // Helper to get category background colors
@@ -124,7 +116,7 @@ const InventoryPage = () => {
     return categoryIcons[nameKey] || categoryIcons.default;
   };
 
-  // ✅ FIXED: Using auth.js getAuthHeaders()
+  // ✅ FIXED: Using authenticatedFetch
   const fetchInventory = async () => {
     try {
       setLoading(true);
@@ -135,20 +127,18 @@ const InventoryPage = () => {
         return;
       }
 
-      const token = getAuthToken();
-      console.log('📡 Fetching inventory from:', `${API_BASE_URL}/api/inventory`);
-      console.log('🔑 Token exists:', !!token);
+      const url = `${API_BASE_URL}/api/inventory`;
+      console.log('📡 Fetching inventory from:', url);
 
-      const response = await fetch(`${API_BASE_URL}/api/inventory`, {
-        method: 'GET',
-        headers: getAuthHeaders(), // ✅ Using your auth.js function
-      });
+      // ✅ Use authenticatedFetch - it handles auth automatically!
+      const response = await authenticatedFetch(url);
 
       console.log('📥 Response status:', response.status);
 
       if (!response.ok) {
         if (response.status === 401) {
-          handleApiError(response);
+          setError('Session expired. Please log in again.');
+          setTimeout(() => navigate('/login'), 2000);
           return;
         }
         const errorData = await response.json().catch(() => ({}));
@@ -164,51 +154,61 @@ const InventoryPage = () => {
         const transformedItems = data.inventory.map(item => ({
           id: item.id,
           inventoryId: item.id,
-          itemId: item.item.id,
-          name: item.item.name,
-          category: item.item.category,
-          equipped: item.is_equipped,
-          favorite: item.is_favorite,
+          itemId: item.item?.id || item.id,
+          name: item.item?.name || item.name || 'Unknown Item',
+          category: item.item?.category || item.category || 'default',
+          equipped: item.is_equipped || false,
+          favorite: item.is_favorite || false,
           backgroundColor: getCategoryBackgroundColor(
-            item.item.category,
-            item.item.rarity
+            item.item?.category || item.category || 'default',
+            item.item?.rarity || 'common'
           ),
-          icon: getItemIcon(item.item.category, item.item.name),
-          rarity: item.item.rarity || 'common',
-          description: item.item.description,
-          level_required: item.item.level_required,
-          coin_cost: item.item.coin_cost,
-          xp_cost: item.item.xp_cost,
+          icon: getItemIcon(
+            item.item?.category || item.category || 'accessories',
+            item.item?.name || item.name || 'default'
+          ),
+          rarity: item.item?.rarity || 'common',
+          description: item.item?.description || item.description,
+          level_required: item.item?.level_required || 1,
+          coin_cost: item.item?.coin_cost || 0,
+          xp_cost: item.item?.xp_cost || 0,
           acquired_at: item.acquired_at
         }));
 
         console.log('✅ Transformed items:', transformedItems);
         setInventoryItems(transformedItems);
       } else {
-        console.warn('⚠️ Unexpected data format:', data);
-        setError(data.message || 'Invalid inventory data format');
+        // Empty inventory is OK
+        console.log('ℹ️ Inventory is empty');
+        setInventoryItems([]);
       }
     } catch (err) {
       console.error('❌ Error fetching inventory:', err);
-      setError(`Failed to load inventory: ${err.message}`);
+
+      // Check if it's an auth error
+      if (err.message.includes('expired') || err.message.includes('authentication')) {
+        setError('Session expired. Please log in again.');
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setError(`Failed to load inventory: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch achievements
+  // ✅ FIXED: Fetch achievements with authenticatedFetch
   const fetchAchievements = async () => {
     try {
       if (!checkAuthentication()) {
         return;
       }
 
-      console.log('📡 Fetching achievements...');
+      const url = `${API_BASE_URL}/api/achievements`;
+      console.log('📡 Fetching achievements from:', url);
 
-      const response = await fetch(`${API_BASE_URL}/api/achievements`, {
-        method: 'GET',
-        headers: getAuthHeaders(), // ✅ Using your auth.js function
-      });
+      // ✅ Use authenticatedFetch
+      const response = await authenticatedFetch(url);
 
       if (response.ok) {
         const data = await response.json();
@@ -220,16 +220,19 @@ const InventoryPage = () => {
             name: achievement.name,
             description: achievement.description,
             completed: achievement.is_completed,
-            progress: achievement.user_progress,
-            total: achievement.requirement_value,
+            progress: achievement.user_progress || 0,
+            total: achievement.requirement_value || 100,
             icon: getAchievementIcon(achievement.name),
             earned_at: achievement.earned_at
           }));
           setAchievements(transformedAchievements);
+        } else {
+          setAchievements([]);
         }
       }
     } catch (error) {
       console.error('❌ Error fetching achievements:', error);
+      // Don't set error for achievements - not critical
     }
   };
 
@@ -252,20 +255,25 @@ const InventoryPage = () => {
     return iconMap[nameKey] || '🏅';
   };
 
-  // Handle equipping items
+  // ✅ FIXED: Handle equipping with authenticatedFetch
   const handleEquipItem = async (inventoryId) => {
     try {
       if (!checkAuthentication()) {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/inventory/${inventoryId}/equip`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(), // ✅ Using your auth.js function
+      const url = `${API_BASE_URL}/api/inventory/${inventoryId}/equip`;
+      console.log('📡 Equipping item:', url);
+
+      const response = await authenticatedFetch(url, {
+        method: 'PATCH'
       });
 
       if (!response.ok) {
-        handleApiError(response);
+        if (response.status === 401) {
+          setError('Session expired. Please log in again.');
+          setTimeout(() => navigate('/login'), 2000);
+        }
         return;
       }
 
@@ -284,20 +292,25 @@ const InventoryPage = () => {
     }
   };
 
-  // Handle favoriting items
+  // ✅ FIXED: Handle favoriting with authenticatedFetch
   const handleFavoriteItem = async (inventoryId) => {
     try {
       if (!checkAuthentication()) {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/inventory/${inventoryId}/favorite`, {
-        method: 'PATCH',
-        headers: getAuthHeaders(), // ✅ Using your auth.js function
+      const url = `${API_BASE_URL}/api/inventory/${inventoryId}/favorite`;
+      console.log('📡 Favoriting item:', url);
+
+      const response = await authenticatedFetch(url, {
+        method: 'PATCH'
       });
 
       if (!response.ok) {
-        handleApiError(response);
+        if (response.status === 401) {
+          setError('Session expired. Please log in again.');
+          setTimeout(() => navigate('/login'), 2000);
+        }
         return;
       }
 
@@ -325,7 +338,7 @@ const InventoryPage = () => {
 
   // Load data on mount
   useEffect(() => {
-    console.log('🔍 Checking authentication on mount...');
+    console.log('🚀 InventoryPage mounted');
 
     if (checkAuthentication()) {
       fetchInventory();

@@ -68,32 +68,50 @@ def create_app():
     # Build allowed origins list
     allowed_origins = [
         "http://localhost:3000",
+        "http://localhost:3001",  # Added backend port too
         "http://localhost:5173",
         "http://localhost:5174",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
         os.getenv("FRONTEND_URL", "http://localhost:3000")
     ]
 
     # Add Codespaces URLs if running in Codespaces
     if CODESPACE_NAME:
+        # Get the FULL domain from the current request if possible
         codespace_origins = [
+            # With port at the end (what your frontend is using)
             f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3000",
-            f"https://{CODESPACE_NAME}-3000.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3001",
+            # Without port
             f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            # With port in subdomain (backend style)
+            f"https://{CODESPACE_NAME}-3000.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            f"https://{CODESPACE_NAME}-3001.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
         ]
         allowed_origins.extend(codespace_origins)
-        print(f"🌐 Codespaces detected! Allowing origins: {codespace_origins}")
+        print(f"🌐 Codespaces detected! Allowing origins:")
+        for origin in codespace_origins:
+            print(f"   ✅ {origin}")
 
-    CORS(app,
-         resources={
-             r"/api/*": {
-                 "origins": allowed_origins,
-                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                 "allow_headers": ["Content-Type", "Authorization"],
-                 "supports_credentials": True,
-                 "max_age": 3600
-             }
-         })
+    # 🎯 SIMPLER APPROACH: Just allow ALL origins in development!
+    if ENV == "development":
+        print("⚠️  Development mode: Allowing ALL origins")
+        CORS(app,
+             resources={r"/api/*": {"origins": "*"}},
+             supports_credentials=False)  # Turn off credentials for wildcard
+    else:
+        # Production: Use strict origin list
+        CORS(app,
+             resources={
+                 r"/api/*": {
+                     "origins": allowed_origins,
+                     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                     "allow_headers": ["Content-Type", "Authorization"],
+                     "supports_credentials": True,
+                     "max_age": 3600
+                 }
+             })
 
     # ===============================
     # DATABASE CONFIGURATION
@@ -282,7 +300,18 @@ def create_app():
         """
         Serve frontend files (React app)
         This lets React Router handle the URLs
+        BUT it should NOT catch API routes!
         """
+        # 🚨 CRITICAL: Exclude all /api/* routes from catch-all
+        # Let blueprints handle API routes instead
+        if path.startswith('api/'):
+            return jsonify({
+                'success': False,
+                'message': 'API endpoint not found',
+                'error': 'not_found'
+            }), 404
+
+        # Serve static files or React app for non-API routes
         if not os.path.isfile(os.path.join(static_file_dir, path)):
             path = 'index.html'
 
@@ -297,6 +326,7 @@ def create_app():
                 'error': 'not_found'
             }), 404
 
+    # ✅ Return the configured app (end of create_app function)
     return app
 
 
@@ -316,7 +346,7 @@ app = create_app()
 
 if __name__ == '__main__':
     # The app is already created above, so we just use it directly
-    # Use port 5000 (IMPORTANT: Must match Google OAuth redirect URI!)
+    # Use port 3001 for backend (frontend uses 3000)
     PORT = int(os.environ.get('PORT', 3001))
 
     print("=" * 50)

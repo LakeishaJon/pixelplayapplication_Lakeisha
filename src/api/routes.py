@@ -9,10 +9,9 @@ from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# ✅ FIXED: Import from correct location (your models.py is in src/api/models.py)
 from api.models import db, User, Task, Game, InventoryItem, UserInventory, Achievement, UserAchievement, UserGameStats, GameSession
 
-# ✅ FIXED: Only ONE blueprint needed
+
 api = Blueprint('api', __name__)
 
 
@@ -20,35 +19,35 @@ api = Blueprint('api', __name__)
 # GAME STATS ENDPOINTS (Added to existing api blueprint)
 # ===============================
 
-@api.route('/api/users/<int:user_id>/stats', methods=['GET'])
+@api.route('/users/<int:user_id>/stats', methods=['GET'])
 @jwt_required()
 def get_user_stats(user_id):
     """Get user's game statistics"""
     try:
         current_user_id = get_jwt_identity()
-        
+
         # Verify user can only access their own stats
         if current_user_id != user_id:
             return jsonify({'error': 'Unauthorized'}), 403
-        
+
         user = User.query.get(user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
-        
+
         # Get user stats
         stats = UserGameStats.query.filter_by(user_id=user_id).first()
-        
+
         if not stats:
             # Create default stats if none exist
             stats = UserGameStats(user_id=user_id)
             db.session.add(stats)
             db.session.commit()
-        
+
         # Calculate weekly streak
         weekly_streak = calculate_weekly_streak(user_id)
         stats.weekly_streak = weekly_streak
         db.session.commit()
-        
+
         return jsonify({
             'level': stats.level,
             'xp': stats.xp,
@@ -58,47 +57,47 @@ def get_user_stats(user_id):
             'completed_games': stats.completed_games or [],
             'favorite_games': stats.favorite_games or []
         }), 200
-        
+
     except Exception as e:
         print(f"Error fetching user stats: {e}")
         return jsonify({'error': 'Failed to fetch stats'}), 500
 
 
-@api.route('/api/users/<int:user_id>/stats', methods=['PUT'])
+@api.route('/users/<int:user_id>/stats', methods=['PUT'])
 @jwt_required()
 def update_user_stats(user_id):
     """Update user statistics after completing a game"""
     try:
         current_user_id = get_jwt_identity()
-        
+
         if current_user_id != user_id:
             return jsonify({'error': 'Unauthorized'}), 403
-        
+
         data = request.json
         game_id = data.get('game_id')
         xp_earned = data.get('xp_earned', 0)
         score = data.get('score', 0)
         duration_minutes = data.get('duration_minutes', 0)
         completed = data.get('completed', False)
-        
+
         # Get or create user stats
         stats = UserGameStats.query.filter_by(user_id=user_id).first()
         if not stats:
             stats = UserGameStats(user_id=user_id)
             db.session.add(stats)
-        
+
         # Update stats
         leveled_up = stats.add_xp(xp_earned)
         stats.total_games_played += 1
-        
+
         # Unlock new games if leveled up
         if leveled_up:
             unlock_games_for_level(stats, stats.level)
-        
+
         # Mark game as completed
         if completed and game_id:
             stats.complete_game(game_id)
-        
+
         # Record game session
         session = GameSession(
             user_id=user_id,
@@ -109,20 +108,20 @@ def update_user_stats(user_id):
             completed=completed
         )
         db.session.add(session)
-        
+
         # Update streak
         weekly_streak = calculate_weekly_streak(user_id)
         stats.weekly_streak = weekly_streak
-        
+
         # Update user's main stats too
         user = User.query.get(user_id)
         if user:
             user.add_xp(xp_earned)
             user.last_activity = datetime.utcnow()
             user.total_playtime += duration_minutes
-        
+
         db.session.commit()
-        
+
         response = {
             'level': stats.level,
             'xp': stats.xp,
@@ -131,13 +130,13 @@ def update_user_stats(user_id):
             'completed_games': stats.completed_games,
             'unlocked_games': stats.unlocked_games
         }
-        
+
         if leveled_up:
             response['level_up'] = True
             response['new_level'] = stats.level
-        
+
         return jsonify(response), 200
-        
+
     except Exception as e:
         db.session.rollback()
         print(f"Error updating user stats: {e}")
@@ -153,30 +152,30 @@ def calculate_weekly_streak(user_id):
             GameSession.user_id == user_id,
             GameSession.played_at >= seven_days_ago
         ).order_by(GameSession.played_at.desc()).all()
-        
+
         if not sessions:
             return 0
-        
+
         # Count unique days played
         unique_days = set()
         for session in sessions:
             day = session.played_at.date()
             unique_days.add(day)
-        
+
         # Calculate streak
         today = datetime.utcnow().date()
         streak = 0
         current_day = today
-        
+
         for i in range(7):
             if current_day in unique_days:
                 streak += 1
                 current_day -= timedelta(days=1)
             else:
                 break
-        
+
         return streak
-        
+
     except Exception as e:
         print(f"Error calculating streak: {e}")
         return 0
@@ -191,7 +190,7 @@ def unlock_games_for_level(stats, level):
         5: ['magic'],
         6: ['superhero']
     }
-    
+
     for unlock_level, games in level_unlocks.items():
         if level >= unlock_level:
             for game in games:
@@ -404,11 +403,13 @@ def get_gamehub_games():
             # Add user-specific data
             game_data['is_unlocked'] = user.level >= game_data['unlock_level']
             game_data['progress'] = user_game.progress if user_game else 0
-            game_data['is_completed'] = user_game.is_completed() if user_game else False
+            game_data['is_completed'] = user_game.is_completed(
+            ) if user_game else False
             game_data['personal_best'] = user_game.personal_best if user_game else 0
             game_data['times_played'] = user_game.times_played if user_game else 0
             game_data['is_favorite'] = user_game.is_favorite if user_game else False
-            game_data['last_played'] = user_game.last_played.isoformat() if user_game and user_game.last_played else None
+            game_data['last_played'] = user_game.last_played.isoformat(
+            ) if user_game and user_game.last_played else None
 
         return jsonify({
             'success': True,
@@ -621,7 +622,8 @@ def get_gamehub_stats():
         total_games_played = len(user_games)
         completed_games = len([g for g in user_games if g.progress >= 100])
         total_playtime = sum(game.total_time for game in user_games)
-        avg_progress = sum(game.progress for game in user_games) / len(user_games) if user_games else 0
+        avg_progress = sum(game.progress for game in user_games) / \
+            len(user_games) if user_games else 0
 
         return jsonify({
             'success': True,
@@ -654,14 +656,16 @@ def get_user_inventory():
         category = request.args.get('category')
         equipped_only = request.args.get('equipped', type=bool)
 
-        query = UserInventory.query.filter_by(user_id=user_id).join(InventoryItem)
+        query = UserInventory.query.filter_by(
+            user_id=user_id).join(InventoryItem)
 
         if category:
             query = query.filter(InventoryItem.category == category)
         if equipped_only:
             query = query.filter(UserInventory.is_equipped == True)
 
-        inventory_items = query.order_by(UserInventory.acquired_at.desc()).all()
+        inventory_items = query.order_by(
+            UserInventory.acquired_at.desc()).all()
 
         return jsonify({
             'success': True,
@@ -684,8 +688,10 @@ def get_available_items():
         if not user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        available_items = InventoryItem.query.filter_by(is_active=True, is_unlockable=True).all()
-        owned_item_ids = [inv.item_id for inv in UserInventory.query.filter_by(user_id=user_id).all()]
+        available_items = InventoryItem.query.filter_by(
+            is_active=True, is_unlockable=True).all()
+        owned_item_ids = [
+            inv.item_id for inv in UserInventory.query.filter_by(user_id=user_id).all()]
 
         result = {'owned': [], 'affordable': [], 'locked': []}
 
@@ -787,7 +793,8 @@ def get_user_achievements():
             achievement_data = achievement.serialize()
             achievement_data['user_progress'] = user_progress.progress if user_progress else 0
             achievement_data['is_completed'] = user_progress.is_completed if user_progress else False
-            achievement_data['earned_at'] = user_progress.earned_at.isoformat() if user_progress and user_progress.earned_at else None
+            achievement_data['earned_at'] = user_progress.earned_at.isoformat(
+            ) if user_progress and user_progress.earned_at else None
             result.append(achievement_data)
 
         return jsonify({
@@ -799,32 +806,33 @@ def get_user_achievements():
 
     except Exception as e:
         return jsonify({'success': False, 'message': f'Error fetching achievements: {str(e)}'}), 500
-    
-@api.route('/api/habits/<int:user_id>', methods=['GET'])
+
+
+@api.route('/habits/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_habits(user_id):
     """Get user's habit tracker data"""
     try:
         current_user_id = get_jwt_identity()
-        
+
         # Verify user can only access their own habits
         if current_user_id != user_id:
             return jsonify({'error': 'Unauthorized'}), 403
-        
+
         user = User.query.get(user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
-        
+
         # Get or create habit tracker data
         from datetime import datetime, date
-        
+
         # Check if we have stored habit data (you can store this in a new model or use existing fields)
         # For now, we'll use a simple approach with User fields
         # You may want to create a separate HabitTracker model for better organization
-        
+
         # Get today's date
         today = date.today().isoformat()
-        
+
         # Check if data needs to be reset (new day)
         if hasattr(user, 'habit_last_reset') and user.habit_last_reset != today:
             # Reset daily data but keep streak if all tasks were completed yesterday
@@ -832,13 +840,13 @@ def get_user_habits(user_id):
                 user.habit_streak_days = (user.habit_streak_days or 0) + 1
             else:
                 user.habit_streak_days = 0
-            
+
             user.habit_completed_tasks = []
             user.habit_daily_points = 0
             user.habit_game_states = {}
             user.habit_last_reset = today
             db.session.commit()
-        
+
         return jsonify({
             'daily_points': getattr(user, 'habit_daily_points', 0),
             'completed_tasks': getattr(user, 'habit_completed_tasks', []),
@@ -846,35 +854,35 @@ def get_user_habits(user_id):
             'streak_days': getattr(user, 'habit_streak_days', 0),
             'game_states': getattr(user, 'habit_game_states', {})
         }), 200
-        
+
     except Exception as e:
         print(f"Error fetching user habits: {e}")
         return jsonify({'error': 'Failed to fetch habits'}), 500
 
 
-@api.route('/api/habits/<int:user_id>/complete', methods=['POST'])
+@api.route('/habits/<int:user_id>/complete', methods=['POST'])
 @jwt_required()
 def complete_habit_task(user_id):
     """Complete a habit task and update points/streak"""
     try:
         current_user_id = get_jwt_identity()
-        
+
         # Verify user can only update their own habits
         if current_user_id != user_id:
             return jsonify({'error': 'Unauthorized'}), 403
-        
+
         data = request.json
         routine_id = data.get('routine_id')
         points_earned = data.get('points_earned', 10)
         all_completed = data.get('all_completed', False)
-        
+
         if not routine_id:
             return jsonify({'error': 'routine_id is required'}), 400
-        
+
         user = User.query.get(user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
-        
+
         # Initialize fields if they don't exist
         if not hasattr(user, 'habit_completed_tasks') or user.habit_completed_tasks is None:
             user.habit_completed_tasks = []
@@ -882,30 +890,31 @@ def complete_habit_task(user_id):
             user.habit_daily_points = 0
         if not hasattr(user, 'habit_streak_days') or user.habit_streak_days is None:
             user.habit_streak_days = 0
-        
+
         # Check if already completed
         completed_tasks = user.habit_completed_tasks or []
         if routine_id in completed_tasks:
             return jsonify({'error': 'Task already completed'}), 400
-        
+
         # Update completed tasks
         completed_tasks.append(routine_id)
         user.habit_completed_tasks = completed_tasks
-        
+
         # Update points
-        user.habit_daily_points = (user.habit_daily_points or 0) + points_earned
-        
+        user.habit_daily_points = (
+            user.habit_daily_points or 0) + points_earned
+
         # Update total user XP as well
         user.add_xp(points_earned)
-        
+
         # If all tasks completed, update streak
         if all_completed:
             # Streak will be updated on next day's reset
             # This ensures streak counts full days, not partial completions
             pass
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
             'daily_points': user.habit_daily_points,
@@ -913,7 +922,7 @@ def complete_habit_task(user_id):
             'streak_days': user.habit_streak_days,
             'total_xp': user.xp
         }), 200
-        
+
     except Exception as e:
         db.session.rollback()
         print(f"Error completing habit task: {e}")
