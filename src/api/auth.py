@@ -461,6 +461,18 @@ def update_profile():
         }), 500
 
 
+@auth.route('/test-token', methods=['GET'])
+@jwt_required()
+def test_token():
+    """Test if JWT validation is working"""
+    user_id = get_jwt_identity()
+    return jsonify({
+        'success': True,
+        'message': 'Token is valid!',
+        'user_id': user_id
+    }), 200
+
+
 @auth.route('/change-password', methods=['PUT'])
 @jwt_required()
 def change_password():

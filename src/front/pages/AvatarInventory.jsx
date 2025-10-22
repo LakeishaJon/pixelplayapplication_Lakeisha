@@ -7,8 +7,8 @@ const AvatarInventory = ({ onNavigate }) => {
   const {
     savedAvatars,
     inventory,
-    backendInventory,  // NEW: From backend API
-    achievements,       // NEW: From backend API
+    backendInventory,
+    achievements,
     userStats,
     setCurrentAvatar,
     isLoading,
@@ -16,14 +16,60 @@ const AvatarInventory = ({ onNavigate }) => {
     refreshData
   } = useAvatar();
 
-  console.log('🎨 AvatarInventory Context Data:', {
-    savedAvatars,
-    inventory,
-    backendInventory,
-    achievements,
+  console.log('🎨 AvatarInventory - Working without authentication!', {
+    savedAvatars: savedAvatars?.length || 0,
+    inventory: Object.keys(inventory || {}).length,
+    backendInventory: backendInventory?.length || 0,
+    achievements: achievements?.length || 0,
     userStats,
     isLoading
   });
+
+  // ⭐ MOCK DATA - Used when backend is empty or unavailable
+  const mockInventoryItems = [
+    { name: 'Cool Sunglasses', category: 'accessories', icon: '🕶️', is_equipped: false },
+    { name: 'Red Cap', category: 'clothing', icon: '🧢', is_equipped: true },
+    { name: 'Blue Hoodie', category: 'clothing', icon: '🧥', is_equipped: false },
+    { name: 'Sneakers', category: 'clothing', icon: '👟', is_equipped: false },
+    { name: 'Backpack', category: 'accessories', icon: '🎒', is_equipped: false },
+    { name: 'Watch', category: 'accessories', icon: '⌚', is_equipped: false },
+  ];
+
+  const mockAchievements = [
+    {
+      name: 'First Steps',
+      description: 'Complete your first workout',
+      is_completed: true,
+      earned_at: new Date().toISOString()
+    },
+    {
+      name: 'Week Warrior',
+      description: 'Work out 7 days in a row',
+      is_completed: false,
+      user_progress: 45
+    },
+    {
+      name: 'Century Club',
+      description: 'Complete 100 workouts',
+      is_completed: false,
+      user_progress: 23
+    },
+    {
+      name: 'Marathon Master',
+      description: 'Run 26 miles total',
+      is_completed: false,
+      user_progress: 68
+    },
+  ];
+
+  // Use backend data if available, otherwise use mock data
+  const displayInventory = backendInventory && backendInventory.length > 0
+    ? backendInventory
+    : mockInventoryItems;
+
+  const displayAchievements = achievements && achievements.length > 0
+    ? achievements
+    : mockAchievements;
 
   // Handle using an avatar
   const handleUseAvatar = (avatar) => {
@@ -40,7 +86,7 @@ const AvatarInventory = ({ onNavigate }) => {
     onNavigate('editor', avatar);
   };
 
-  // Show loading state
+  // Show loading state (though it should be instant now)
   if (isLoading) {
     return (
       <div className="avatar-inventory-page">
@@ -78,10 +124,10 @@ const AvatarInventory = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error Message - Modified to be less alarming */}
       {syncError && (
         <div className="error-banner">
-          <span>⚠️ Could not load data from server</span>
+          <span>⚠️ Using offline mode - showing demo data</span>
           <button onClick={refreshData} className="retry-btn">Try Again</button>
         </div>
       )}
@@ -149,12 +195,12 @@ const AvatarInventory = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Backend Inventory Items Section */}
+        {/* Inventory Items Section - Now shows demo data */}
         <div className="inventory-items-section">
           <div className="section-card">
-            <h2>🎒 Inventory Items (From Database)</h2>
+            <h2>🎒 Inventory Items {!backendInventory || backendInventory.length === 0 ? '(Demo)' : ''}</h2>
 
-            {!backendInventory || backendInventory.length === 0 ? (
+            {displayInventory.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">📦</div>
                 <h3>No Items Yet</h3>
@@ -168,7 +214,7 @@ const AvatarInventory = ({ onNavigate }) => {
               </div>
             ) : (
               <div className="inventory-grid">
-                {backendInventory.map((item, index) => (
+                {displayInventory.map((item, index) => (
                   <div key={index} className="inventory-item-card">
                     <div className="item-icon">{item.icon || '📦'}</div>
                     <div className="item-details">
@@ -185,12 +231,12 @@ const AvatarInventory = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Achievements Section */}
+        {/* Achievements Section - Now shows demo data */}
         <div className="achievements-section">
           <div className="section-card">
-            <h2>🏆 Achievements</h2>
+            <h2>🏆 Achievements {!achievements || achievements.length === 0 ? '(Demo)' : ''}</h2>
 
-            {!achievements || achievements.length === 0 ? (
+            {displayAchievements.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">🏆</div>
                 <h3>No Achievements Yet</h3>
@@ -198,7 +244,7 @@ const AvatarInventory = ({ onNavigate }) => {
               </div>
             ) : (
               <div className="achievements-grid">
-                {achievements.map((achievement, index) => (
+                {displayAchievements.map((achievement, index) => (
                   <div
                     key={index}
                     className={`achievement-card ${achievement.is_completed ? 'completed' : 'locked'}`}
@@ -233,7 +279,7 @@ const AvatarInventory = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* Local Inventory (Fallback) */}
+        {/* Local Inventory (Browser-saved items) */}
         {inventory && Object.keys(inventory).length > 0 && (
           <div className="local-inventory-section">
             <div className="section-card">
@@ -279,13 +325,13 @@ const AvatarInventory = ({ onNavigate }) => {
               </div>
               <div className="stat-item">
                 <div className="stat-icon">📦</div>
-                <div className="stat-number">{backendInventory?.length || 0}</div>
+                <div className="stat-number">{displayInventory?.length || 0}</div>
                 <div className="stat-label">Inventory Items</div>
               </div>
               <div className="stat-item">
                 <div className="stat-icon">🏆</div>
                 <div className="stat-number">
-                  {achievements?.filter(a => a.is_completed).length || 0}
+                  {displayAchievements?.filter(a => a.is_completed).length || 0}
                 </div>
                 <div className="stat-label">Achievements</div>
               </div>

@@ -1,7 +1,8 @@
 // auth.js - Authentication utility functions for PixelPlay
+// UPDATED: Now saves tokens with multiple keys for compatibility
 
 const API_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:30001";
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 // Token storage keys
 const TOKEN_KEY = "pixelplay_token";
@@ -13,7 +14,14 @@ const USER_KEY = "pixelplay_user";
  * @returns {string|null} JWT token or null if not found
  */
 export const getAuthToken = () => {
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
+  // Check all possible token key names for compatibility
+  return (
+    localStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem("userToken") ||
+    localStorage.getItem("access_token") ||
+    localStorage.getItem("accessToken") ||
+    sessionStorage.getItem(TOKEN_KEY)
+  );
 };
 
 /**
@@ -23,12 +31,15 @@ export const getAuthToken = () => {
 export const getRefreshToken = () => {
   return (
     localStorage.getItem(REFRESH_TOKEN_KEY) ||
+    localStorage.getItem("refreshToken") ||
+    localStorage.getItem("refresh_token") ||
     sessionStorage.getItem(REFRESH_TOKEN_KEY)
   );
 };
 
 /**
  * Store authentication tokens
+ * UPDATED: Now saves with MULTIPLE keys for compatibility!
  * @param {string} accessToken - JWT access token
  * @param {string} refreshToken - JWT refresh token (optional)
  * @param {boolean} remember - Whether to use localStorage (true) or sessionStorage (false)
@@ -36,22 +47,63 @@ export const getRefreshToken = () => {
 export const setAuthTokens = (accessToken, refreshToken, remember = false) => {
   const storage = localStorage; // Always use localStorage
 
-  storage.setItem(TOKEN_KEY, accessToken);
+  console.log("💾 Saving tokens with multiple keys for compatibility...");
+
+  // Save access token with ALL possible key names
+  storage.setItem(TOKEN_KEY, accessToken); // Original: pixelplay_token
+  storage.setItem("userToken", accessToken); // For InventoryPage
+  storage.setItem("access_token", accessToken); // For backend calls
+  storage.setItem("accessToken", accessToken); // Alternative format
+  storage.setItem("token", accessToken); // Generic key
+
+  // Save refresh token with ALL possible key names
   if (refreshToken) {
-    storage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    storage.setItem(REFRESH_TOKEN_KEY, refreshToken); // Original: pixelplay_refresh_token
+    storage.setItem("refreshToken", refreshToken); // Standard format
+    storage.setItem("refresh_token", refreshToken); // Backend format
   }
+
+  // Mark as authenticated
+  storage.setItem("isAuthenticated", "true");
+
+  console.log("✅ Tokens saved successfully with keys:", {
+    pixelplay_token: !!storage.getItem(TOKEN_KEY),
+    userToken: !!storage.getItem("userToken"),
+    access_token: !!storage.getItem("access_token"),
+    refreshToken: !!storage.getItem("refreshToken"),
+  });
 };
 
 /**
  * Remove authentication tokens from storage
+ * UPDATED: Clears ALL possible token keys
  */
 export const removeAuthTokens = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-  sessionStorage.removeItem(USER_KEY);
+  console.log("🗑️ Clearing all authentication tokens...");
+
+  // Remove all possible token key variations
+  const keysToRemove = [
+    TOKEN_KEY,
+    REFRESH_TOKEN_KEY,
+    USER_KEY,
+    "userToken",
+    "access_token",
+    "accessToken",
+    "token",
+    "refreshToken",
+    "refresh_token",
+    "isAuthenticated",
+    "userId",
+    "userEmail",
+    "userName",
+  ];
+
+  keysToRemove.forEach((key) => {
+    localStorage.removeItem(key);
+    sessionStorage.removeItem(key);
+  });
+
+  console.log("✅ All authentication data cleared");
 };
 
 /**
@@ -60,6 +112,11 @@ export const removeAuthTokens = () => {
  */
 export const setUserData = (user) => {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+  // Also save individual user fields for easy access
+  if (user.id) localStorage.setItem("userId", user.id);
+  if (user.email) localStorage.setItem("userEmail", user.email);
+  if (user.name) localStorage.setItem("userName", user.name);
 };
 
 /**
@@ -82,13 +139,26 @@ export const getUserData = () => {
  */
 export const isAuthenticated = () => {
   const token = getAuthToken();
+
+  console.log("🔐 Authentication check:", {
+    hasToken: !!token,
+    tokenPreview: token ? `${token.substring(0, 20)}...` : "none",
+  });
+
   if (!token) return false;
 
   try {
     // Check if token is expired (basic check)
     const payload = JSON.parse(atob(token.split(".")[1]));
     const currentTime = Date.now() / 1000;
-    return payload.exp > currentTime;
+    const isValid = payload.exp > currentTime;
+
+    console.log("🔐 Token validity:", {
+      expires: new Date(payload.exp * 1000).toLocaleString(),
+      isValid,
+    });
+
+    return isValid;
   } catch (error) {
     console.error("Error checking token validity:", error);
     return false;
@@ -103,6 +173,8 @@ export const isAuthenticated = () => {
  * @returns {Promise<object>} Login response
  */
 export const login = async (email, password, remember = false) => {
+  console.log("🔐 Attempting login for:", email);
+
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: "POST",
@@ -119,7 +191,9 @@ export const login = async (email, password, remember = false) => {
     }
 
     if (data.success && data.access_token) {
-      // Store tokens
+      console.log("✅ Login successful");
+
+      // Store tokens with multiple keys
       setAuthTokens(data.access_token, data.refresh_token, remember);
 
       // Store user data if provided
@@ -136,7 +210,7 @@ export const login = async (email, password, remember = false) => {
       throw new Error(data.message || "Invalid response from server");
     }
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("❌ Login error:", error);
     return {
       success: false,
       message: error.message || "Login failed",
@@ -152,6 +226,8 @@ export const login = async (email, password, remember = false) => {
  * @returns {Promise<object>} Registration response
  */
 export const register = async (email, password, confirmPassword) => {
+  console.log("📝 Attempting registration for:", email);
+
   try {
     if (password !== confirmPassword) {
       throw new Error("Passwords do not match");
@@ -172,15 +248,26 @@ export const register = async (email, password, confirmPassword) => {
     }
 
     if (data.success) {
+      console.log("✅ Registration successful");
+
+      // If registration returns tokens, save them
+      if (data.access_token) {
+        setAuthTokens(data.access_token, data.refresh_token, true);
+        if (data.user) {
+          setUserData(data.user);
+        }
+      }
+
       return {
         success: true,
         message: data.message || "Registration successful",
+        user: data.user,
       };
     } else {
       throw new Error(data.message || "Invalid response from server");
     }
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("❌ Registration error:", error);
     return {
       success: false,
       message: error.message || "Registration failed",
@@ -193,6 +280,8 @@ export const register = async (email, password, confirmPassword) => {
  * @returns {Promise<object>} Logout response
  */
 export const logout = async () => {
+  console.log("👋 Logging out...");
+
   try {
     const token = getAuthToken();
 
@@ -217,6 +306,8 @@ export const logout = async () => {
     // Clear local storage regardless of server response
     removeAuthTokens();
 
+    console.log("✅ Logged out successfully");
+
     return {
       success: true,
       message: "Logged out successfully",
@@ -237,6 +328,8 @@ export const logout = async () => {
  * @returns {Promise<string|null>} New access token or null if refresh failed
  */
 export const refreshAuthToken = async () => {
+  console.log("🔄 Refreshing authentication token...");
+
   try {
     const refreshToken = getRefreshToken();
 
@@ -259,17 +352,18 @@ export const refreshAuthToken = async () => {
     }
 
     if (data.success && data.access_token) {
-      // Update stored token
+      console.log("✅ Token refreshed successfully");
+
+      // Update stored token with multiple keys
       const currentRefreshToken = getRefreshToken();
-      const remember = localStorage.getItem(TOKEN_KEY) !== null;
-      setAuthTokens(data.access_token, currentRefreshToken, remember);
+      setAuthTokens(data.access_token, currentRefreshToken, true);
 
       return data.access_token;
     } else {
       throw new Error("Invalid refresh response");
     }
   } catch (error) {
-    console.error("Token refresh error:", error);
+    console.error("❌ Token refresh error:", error);
     // If refresh fails, user needs to login again
     removeAuthTokens();
     return null;
@@ -284,6 +378,8 @@ export const refreshAuthToken = async () => {
  */
 export const authenticatedFetch = async (url, options = {}) => {
   let token = getAuthToken();
+
+  console.log("📡 Authenticated fetch to:", url, "Token exists:", !!token);
 
   if (!token) {
     throw new Error("No authentication token available");
@@ -304,17 +400,25 @@ export const authenticatedFetch = async (url, options = {}) => {
 
   // If token expired, try to refresh and retry
   if (response.status === 401) {
+    console.log("⚠️ 401 Unauthorized - Attempting token refresh...");
+
     const newToken = await refreshAuthToken();
 
     if (newToken) {
+      console.log("🔄 Retrying request with new token...");
       // Retry with new token
       headers["Authorization"] = `Bearer ${newToken}`;
       response = await fetch(url, {
         ...options,
         headers,
       });
+
+      if (response.ok) {
+        console.log("✅ Request successful after token refresh");
+      }
     } else {
       // Refresh failed, redirect to login
+      console.error("❌ Token refresh failed - redirecting to login");
       throw new Error("Authentication expired. Please login again.");
     }
   }
@@ -446,6 +550,7 @@ if (typeof window !== "undefined") {
 
 export default {
   getAuthToken,
+  getRefreshToken,
   setAuthTokens,
   removeAuthTokens,
   setUserData,

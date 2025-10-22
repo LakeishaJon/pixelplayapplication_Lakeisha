@@ -34,11 +34,16 @@ const initialState = {
     accessories: ['glasses'],
     colors: ['blue', 'red', 'green', 'purple']
   },
+  // Backend data (using defaults for now)
+  backendInventory: [],
+  achievements: [],
   editorSettings: {
     currentStyle: 'avataaars',
     previewMode: 'live'
   },
-  notifications: []
+  notifications: [],
+  isLoading: false,
+  syncError: null
 };
 
 // Reducer
@@ -87,6 +92,16 @@ const avatarReducer = (state, action) => {
       return { ...state, notifications: state.notifications.filter(n => n.id !== action.payload) };
     case 'LOAD_USER_DATA':
       return { ...state, ...action.payload };
+    case 'SET_BACKEND_INVENTORY':
+      return { ...state, backendInventory: action.payload };
+    case 'SET_ACHIEVEMENTS':
+      return { ...state, achievements: action.payload };
+    case 'SET_USER_STATS_FROM_BACKEND':
+      return { ...state, userStats: { ...state.userStats, ...action.payload } };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
+    case 'SET_ERROR':
+      return { ...state, syncError: action.payload };
     default:
       return state;
   }
@@ -96,7 +111,7 @@ const avatarReducer = (state, action) => {
 export const AvatarProvider = ({ children }) => {
   const [state, dispatch] = useReducer(avatarReducer, initialState);
 
-  // Save state to localStorage
+  // Save LOCAL state to localStorage (avatars saved in browser)
   useEffect(() => {
     const dataToSave = {
       userStats: state.userStats,
@@ -107,7 +122,7 @@ export const AvatarProvider = ({ children }) => {
     localStorage.setItem('pixelplay-data', JSON.stringify(dataToSave));
   }, [state.userStats, state.currentAvatar, state.savedAvatars, state.inventory]);
 
-  // Load state from localStorage
+  // Load LOCAL state from localStorage
   useEffect(() => {
     const savedData = localStorage.getItem('pixelplay-data');
     if (savedData) {
@@ -120,10 +135,21 @@ export const AvatarProvider = ({ children }) => {
     }
   }, []);
 
+  // ⭐ REMOVED BACKEND FETCHING - No auth required!
+  // Backend calls are commented out for now
+
+  const refreshData = () => {
+    console.log('📦 Refresh requested, but backend fetch is disabled');
+    // Backend fetch disabled - using local data only
+  };
+
   // Helper functions
   const value = {
     ...state,
     dispatch,
+    isLoading: false,
+    syncError: null,
+    refreshData,
     updateAvatar: (changes) => dispatch({ type: 'UPDATE_AVATAR', payload: changes }),
     saveAvatar: (name, settings) => dispatch({ type: 'SAVE_AVATAR', payload: { name, settings } }),
     setCurrentAvatar: (avatar) => dispatch({ type: 'SET_CURRENT_AVATAR', payload: avatar }),
