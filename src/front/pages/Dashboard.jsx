@@ -42,7 +42,7 @@ const Dashboard = () => {
         navigate('/avatar-editor');
         break;
       case 'inventory':
-        navigate('/inventory');
+        navigate('/collection');
         break;
       default:
         console.log(`Navigation to ${route} not implemented`);

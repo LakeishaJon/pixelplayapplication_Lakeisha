@@ -13,6 +13,7 @@ import HabitTracker from "./pages/HabitTracker";
 import RewardStore from "./pages/RewardStore";
 import StoryCreator from "./pages/StoryCreator";
 import AuthCallback from './pages/AuthCallback';
+import CollectionPage from "./pages/CollectionPage";
 
 // Create the router configuration
 const router = createBrowserRouter([
@@ -64,7 +65,7 @@ const router = createBrowserRouter([
         path: "avatar-inventory",
         element: (
           <ProtectedRoute>
-            <AvatarInventory />
+            <CollectionPage />
           </ProtectedRoute>
         ),
       },

@@ -1,504 +1,130 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAvatar } from '../Contexts/AvatarContext';
-import { isAuthenticated, authenticatedFetch } from '../utils/auth'; // ✅ Use authenticatedFetch!
-import "../styles/InventoryPage.css";
+import '../styles/InventoryPage.css';
 
 const InventoryPage = () => {
   const navigate = useNavigate();
-  const { userStats } = useAvatar();
   const [activeTab, setActiveTab] = useState('myItems');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [activeCategory, setActiveCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [inventoryItems, setInventoryItems] = useState([]);
+  const [items, setItems] = useState([]);
   const [achievements, setAchievements] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [backendConnected, setBackendConnected] = useState(false);
 
-  // ✅ FIXED: Correct port!
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  // ⭐ MOCK DATA - Used as fallback
+  const mockInventoryItems = [
+    { id: 1, name: 'Cool Sunglasses', category: 'accessories', icon: '🕶️', owned: true, equipped: false, price: 100 },
+    { id: 2, name: 'Red Cap', category: 'clothing', icon: '🧢', owned: true, equipped: true, price: 50 },
+    { id: 3, name: 'Blue T-Shirt', category: 'clothing', icon: '👕', owned: true, equipped: false, price: 75 },
+    { id: 4, name: 'Sneakers', category: 'clothing', icon: '👟', owned: true, equipped: false, price: 150 },
+    { id: 5, name: 'Backpack', category: 'accessories', icon: '🎒', owned: true, equipped: false, price: 200 },
+    { id: 6, name: 'Watch', category: 'accessories', icon: '⌚', owned: false, equipped: false, price: 300 },
+    { id: 7, name: 'Hoodie', category: 'clothing', icon: '🧥', owned: false, equipped: false, price: 125 },
+  ];
 
-  const handleNavigateToDashboard = () => {
-    navigate('/dashboard');
-  };
+  const mockAchievements = [
+    { id: 1, name: 'First Steps', description: 'Complete your first workout', icon: '🏃', unlocked: true, progress: 100 },
+    { id: 2, name: 'Week Warrior', description: 'Work out 7 days in a row', icon: '🔥', unlocked: true, progress: 100 },
+    { id: 3, name: 'Century Club', description: 'Complete 100 workouts', icon: '💯', unlocked: false, progress: 45 },
+    { id: 4, name: 'Marathon Master', description: 'Run 26 miles total', icon: '🏅', unlocked: false, progress: 68 },
+    { id: 5, name: 'Strength Supreme', description: 'Complete 50 strength workouts', icon: '💪', unlocked: false, progress: 32 },
+  ];
 
-  const handleNavigateToEditor = () => {
-    navigate('/avatar-editor');
-  };
+  // ⭐ NO AUTHENTICATION CHECK - Removed completely!
 
-  const handleNavigateToHome = () => {
-    navigate('/');
-  };
+  useEffect(() => {
+    console.log('🚀 InventoryPage mounted (NO AUTH REQUIRED)');
+    fetchData();
+  }, []);
 
-  // Check authentication
-  const checkAuthentication = () => {
-    console.log('🔐 Checking authentication...');
-    if (!isAuthenticated()) {
-      console.error('❌ User not authenticated, redirecting to login...');
-      setError('Please log in to view your inventory.');
-      setLoading(false);
-      setTimeout(() => navigate('/login'), 2000);
-      return false;
-    }
-    console.log('✅ User is authenticated');
-    return true;
-  };
+  // ⭐ FETCH DATA WITHOUT AUTHENTICATION
+  const fetchData = async () => {
+    setLoading(true);
 
-  // Helper to get category background colors
-  const getCategoryBackgroundColor = (category, rarity = 'common') => {
-    const colorMap = {
-      clothing: {
-        common: '#E3F2FD',
-        rare: '#BBDEFB',
-        epic: '#90CAF9',
-        legendary: '#64B5F6'
-      },
-      accessories: {
-        common: '#FFF3C4',
-        rare: '#FFEB3B',
-        epic: '#FFC107',
-        legendary: '#FF9800'
-      },
-      consumables: {
-        common: '#E8F5E8',
-        rare: '#C8E6C9',
-        epic: '#A5D6A7',
-        legendary: '#81C784'
-      },
-      default: {
-        common: '#F5F5F5',
-        rare: '#E0E0E0',
-        epic: '#BDBDBD',
-        legendary: '#9E9E9E'
-      }
-    };
-    return colorMap[category]?.[rarity] || colorMap.default[rarity];
-  };
-
-  // Helper to get item icon
-  const getItemIcon = (category, name) => {
-    const iconMap = {
-      clothing: {
-        'cape': '🦸',
-        'shirt': '👕',
-        'hoodie': '🧥',
-        'jacket': '🧥',
-        'blazer': '👔',
-        'dress': '👗',
-        'default': '👕'
-      },
-      accessories: {
-        'sneakers': '👟',
-        'shoes': '👟',
-        'tracker': '⌚',
-        'watch': '⌚',
-        'headband': '🎯',
-        'gloves': '🧤',
-        'glasses': '👓',
-        'sunglasses': '🕶️',
-        'hat': '👒',
-        'crown': '👑',
-        'mask': '🎭',
-        'default': '👑'
-      },
-      consumables: {
-        'potion': '🧪',
-        'energy': '⚡',
-        'health': '💊',
-        'default': '🍎'
-      }
-    };
-
-    const categoryIcons = iconMap[category] || iconMap.accessories;
-    const nameKey = Object.keys(categoryIcons).find(key =>
-      name.toLowerCase().includes(key)
-    );
-    return categoryIcons[nameKey] || categoryIcons.default;
-  };
-
-  // ✅ FIXED: Using authenticatedFetch
-  const fetchInventory = async () => {
+    // Try to fetch from backend (without auth)
     try {
-      setLoading(true);
-      setError(null);
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
-      // Check authentication first
-      if (!checkAuthentication()) {
-        return;
-      }
+      console.log('📡 Attempting to fetch from backend (no auth)...');
 
-      const url = `${API_BASE_URL}/api/inventory`;
-      console.log('📡 Fetching inventory from:', url);
+      // Try fetching inventory
+      try {
+        const inventoryResponse = await fetch(`${backendUrl}/api/inventory`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
-      // ✅ Use authenticatedFetch - it handles auth automatically!
-      const response = await authenticatedFetch(url);
-
-      console.log('📥 Response status:', response.status);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expired. Please log in again.');
-          setTimeout(() => navigate('/login'), 2000);
-          return;
+        if (inventoryResponse.ok) {
+          const inventoryData = await inventoryResponse.json();
+          console.log('✅ Backend inventory loaded:', inventoryData);
+          setItems(inventoryData.items || mockInventoryItems);
+          setBackendConnected(true);
+        } else {
+          console.log('⚠️ Backend returned error, using mock data');
+          setItems(mockInventoryItems);
+          setBackendConnected(false);
         }
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ API Error:', errorData);
-        setError(errorData.message || 'Failed to fetch inventory');
-        return;
+      } catch (error) {
+        console.log('⚠️ Backend not available, using mock data');
+        setItems(mockInventoryItems);
+        setBackendConnected(false);
       }
 
-      const data = await response.json();
-      console.log('✅ Inventory data received:', data);
+      // Try fetching achievements
+      try {
+        const achievementsResponse = await fetch(`${backendUrl}/api/achievements`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
-      if (data.success && data.inventory) {
-        const transformedItems = data.inventory.map(item => ({
-          id: item.id,
-          inventoryId: item.id,
-          itemId: item.item?.id || item.id,
-          name: item.item?.name || item.name || 'Unknown Item',
-          category: item.item?.category || item.category || 'default',
-          equipped: item.is_equipped || false,
-          favorite: item.is_favorite || false,
-          backgroundColor: getCategoryBackgroundColor(
-            item.item?.category || item.category || 'default',
-            item.item?.rarity || 'common'
-          ),
-          icon: getItemIcon(
-            item.item?.category || item.category || 'accessories',
-            item.item?.name || item.name || 'default'
-          ),
-          rarity: item.item?.rarity || 'common',
-          description: item.item?.description || item.description,
-          level_required: item.item?.level_required || 1,
-          coin_cost: item.item?.coin_cost || 0,
-          xp_cost: item.item?.xp_cost || 0,
-          acquired_at: item.acquired_at
-        }));
-
-        console.log('✅ Transformed items:', transformedItems);
-        setInventoryItems(transformedItems);
-      } else {
-        // Empty inventory is OK
-        console.log('ℹ️ Inventory is empty');
-        setInventoryItems([]);
+        if (achievementsResponse.ok) {
+          const achievementsData = await achievementsResponse.json();
+          console.log('✅ Backend achievements loaded:', achievementsData);
+          setAchievements(achievementsData.achievements || mockAchievements);
+        } else {
+          console.log('⚠️ Backend returned error, using mock achievements');
+          setAchievements(mockAchievements);
+        }
+      } catch (error) {
+        console.log('⚠️ Backend not available, using mock achievements');
+        setAchievements(mockAchievements);
       }
-    } catch (err) {
-      console.error('❌ Error fetching inventory:', err);
 
-      // Check if it's an auth error
-      if (err.message.includes('expired') || err.message.includes('authentication')) {
-        setError('Session expired. Please log in again.');
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        setError(`Failed to load inventory: ${err.message}`);
-      }
+    } catch (error) {
+      console.log('⚠️ Error fetching data, using mock data:', error);
+      setItems(mockInventoryItems);
+      setAchievements(mockAchievements);
+      setBackendConnected(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ FIXED: Fetch achievements with authenticatedFetch
-  const fetchAchievements = async () => {
-    try {
-      if (!checkAuthentication()) {
-        return;
-      }
-
-      const url = `${API_BASE_URL}/api/achievements`;
-      console.log('📡 Fetching achievements from:', url);
-
-      // ✅ Use authenticatedFetch
-      const response = await authenticatedFetch(url);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Achievements data:', data);
-
-        if (data.success && data.achievements) {
-          const transformedAchievements = data.achievements.map(achievement => ({
-            id: achievement.id,
-            name: achievement.name,
-            description: achievement.description,
-            completed: achievement.is_completed,
-            progress: achievement.user_progress || 0,
-            total: achievement.requirement_value || 100,
-            icon: getAchievementIcon(achievement.name),
-            earned_at: achievement.earned_at
-          }));
-          setAchievements(transformedAchievements);
-        } else {
-          setAchievements([]);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error fetching achievements:', error);
-      // Don't set error for achievements - not critical
-    }
-  };
-
-  // Helper for achievement icons
-  const getAchievementIcon = (name) => {
-    const iconMap = {
-      'first': '🎯',
-      'steps': '👣',
-      'warrior': '💪',
-      'workout': '🏋️',
-      'level': '⭐',
-      'master': '🏆',
-      'streak': '🔥',
-      'point': '💎'
-    };
-
-    const nameKey = Object.keys(iconMap).find(key =>
-      name.toLowerCase().includes(key)
-    );
-    return iconMap[nameKey] || '🏅';
-  };
-
-  // ✅ FIXED: Handle equipping with authenticatedFetch
-  const handleEquipItem = async (inventoryId) => {
-    try {
-      if (!checkAuthentication()) {
-        return;
-      }
-
-      const url = `${API_BASE_URL}/api/inventory/${inventoryId}/equip`;
-      console.log('📡 Equipping item:', url);
-
-      const response = await authenticatedFetch(url, {
-        method: 'PATCH'
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expired. Please log in again.');
-          setTimeout(() => navigate('/login'), 2000);
-        }
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setInventoryItems(prev => prev.map(item =>
-          item.inventoryId === inventoryId
-            ? { ...item, equipped: !item.equipped }
-            : item
-        ));
-        console.log('✅ Item equipped successfully');
-      }
-    } catch (error) {
-      console.error('❌ Error equipping item:', error);
-    }
-  };
-
-  // ✅ FIXED: Handle favoriting with authenticatedFetch
-  const handleFavoriteItem = async (inventoryId) => {
-    try {
-      if (!checkAuthentication()) {
-        return;
-      }
-
-      const url = `${API_BASE_URL}/api/inventory/${inventoryId}/favorite`;
-      console.log('📡 Favoriting item:', url);
-
-      const response = await authenticatedFetch(url, {
-        method: 'PATCH'
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expired. Please log in again.');
-          setTimeout(() => navigate('/login'), 2000);
-        }
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.success) {
-        setInventoryItems(prev => prev.map(item =>
-          item.inventoryId === inventoryId
-            ? { ...item, favorite: !item.favorite }
-            : item
-        ));
-        console.log('✅ Item favorited successfully');
-      }
-    } catch (error) {
-      console.error('❌ Error favoriting item:', error);
-    }
-  };
-
-  // Filter inventory items
-  const filteredItems = inventoryItems.filter(item => {
-    const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+  // Filter items based on search and category
+  const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
+    return matchesSearch && matchesCategory;
   });
 
-  // Load data on mount
-  useEffect(() => {
-    console.log('🚀 InventoryPage mounted');
+  const ownedItems = filteredItems.filter(item => item.owned);
+  const shopItems = filteredItems.filter(item => !item.owned);
 
-    if (checkAuthentication()) {
-      fetchInventory();
-      fetchAchievements();
-    }
-  }, []);
-
-  // Render inventory items
-  const renderInventoryItems = () => {
-    if (loading) {
-      return (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading your awesome gear...</p>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="error-container">
-          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>❌</p>
-          <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>{error}</p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <button onClick={fetchInventory} className="retry-btn">
-              🔄 Try Again
-            </button>
-            <button onClick={() => navigate('/login')} className="login-btn">
-              🔐 Go to Login
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    if (filteredItems.length === 0) {
-      return (
-        <div className="empty-container">
-          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</p>
-          <p style={{ fontSize: '1.2rem' }}>
-            {searchTerm
-              ? 'No items match your search. Try adjusting your filters.'
-              : 'No items found. Start working out to earn awesome gear!'
-            }
-          </p>
-        </div>
-      );
-    }
-
+  if (loading) {
     return (
-      <div className="inventory-grid">
-        {filteredItems.map(item => (
-          <div
-            key={item.inventoryId}
-            className="inventory-card"
-            style={{ backgroundColor: item.backgroundColor }}
-          >
-            <div className="item-icon">{item.icon}</div>
-            <h3 className="item-name">{item.name}</h3>
-            {item.description && (
-              <p className="item-description">{item.description}</p>
-            )}
-            <div className="item-rarity">
-              <span className={`rarity-badge ${item.rarity}`}>
-                {item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}
-              </span>
-            </div>
-            <div className="item-actions">
-              <button
-                className={`favorite-btn ${item.favorite ? 'active' : ''}`}
-                onClick={() => handleFavoriteItem(item.inventoryId)}
-                disabled={loading}
-                title={item.favorite ? 'Remove from favorites' : 'Add to favorites'}
-              >
-                {item.favorite ? '❤️' : '🤍'}
-              </button>
-              <button
-                className={`equip-btn ${item.equipped ? 'equipped' : ''}`}
-                onClick={() => handleEquipItem(item.inventoryId)}
-                disabled={loading}
-              >
-                {item.equipped ? '✅ Equipped' : '🔄 Equip'}
-              </button>
-            </div>
-          </div>
-        ))}
+      <div className="inventory-page">
+        <div className="loading-container">
+          <div className="loading-spinner">🔄</div>
+          <h2>Loading Collection...</h2>
+        </div>
       </div>
     );
-  };
-
-  // Render achievements
-  const renderAchievements = () => (
-    <div className="achievements-list">
-      {achievements.length === 0 ? (
-        <div className="empty-container">
-          <p style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</p>
-          <p style={{ fontSize: '1.2rem' }}>
-            No achievements yet. Keep working out to unlock them!
-          </p>
-        </div>
-      ) : (
-        achievements.map(achievement => (
-          <div
-            key={achievement.id}
-            className={`achievement-card ${achievement.completed ? 'completed' : 'in-progress'}`}
-          >
-            <div className="achievement-icon">{achievement.icon}</div>
-            <div className="achievement-content">
-              <h3 className="achievement-name">{achievement.name}</h3>
-              <p className="achievement-description">{achievement.description}</p>
-              {achievement.completed ? (
-                <div className="completion-badge">
-                  ✅ Completed!
-                  {achievement.earned_at && (
-                    <span className="earned-date">
-                      {new Date(achievement.earned_at).toLocaleDateString()}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <div className="progress-container">
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${(achievement.progress / achievement.total) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="progress-text">
-                    {achievement.progress}/{achievement.total}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-  );
-
-  // Render shop placeholder
-  const renderShop = () => (
-    <div className="shop-container">
-      <h3>🛍️ Shop Coming Soon!</h3>
-      <p>Purchase new items to customize your avatar and enhance your workouts.</p>
-      <div className="shop-features">
-        <div className="feature">
-          <span className="feature-icon">👕</span>
-          <span>Exclusive Clothing</span>
-        </div>
-        <div className="feature">
-          <span className="feature-icon">⚡</span>
-          <span>Power-ups & Boosts</span>
-        </div>
-        <div className="feature">
-          <span className="feature-icon">🏆</span>
-          <span>Rare Collectibles</span>
-        </div>
-      </div>
-    </div>
-  );
+  }
 
   return (
     <div className="inventory-page">
@@ -507,110 +133,187 @@ const InventoryPage = () => {
         <div className="header-content">
           <div className="header-left">
             <div className="cube-icon">📦</div>
-            <div className="header-text">
+            <div>
               <h1>My Collection</h1>
-              <p>Check out all your awesome gear!</p>
+              <p>Check out all your awesome gear! {!backendConnected && '(Demo Mode)'}</p>
             </div>
           </div>
           <div className="header-right">
-            <div className="level-display">
-              <div className="level-text">Level {userStats?.level || 1}</div>
-              <div className="xp-text">✨ {userStats?.points || 0} XP</div>
+            <div className="level-badge">
+              <span className="level-number">Level 5</span>
+              <span className="xp-amount">⭐ 850 XP</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content Container */}
-      <div className="inventory-content">
-        {/* Main Navigation Tabs */}
-        <div className="main-tabs">
-          <button
-            className={`tab-btn ${activeTab === 'myItems' ? 'active' : ''}`}
-            onClick={() => setActiveTab('myItems')}
-          >
-            📦 My Items
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'shop' ? 'active' : ''}`}
-            onClick={() => setActiveTab('shop')}
-          >
-            🛍️ Shop
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'achievements' ? 'active' : ''}`}
-            onClick={() => setActiveTab('achievements')}
-          >
-            🏆 Achievements
-          </button>
+      {/* Backend Status Banner */}
+      {!backendConnected && (
+        <div style={{
+          background: 'rgba(251, 191, 36, 0.1)',
+          border: '2px solid #fbbf24',
+          borderRadius: '12px',
+          padding: '1rem',
+          margin: '0 2rem 1rem 2rem',
+          color: '#92400e',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
+          <span>Backend not connected - showing demo data</span>
         </div>
+      )}
 
-        {/* Secondary Controls */}
+      {/* Tabs */}
+      <div className="tabs-container">
+        <button
+          className={`tab ${activeTab === 'myItems' ? 'active' : ''}`}
+          onClick={() => setActiveTab('myItems')}
+        >
+          🎒 My Items
+        </button>
+        <button
+          className={`tab ${activeTab === 'shop' ? 'active' : ''}`}
+          onClick={() => setActiveTab('shop')}
+        >
+          🏪 Shop
+        </button>
+        <button
+          className={`tab ${activeTab === 'achievements' ? 'active' : ''}`}
+          onClick={() => setActiveTab('achievements')}
+        >
+          🏆 Achievements
+        </button>
+      </div>
+
+      {/* Filters (only show for items tabs) */}
+      {(activeTab === 'myItems' || activeTab === 'shop') && (
+        <div className="filters-container">
+          <div className="category-filters">
+            <button
+              className={`filter-btn ${activeCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('all')}
+            >
+              📦 All Items
+            </button>
+            <button
+              className={`filter-btn ${activeCategory === 'clothing' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('clothing')}
+            >
+              👕 Clothing
+            </button>
+            <button
+              className={`filter-btn ${activeCategory === 'accessories' ? 'active' : ''}`}
+              onClick={() => setActiveCategory('accessories')}
+            >
+              🎩 Accessories
+            </button>
+          </div>
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search items..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <span className="search-icon">🔍</span>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="inventory-content">
         {activeTab === 'myItems' && (
-          <div className="secondary-controls">
-            <div className="category-tabs">
-              <button
-                className={`category-btn ${categoryFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setCategoryFilter('all')}
-              >
-                📋 All Items
-              </button>
-              <button
-                className={`category-btn ${categoryFilter === 'clothing' ? 'active' : ''}`}
-                onClick={() => setCategoryFilter('clothing')}
-              >
-                👕 Clothing
-              </button>
-              <button
-                className={`category-btn ${categoryFilter === 'accessories' ? 'active' : ''}`}
-                onClick={() => setCategoryFilter('accessories')}
-              >
-                👑 Accessories
-              </button>
-            </div>
-            <div className="search-container">
-              <input
-                type="text"
-                placeholder="Search items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-              <span className="search-icon">🔍</span>
-            </div>
+          <div className="items-grid">
+            {ownedItems.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📦</div>
+                <h3>No items yet!</h3>
+                <p>Complete workouts to earn coins and buy items in the shop!</p>
+              </div>
+            ) : (
+              ownedItems.map(item => (
+                <div key={item.id} className={`item-card ${item.equipped ? 'equipped' : ''}`}>
+                  <div className="item-icon">{item.icon}</div>
+                  <h3>{item.name}</h3>
+                  <p className="item-category">{item.category}</p>
+                  {item.equipped && <span className="equipped-badge">✓ Equipped</span>}
+                  <div className="item-actions">
+                    <button className="equip-btn">
+                      {item.equipped ? 'Unequip' : 'Equip'}
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
 
-        {/* Tab Content */}
-        <div className="tab-content">
-          {activeTab === 'myItems' && renderInventoryItems()}
-          {activeTab === 'shop' && renderShop()}
-          {activeTab === 'achievements' && renderAchievements()}
-        </div>
-
-        {/* Bottom Navigation */}
-        <div className="bottom-navigation">
-          <div className="nav-buttons">
-            <button
-              onClick={handleNavigateToDashboard}
-              className="nav-btn secondary"
-            >
-              📊 Back to Dashboard
-            </button>
-            <button
-              onClick={handleNavigateToEditor}
-              className="nav-btn primary"
-            >
-              🎨 Edit Avatar
-            </button>
-            <button
-              onClick={handleNavigateToHome}
-              className="nav-btn tertiary"
-            >
-              🏡 Home
-            </button>
+        {activeTab === 'shop' && (
+          <div className="items-grid">
+            {shopItems.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">🎉</div>
+                <h3>You own everything!</h3>
+                <p>Check back later for new items!</p>
+              </div>
+            ) : (
+              shopItems.map(item => (
+                <div key={item.id} className="item-card shop-item">
+                  <div className="item-icon">{item.icon}</div>
+                  <h3>{item.name}</h3>
+                  <p className="item-category">{item.category}</p>
+                  <div className="item-price">💰 {item.price} coins</div>
+                  <div className="item-actions">
+                    <button className="buy-btn">Buy Now</button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        </div>
+        )}
+
+        {activeTab === 'achievements' && (
+          <div className="achievements-grid">
+            {achievements.map(achievement => (
+              <div key={achievement.id} className={`achievement-card ${achievement.unlocked ? 'unlocked' : ''}`}>
+                <div className="achievement-icon">{achievement.icon}</div>
+                <div className="achievement-info">
+                  <h3>{achievement.name}</h3>
+                  <p>{achievement.description}</p>
+                  {achievement.unlocked ? (
+                    <span className="unlocked-badge">✓ Unlocked!</span>
+                  ) : (
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${achievement.progress}%` }}
+                      />
+                      <span className="progress-text">{achievement.progress}%</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <div className="navigation-buttons">
+        <button
+          className="nav-btn secondary"
+          onClick={() => navigate('/home')}
+        >
+          🏠 Back to Home
+        </button>
+        <button
+          className="nav-btn primary"
+          onClick={() => navigate('/editor')}
+        >
+          🎨 Edit Avatar
+        </button>
       </div>
     </div>
   );

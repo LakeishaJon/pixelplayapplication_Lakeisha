@@ -927,3 +927,188 @@ def complete_habit_task(user_id):
         db.session.rollback()
         print(f"Error completing habit task: {e}")
         return jsonify({'error': 'Failed to complete task'}), 500
+# Add these routes to your api/routes.py or create a new inventory_routes.py
+
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
+from api.models import db, User, InventoryItem, Achievement
+
+# Create blueprint
+inventory_bp = Blueprint('inventory', __name__)
+
+# ⭐ Helper function to check if user is authenticated (optional)
+def get_current_user_optional():
+    """Get current user if authenticated, otherwise return None"""
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+        if user_id:
+            return User.query.get(user_id)
+        return None
+    except:
+        return None
+
+
+# ===============================
+# INVENTORY ROUTES (NO AUTH REQUIRED)
+# ===============================
+
+@inventory_bp.route('/inventory', methods=['GET'])
+def get_inventory():
+    """
+    Get inventory items
+    - If authenticated: returns user's inventory
+    - If not authenticated: returns demo/default items
+    """
+    try:
+        user = get_current_user_optional()
+        
+        if user:
+            # Return user's actual inventory from database
+            items = InventoryItem.query.filter_by(user_id=user.id).all()
+            return jsonify({
+                'success': True,
+                'items': [item.serialize() for item in items],
+                'source': 'database',
+                'user_authenticated': True
+            }), 200
+        else:
+            # Return demo items for non-authenticated users
+            demo_items = [
+                {
+                    'id': 1,
+                    'name': 'Cool Sunglasses',
+                    'category': 'accessories',
+                    'icon': '🕶️',
+                    'owned': True,
+                    'equipped': False,
+                    'price': 100
+                },
+                {
+                    'id': 2,
+                    'name': 'Red Cap',
+                    'category': 'clothing',
+                    'icon': '🧢',
+                    'owned': True,
+                    'equipped': True,
+                    'price': 50
+                },
+                {
+                    'id': 3,
+                    'name': 'Blue T-Shirt',
+                    'category': 'clothing',
+                    'icon': '👕',
+                    'owned': True,
+                    'equipped': False,
+                    'price': 75
+                },
+                {
+                    'id': 4,
+                    'name': 'Sneakers',
+                    'category': 'clothing',
+                    'icon': '👟',
+                    'owned': True,
+                    'equipped': False,
+                    'price': 150
+                }
+            ]
+            
+            return jsonify({
+                'success': True,
+                'items': demo_items,
+                'source': 'demo',
+                'user_authenticated': False,
+                'message': 'Showing demo data - login to see your items'
+            }), 200
+            
+    except Exception as e:
+        print(f"Error fetching inventory: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+@inventory_bp.route('/achievements', methods=['GET'])
+def get_achievements():
+    """
+    Get achievements
+    - If authenticated: returns user's achievements
+    - If not authenticated: returns demo achievements
+    """
+    try:
+        user = get_current_user_optional()
+        
+        if user:
+            # Return user's actual achievements from database
+            achievements = Achievement.query.filter_by(user_id=user.id).all()
+            return jsonify({
+                'success': True,
+                'achievements': [ach.serialize() for ach in achievements],
+                'source': 'database',
+                'user_authenticated': True
+            }), 200
+        else:
+            # Return demo achievements for non-authenticated users
+            demo_achievements = [
+                {
+                    'id': 1,
+                    'name': 'First Steps',
+                    'description': 'Complete your first workout',
+                    'icon': '🏃',
+                    'unlocked': True,
+                    'progress': 100
+                },
+                {
+                    'id': 2,
+                    'name': 'Week Warrior',
+                    'description': 'Work out 7 days in a row',
+                    'icon': '🔥',
+                    'unlocked': True,
+                    'progress': 100
+                },
+                {
+                    'id': 3,
+                    'name': 'Century Club',
+                    'description': 'Complete 100 workouts',
+                    'icon': '💯',
+                    'unlocked': False,
+                    'progress': 45
+                },
+                {
+                    'id': 4,
+                    'name': 'Marathon Master',
+                    'description': 'Run 26 miles total',
+                    'icon': '🏅',
+                    'unlocked': False,
+                    'progress': 68
+                }
+            ]
+            
+            return jsonify({
+                'success': True,
+                'achievements': demo_achievements,
+                'source': 'demo',
+                'user_authenticated': False,
+                'message': 'Showing demo data - login to track your achievements'
+            }), 200
+            
+    except Exception as e:
+        print(f"Error fetching achievements: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ===============================
+# REGISTER BLUEPRINT IN app.py
+# ===============================
+"""
+Add to your app.py:
+
+from api.inventory_routes import inventory_bp
+
+# Register blueprint
+app.register_blueprint(inventory_bp, url_prefix='/api')
+"""

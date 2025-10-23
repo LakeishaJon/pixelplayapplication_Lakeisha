@@ -1,5 +1,7 @@
-# 🎮 PixelPlay Avatar API Routes (Flask)
-# Backend endpoints for managing avatars and items
+"""
+PixelPlay Avatar API Routes (Flask)
+Backend endpoints for managing avatars and items
+"""
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -7,16 +9,19 @@ from datetime import datetime
 import json
 from api.models import db, UserAvatar, UnlockedItem, UserProgress, ItemCatalog, SavedAvatarPreset
 
-# Create Blueprint
+# ===================================
+# CREATE BLUEPRINTS
+# ===================================
+
 avatar_bp = Blueprint('avatar', __name__, url_prefix='/api/avatar')
 items_bp = Blueprint('items', __name__, url_prefix='/api/items')
 progress_bp = Blueprint('progress', __name__, url_prefix='/api/progress')
 presets_bp = Blueprint('presets', __name__, url_prefix='/api/presets')
 
+
 # ===================================
 # 🎨 AVATAR ENDPOINTS
 # ===================================
-
 
 @avatar_bp.route('/current', methods=['GET'])
 @jwt_required()
@@ -46,7 +51,7 @@ def get_current_avatar():
         }), 200
 
     except Exception as e:
-        print(f"Error fetching avatar: {e}")
+        print(f"❌ Error fetching avatar: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching avatar'
@@ -106,7 +111,7 @@ def save_avatar():
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error saving avatar: {e}")
+        print(f"❌ Error saving avatar: {e}")
         return jsonify({
             'success': False,
             'message': 'Error saving avatar'
@@ -150,10 +155,43 @@ def update_avatar():
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error updating avatar: {e}")
+        print(f"❌ Error updating avatar: {e}")
         return jsonify({
             'success': False,
             'message': 'Error updating avatar'
+        }), 500
+
+
+@avatar_bp.route('/all', methods=['GET'])
+@jwt_required()
+def get_all_avatars():
+    """Get all avatars created by the user"""
+    try:
+        user_id = get_jwt_identity()
+
+        avatars = UserAvatar.query.filter_by(
+            user_id=user_id
+        ).order_by(UserAvatar.created_at.desc()).all()
+
+        formatted = [{
+            'id': avatar.id,
+            'style': avatar.avatar_style,
+            'seed': avatar.avatar_seed,
+            'options': json.loads(avatar.avatar_options),
+            'is_current': avatar.is_current,
+            'created_at': avatar.created_at.isoformat()
+        } for avatar in avatars]
+
+        return jsonify({
+            'success': True,
+            'avatars': formatted
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error fetching all avatars: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error fetching avatars'
         }), 500
 
 
@@ -203,7 +241,7 @@ def get_unlocked_items():
         }), 200
 
     except Exception as e:
-        print(f"Error fetching unlocked items: {e}")
+        print(f"❌ Error fetching unlocked items: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching items'
@@ -278,38 +316,34 @@ def unlock_item():
                 'message': 'Item already unlocked'
             }), 400
 
-        # Unlock the item
+        # Deduct points
+        progress.total_points -= catalog_item.unlock_cost
+
+        # Create unlocked item
         new_item = UnlockedItem(
             user_id=user_id,
             avatar_style=style,
             item_category=category,
             item_value=value,
-            unlocked_by=unlock_method
+            unlock_method=unlock_method
         )
+
         db.session.add(new_item)
 
-        # Deduct points if purchased
-        if catalog_item.unlock_cost > 0:
-            progress.total_points -= catalog_item.unlock_cost
-
-        # Update items unlocked count
-        progress.items_unlocked = UnlockedItem.query.filter_by(
-            user_id=user_id).count() + 1
+        # Update items_unlocked count
+        progress.items_unlocked += 1
 
         db.session.commit()
 
         return jsonify({
             'success': True,
             'message': 'Item unlocked successfully',
-            'item': {
-                'name': catalog_item.item_name,
-                'rarity': catalog_item.rarity
-            }
+            'remaining_points': progress.total_points
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error unlocking item: {e}")
+        print(f"❌ Error unlocking item: {e}")
         return jsonify({
             'success': False,
             'message': 'Error unlocking item'
@@ -318,8 +352,8 @@ def unlock_item():
 
 @items_bp.route('/catalog', methods=['GET'])
 @jwt_required()
-def get_catalog():
-    """Get available items from catalog (for shop)"""
+def get_item_catalog():
+    """Get available items from catalog based on user level"""
     try:
         user_id = get_jwt_identity()
         style = request.args.get('style')
@@ -369,7 +403,7 @@ def get_catalog():
         }), 200
 
     except Exception as e:
-        print(f"Error fetching catalog: {e}")
+        print(f"❌ Error fetching catalog: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching catalog'
@@ -408,7 +442,7 @@ def get_progress():
         }), 200
 
     except Exception as e:
-        print(f"Error fetching progress: {e}")
+        print(f"❌ Error fetching progress: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching progress'
@@ -466,7 +500,7 @@ def add_points():
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error adding points: {e}")
+        print(f"❌ Error adding points: {e}")
         return jsonify({
             'success': False,
             'message': 'Error adding points'
@@ -503,7 +537,7 @@ def get_presets():
         }), 200
 
     except Exception as e:
-        print(f"Error fetching presets: {e}")
+        print(f"❌ Error fetching presets: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching presets'
@@ -548,7 +582,7 @@ def save_preset():
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error saving preset: {e}")
+        print(f"❌ Error saving preset: {e}")
         return jsonify({
             'success': False,
             'message': 'Error saving preset'
@@ -583,7 +617,7 @@ def delete_preset(preset_id):
 
     except Exception as e:
         db.session.rollback()
-        print(f"Error deleting preset: {e}")
+        print(f"❌ Error deleting preset: {e}")
         return jsonify({
             'success': False,
             'message': 'Error deleting preset'

@@ -2,13 +2,11 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 const AvatarContext = createContext();
 
-// Initial state
+// Initial state - just avatar management, no backend
 const initialState = {
   userStats: {
     level: 1,
-    points: 0,
-    workoutsCompleted: 0,
-    totalMinutesExercised: 0
+    points: 0
   },
   currentAvatar: {
     style: 'avataaars',
@@ -28,29 +26,20 @@ const initialState = {
     top: 'shortWaved'
   },
   savedAvatars: [],
-  inventory: {
-    hair: ['shortWaved', 'longHair'],
-    clothing: ['blazerShirt', 'hoodie'],
-    accessories: ['glasses'],
-    colors: ['blue', 'red', 'green', 'purple']
-  },
-  // Backend data (using defaults for now)
-  backendInventory: [],
-  achievements: [],
+  inventory: {},
   editorSettings: {
     currentStyle: 'avataaars',
     previewMode: 'live'
   },
-  notifications: [],
-  isLoading: false,
-  syncError: null
+  notifications: []
 };
 
-// Reducer
+// Reducer - simplified, just avatar operations
 const avatarReducer = (state, action) => {
   switch (action.type) {
     case 'UPDATE_AVATAR':
       return { ...state, currentAvatar: { ...state.currentAvatar, ...action.payload } };
+
     case 'SAVE_AVATAR':
       const newAvatar = {
         id: Date.now(),
@@ -59,49 +48,35 @@ const avatarReducer = (state, action) => {
         createdAt: new Date().toISOString()
       };
       return { ...state, savedAvatars: [...state.savedAvatars, newAvatar] };
+
     case 'SET_CURRENT_AVATAR':
       return { ...state, currentAvatar: action.payload };
-    case 'ADD_POINTS':
-      const newPoints = state.userStats.points + action.payload;
-      const newLevel = Math.floor(newPoints / 100) + 1;
-      const leveledUp = newLevel > state.userStats.level;
+
+    case 'DELETE_AVATAR':
       return {
         ...state,
-        userStats: { ...state.userStats, points: newPoints, level: newLevel },
-        notifications: leveledUp
-          ? [...state.notifications, { id: Date.now(), message: `Level Up! You're now level ${newLevel}!`, type: 'success' }]
-          : state.notifications
+        savedAvatars: state.savedAvatars.filter(a => a.id !== action.payload)
       };
-    case 'COMPLETE_WORKOUT':
+
+    case 'ADD_NOTIFICATION':
       return {
         ...state,
-        userStats: {
-          ...state.userStats,
-          workoutsCompleted: state.userStats.workoutsCompleted + 1,
-          totalMinutesExercised: state.userStats.totalMinutesExercised + action.payload.minutes
-        }
+        notifications: [...state.notifications, {
+          id: Date.now(),
+          message: action.payload.message,
+          type: action.payload.type || 'info'
+        }]
       };
-    case 'UNLOCK_ITEM':
-      const { category, item } = action.payload;
-      return {
-        ...state,
-        inventory: { ...state.inventory, [category]: [...state.inventory[category], item] },
-        notifications: [...state.notifications, { id: Date.now(), message: `New ${category} unlocked: ${item}!`, type: 'unlock' }]
-      };
+
     case 'CLEAR_NOTIFICATION':
-      return { ...state, notifications: state.notifications.filter(n => n.id !== action.payload) };
+      return {
+        ...state,
+        notifications: state.notifications.filter(n => n.id !== action.payload)
+      };
+
     case 'LOAD_USER_DATA':
       return { ...state, ...action.payload };
-    case 'SET_BACKEND_INVENTORY':
-      return { ...state, backendInventory: action.payload };
-    case 'SET_ACHIEVEMENTS':
-      return { ...state, achievements: action.payload };
-    case 'SET_USER_STATS_FROM_BACKEND':
-      return { ...state, userStats: { ...state.userStats, ...action.payload } };
-    case 'SET_LOADING':
-      return { ...state, isLoading: action.payload };
-    case 'SET_ERROR':
-      return { ...state, syncError: action.payload };
+
     default:
       return state;
   }
@@ -111,7 +86,7 @@ const avatarReducer = (state, action) => {
 export const AvatarProvider = ({ children }) => {
   const [state, dispatch] = useReducer(avatarReducer, initialState);
 
-  // Save LOCAL state to localStorage (avatars saved in browser)
+  // Save to localStorage whenever avatars change
   useEffect(() => {
     const dataToSave = {
       userStats: state.userStats,
@@ -120,28 +95,27 @@ export const AvatarProvider = ({ children }) => {
       inventory: state.inventory
     };
     localStorage.setItem('pixelplay-data', JSON.stringify(dataToSave));
+    console.log('💾 Saved to localStorage:', {
+      avatarCount: state.savedAvatars.length,
+      currentAvatar: state.currentAvatar.style
+    });
   }, [state.userStats, state.currentAvatar, state.savedAvatars, state.inventory]);
 
-  // Load LOCAL state from localStorage
+  // Load from localStorage on mount
   useEffect(() => {
     const savedData = localStorage.getItem('pixelplay-data');
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
         dispatch({ type: 'LOAD_USER_DATA', payload: parsed });
+        console.log('✅ Loaded from localStorage:', {
+          avatarCount: parsed.savedAvatars?.length || 0
+        });
       } catch (error) {
-        console.log('Could not load saved data', error);
+        console.error('❌ Could not load saved data:', error);
       }
     }
   }, []);
-
-  // ⭐ REMOVED BACKEND FETCHING - No auth required!
-  // Backend calls are commented out for now
-
-  const refreshData = () => {
-    console.log('📦 Refresh requested, but backend fetch is disabled');
-    // Backend fetch disabled - using local data only
-  };
 
   // Helper functions
   const value = {
@@ -149,14 +123,28 @@ export const AvatarProvider = ({ children }) => {
     dispatch,
     isLoading: false,
     syncError: null,
-    refreshData,
+
+    // Avatar operations
     updateAvatar: (changes) => dispatch({ type: 'UPDATE_AVATAR', payload: changes }),
-    saveAvatar: (name, settings) => dispatch({ type: 'SAVE_AVATAR', payload: { name, settings } }),
+    saveAvatar: (name, settings) => {
+      dispatch({ type: 'SAVE_AVATAR', payload: { name, settings } });
+      dispatch({
+        type: 'ADD_NOTIFICATION',
+        payload: { message: `Avatar "${name}" saved!`, type: 'success' }
+      });
+    },
     setCurrentAvatar: (avatar) => dispatch({ type: 'SET_CURRENT_AVATAR', payload: avatar }),
-    addPoints: (points) => dispatch({ type: 'ADD_POINTS', payload: points }),
-    completeWorkout: (minutes) => dispatch({ type: 'COMPLETE_WORKOUT', payload: { minutes } }),
-    unlockItem: (category, item) => dispatch({ type: 'UNLOCK_ITEM', payload: { category, item } }),
-    clearNotification: (id) => dispatch({ type: 'CLEAR_NOTIFICATION', payload: id })
+    deleteAvatar: (id) => dispatch({ type: 'DELETE_AVATAR', payload: id }),
+
+    // Notifications
+    addNotification: (message, type) => dispatch({
+      type: 'ADD_NOTIFICATION',
+      payload: { message, type }
+    }),
+    clearNotification: (id) => dispatch({ type: 'CLEAR_NOTIFICATION', payload: id }),
+
+    // Dummy function for compatibility
+    refreshData: () => console.log('📦 No backend to refresh from')
   };
 
   return <AvatarContext.Provider value={value}>{children}</AvatarContext.Provider>;

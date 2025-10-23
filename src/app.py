@@ -23,6 +23,14 @@ from api.auth import auth, init_oauth
 # Import avatar-related blueprints
 from api.avatar_routes import avatar_bp, items_bp, progress_bp, presets_bp
 
+# Try to import inventory routes (optional - might not exist yet)
+try:
+    from api.inventory_routes import inventory_bp
+    HAS_INVENTORY = True
+except ImportError:
+    print("⚠️  inventory_routes not found - skipping inventory features")
+    HAS_INVENTORY = False
+
 # ===============================
 # CONFIGURATION
 # ===============================
@@ -68,7 +76,7 @@ def create_app():
     # Build allowed origins list
     allowed_origins = [
         "http://localhost:3000",
-        "http://localhost:3001",  # Added backend port too
+        "http://localhost:3001",
         "http://localhost:5173",
         "http://localhost:5174",
         "http://127.0.0.1:3000",
@@ -78,40 +86,44 @@ def create_app():
 
     # Add Codespaces URLs if running in Codespaces
     if CODESPACE_NAME:
-        # Get the FULL domain from the current request if possible
+        # GitHub Codespaces URL format: https://CODESPACE_NAME-PORT.DOMAIN
         codespace_origins = [
-            # With port at the end (what your frontend is using)
-            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3000",
-            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3001",
-            # Without port
-            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
-            # With port in subdomain (backend style)
+            # Frontend (port 3000)
             f"https://{CODESPACE_NAME}-3000.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            # Backend (port 3001)
             f"https://{CODESPACE_NAME}-3001.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            # Vite dev server (port 5173)
+            f"https://{CODESPACE_NAME}-5173.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            # Base domain (no port)
+            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
         ]
         allowed_origins.extend(codespace_origins)
-        print(f"🌐 Codespaces detected! Allowing origins:")
+        print("\n" + "=" * 60)
+        print("🌐 GitHub Codespaces Detected!")
+        print("=" * 60)
+        print("✅ Allowing these origins:")
         for origin in codespace_origins:
-            print(f"   ✅ {origin}")
+            print(f"   • {origin}")
+        print("=" * 60 + "\n")
 
-    # 🎯 SIMPLER APPROACH: Just allow ALL origins in development!
-    if ENV == "development":
-        print("⚠️  Development mode: Allowing ALL origins")
-        CORS(app,
-             resources={r"/api/*": {"origins": "*"}},
-             supports_credentials=False)  # Turn off credentials for wildcard
-    else:
-        # Production: Use strict origin list
-        CORS(app,
-             resources={
-                 r"/api/*": {
-                     "origins": allowed_origins,
-                     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                     "allow_headers": ["Content-Type", "Authorization"],
-                     "supports_credentials": True,
-                     "max_age": 3600
-                 }
-             })
+    # Configure CORS
+    CORS(app,
+         resources={
+             r"/api/*": {
+                 "origins": allowed_origins,
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                 "allow_headers": ["Content-Type", "Authorization"],
+                 "supports_credentials": True,
+                 "expose_headers": ["Content-Type", "Authorization"],
+                 "max_age": 3600
+             }
+         })
+
+    print("🔒 CORS Configuration:")
+    print(f"   • Mode: {ENV}")
+    print(f"   • Allowed origins: {len(allowed_origins)} URLs")
+    print(f"   • Credentials: Enabled")
+    print("")
 
     # ===============================
     # DATABASE CONFIGURATION
@@ -141,10 +153,8 @@ def create_app():
     app.config['JWT_TOKEN_LOCATION'] = ['headers']
     app.config['JWT_HEADER_NAME'] = 'Authorization'
     app.config['JWT_HEADER_TYPE'] = 'Bearer'
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(
-        hours=24)      # Token lasts 24 hours
-    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(
-        days=30)      # Refresh lasts 30 days
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+    app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=30)
 
     # ===============================
     # INITIALIZE EXTENSIONS
@@ -153,13 +163,13 @@ def create_app():
     # Initialize database
     db.init_app(app)
 
-    # Initialize database migrations (for updating database structure)
+    # Initialize database migrations
     migrate = Migrate(app, db, compare_type=True)
 
-    # Initialize JWT (for login tokens)
+    # Initialize JWT
     jwt = JWTManager(app)
 
-    # Initialize Google OAuth (for "Sign in with Google")
+    # Initialize Google OAuth
     with app.app_context():
         init_oauth(app)
         # Create database tables if they don't exist
@@ -174,10 +184,10 @@ def create_app():
     # REGISTER BLUEPRINTS (Routes)
     # ===============================
 
-    # Register authentication routes (login, register, Google OAuth)
+    # Register authentication routes
     app.register_blueprint(auth, url_prefix='/api/auth')
 
-    # Register main API routes (games, stories, profile)
+    # Register main API routes
     app.register_blueprint(api, url_prefix='/api')
 
     # Register avatar-related routes
@@ -185,6 +195,13 @@ def create_app():
     app.register_blueprint(items_bp)
     app.register_blueprint(progress_bp)
     app.register_blueprint(presets_bp)
+    
+    # Register inventory routes (if available)
+    if HAS_INVENTORY:
+        app.register_blueprint(inventory_bp, url_prefix='/api')
+        print("✅ Inventory routes registered")
+    else:
+        print("⚠️  Inventory routes skipped (module not found)")
 
     # ===============================
     # JWT ERROR HANDLERS
@@ -267,22 +284,26 @@ def create_app():
         if ENV == "development":
             return generate_sitemap(app)
 
-        # Try to serve the React app, or show API info if no frontend built yet
+        # Try to serve the React app
         if os.path.isfile(os.path.join(static_file_dir, 'index.html')):
             return send_from_directory(static_file_dir, 'index.html')
         else:
+            endpoints = {
+                'auth': '/api/auth',
+                'avatar': '/api/avatar',
+                'items': '/api/items',
+                'progress': '/api/progress',
+                'presets': '/api/presets',
+                'health': '/api/health'
+            }
+            if HAS_INVENTORY:
+                endpoints['inventory'] = '/api/inventory'
+            
             return jsonify({
                 'message': 'Welcome to PixelPlay Fitness API!',
                 'version': '1.0.0',
                 'status': 'healthy',
-                'endpoints': {
-                    'auth': '/api/auth',
-                    'avatar': '/api/avatar',
-                    'items': '/api/items',
-                    'progress': '/api/progress',
-                    'presets': '/api/presets',
-                    'health': '/api/health'
-                }
+                'endpoints': endpoints
             })
 
     @app.route('/api/health', methods=['GET'])
@@ -292,7 +313,10 @@ def create_app():
             'status': 'healthy',
             'message': 'PixelPlay API is running!',
             'environment': ENV,
-            'database': 'connected'
+            'database': 'connected',
+            'features': {
+                'inventory': HAS_INVENTORY
+            }
         }), 200
 
     @app.route('/<path:path>', methods=['GET'])
@@ -300,10 +324,8 @@ def create_app():
         """
         Serve frontend files (React app)
         This lets React Router handle the URLs
-        BUT it should NOT catch API routes!
         """
-        # 🚨 CRITICAL: Exclude all /api/* routes from catch-all
-        # Let blueprints handle API routes instead
+        # Exclude all /api/* routes from catch-all
         if path.startswith('api/'):
             return jsonify({
                 'success': False,
@@ -311,13 +333,13 @@ def create_app():
                 'error': 'not_found'
             }), 404
 
-        # Serve static files or React app for non-API routes
+        # Serve static files or React app
         if not os.path.isfile(os.path.join(static_file_dir, path)):
             path = 'index.html'
 
         if os.path.isfile(os.path.join(static_file_dir, path)):
             response = send_from_directory(static_file_dir, path)
-            response.cache_control.max_age = 0  # Don't cache, always get fresh version
+            response.cache_control.max_age = 0
             return response
         else:
             return jsonify({
@@ -326,7 +348,6 @@ def create_app():
                 'error': 'not_found'
             }), 404
 
-    # ✅ Return the configured app (end of create_app function)
     return app
 
 
@@ -334,9 +355,6 @@ def create_app():
 # CREATE APP INSTANCE FOR FLASK CLI
 # ===============================
 
-# 🔥 THIS LINE IS CRITICAL! 🔥
-# Flask CLI commands (like "flask db migrate") need this line
-# It MUST be outside the "if __name__ == '__main__':" block
 app = create_app()
 
 
@@ -345,19 +363,17 @@ app = create_app()
 # ===============================
 
 if __name__ == '__main__':
-    # The app is already created above, so we just use it directly
-    # Use port 3001 for backend (frontend uses 3000)
     PORT = int(os.environ.get('PORT', 3001))
 
-    print("=" * 50)
+    print("\n" + "=" * 60)
     print("🎮 PixelPlay Fitness App Starting!")
-    print("=" * 50)
+    print("=" * 60)
     print(f"📍 Running on: http://localhost:{PORT}")
     print(f"🔧 Environment: {ENV}")
     print(f"🗄️  Database: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
-    print(
-        f"🔐 Google OAuth: {'✅ Configured' if os.getenv('GOOGLE_CLIENT_ID') else '❌ Not configured'}")
-    print("=" * 50)
+    print(f"🔐 Google OAuth: {'✅ Configured' if os.getenv('GOOGLE_CLIENT_ID') else '❌ Not configured'}")
+    print(f"📦 Inventory: {'✅ Enabled' if HAS_INVENTORY else '⚠️  Disabled (module not found)'}")
+    print("=" * 60 + "\n")
 
     # Start the server
     app.run(host='0.0.0.0', port=PORT, debug=(ENV == "development"))
