@@ -1,13 +1,14 @@
+# src/api/inventory_routes.py
 """
-PixelPlay Inventory & Achievements API Routes (Flask)
-Backend endpoints for managing inventory items and achievements
+PixelPlay Inventory & Achievements API Routes - UPDATED with Centralized Stat Tracking
+Backend endpoints for managing inventory items and achievements using the new system.
 """
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from datetime import datetime
 import json
-from api.models import db, User, UserProgress, UnlockedItem, ItemCatalog
+from api.models import db, User, UserProgress, UnlockedItem, ItemCatalog, UserAchievement
 
 # Create Blueprint
 inventory_bp = Blueprint('inventory', __name__)
@@ -16,209 +17,41 @@ inventory_bp = Blueprint('inventory', __name__)
 # 📦 INVENTORY DATA (Catalog)
 # ===================================
 
-# Default item catalog - can be stored in database too
 DEFAULT_ITEMS = [
-    {
-        'id': 1,
-        'name': 'Cool Sunglasses',
-        'category': 'accessories',
-        'icon': '🕶️',
-        'price': 100,
-        'levelRequired': 1,
-        'rarity': 'common',
-        'description': 'Look cool while working out'
-    },
-    {
-        'id': 2,
-        'name': 'Red Cap',
-        'category': 'clothing',
-        'icon': '🧢',
-        'price': 50,
-        'levelRequired': 1,
-        'rarity': 'common',
-        'description': 'A stylish red baseball cap'
-    },
-    {
-        'id': 3,
-        'name': 'Blue T-Shirt',
-        'category': 'clothing',
-        'icon': '👕',
-        'price': 75,
-        'levelRequired': 1,
-        'rarity': 'common',
-        'description': 'Comfortable workout shirt'
-    },
-    {
-        'id': 4,
-        'name': 'Sneakers',
-        'category': 'clothing',
-        'icon': '👟',
-        'price': 150,
-        'levelRequired': 3,
-        'rarity': 'rare',
-        'description': 'High-performance running shoes'
-    },
-    {
-        'id': 5,
-        'name': 'Backpack',
-        'category': 'accessories',
-        'icon': '🎒',
-        'price': 200,
-        'levelRequired': 5,
-        'rarity': 'rare',
-        'description': 'Carry all your gear'
-    },
-    {
-        'id': 6,
-        'name': 'Watch',
-        'category': 'accessories',
-        'icon': '⌚',
-        'price': 300,
-        'levelRequired': 7,
-        'rarity': 'epic',
-        'description': 'Track your workout stats'
-    },
-    {
-        'id': 7,
-        'name': 'Hoodie',
-        'category': 'clothing',
-        'icon': '🧥',
-        'price': 125,
-        'levelRequired': 4,
-        'rarity': 'rare',
-        'description': 'Warm and comfy'
-    },
-    {
-        'id': 8,
-        'name': 'Crown',
-        'category': 'accessories',
-        'icon': '👑',
-        'price': 500,
-        'levelRequired': 10,
-        'rarity': 'legendary',
-        'description': 'For fitness royalty only'
-    },
-    {
-        'id': 9,
-        'name': 'Headphones',
-        'category': 'accessories',
-        'icon': '🎧',
-        'price': 180,
-        'levelRequired': 6,
-        'rarity': 'rare',
-        'description': 'Perfect workout music'
-    },
-    {
-        'id': 10,
-        'name': 'Gym Bag',
-        'category': 'accessories',
-        'icon': '👜',
-        'price': 220,
-        'levelRequired': 8,
-        'rarity': 'epic',
-        'description': 'Professional gym bag'
-    }
-]
-
-# Achievement definitions
-DEFAULT_ACHIEVEMENTS = [
-    {
-        'id': 1,
-        'name': 'First Steps',
-        'description': 'Complete your first workout',
-        'icon': '🏃',
-        'reward': 50,
-        'target': 1,
-        'category': 'workouts'
-    },
-    {
-        'id': 2,
-        'name': 'Week Warrior',
-        'description': 'Work out 7 days in a row',
-        'icon': '🔥',
-        'reward': 100,
-        'target': 7,
-        'category': 'streak'
-    },
-    {
-        'id': 3,
-        'name': 'Avatar Creator',
-        'description': 'Create 5 unique avatars',
-        'icon': '🎨',
-        'reward': 150,
-        'target': 5,
-        'category': 'avatars'
-    },
-    {
-        'id': 4,
-        'name': 'Century Club',
-        'description': 'Complete 100 workouts',
-        'icon': '💯',
-        'reward': 500,
-        'target': 100,
-        'category': 'workouts'
-    },
-    {
-        'id': 5,
-        'name': 'Marathon Master',
-        'description': 'Run 26 miles total',
-        'icon': '🏅',
-        'reward': 300,
-        'target': 26,
-        'category': 'distance'
-    },
-    {
-        'id': 6,
-        'name': 'Strength Supreme',
-        'description': 'Complete 50 strength workouts',
-        'icon': '💪',
-        'reward': 250,
-        'target': 50,
-        'category': 'strength'
-    },
-    {
-        'id': 7,
-        'name': 'Level Up Legend',
-        'description': 'Reach level 10',
-        'icon': '⭐',
-        'reward': 1000,
-        'target': 10,
-        'category': 'level'
-    },
-    {
-        'id': 8,
-        'name': 'Fashionista',
-        'description': 'Unlock 10 items',
-        'icon': '👗',
-        'reward': 200,
-        'target': 10,
-        'category': 'items'
-    }
+    {'id': 1, 'name': 'Cool Sunglasses', 'category': 'accessories', 'icon': '🕶️', 'price': 100, 'levelRequired': 1, 'rarity': 'common'},
+    {'id': 2, 'name': 'Red Cap', 'category': 'clothing', 'icon': '🧢', 'price': 50, 'levelRequired': 1, 'rarity': 'common'},
+    {'id': 3, 'name': 'Blue T-Shirt', 'category': 'clothing', 'icon': '👕', 'price': 75, 'levelRequired': 1, 'rarity': 'common'},
+    {'id': 4, 'name': 'Sneakers', 'category': 'clothing', 'icon': '👟', 'price': 150, 'levelRequired': 3, 'rarity': 'rare'},
+    {'id': 5, 'name': 'Backpack', 'category': 'accessories', 'icon': '🎒', 'price': 200, 'levelRequired': 5, 'rarity': 'rare'},
+    {'id': 6, 'name': 'Watch', 'category': 'accessories', 'icon': '⌚', 'price': 300, 'levelRequired': 7, 'rarity': 'epic'},
+    {'id': 7, 'name': 'Hoodie', 'category': 'clothing', 'icon': '🧥', 'price': 125, 'levelRequired': 4, 'rarity': 'rare'},
+    {'id': 8, 'name': 'Crown', 'category': 'accessories', 'icon': '👑', 'price': 500, 'levelRequired': 10, 'rarity': 'legendary'},
+    {'id': 9, 'name': 'Headphones', 'category': 'accessories', 'icon': '🎧', 'price': 180, 'levelRequired': 6, 'rarity': 'rare'},
+    {'id': 10, 'name': 'Gym Bag', 'category': 'accessories', 'icon': '👜', 'price': 220, 'levelRequired': 8, 'rarity': 'epic'}
 ]
 
 
 # ===================================
-# 📦 PUBLIC INVENTORY ENDPOINTS (No Auth Required)
+# 📦 PUBLIC INVENTORY ENDPOINTS
 # ===================================
 
 @inventory_bp.route('/inventory', methods=['GET'])
 def get_inventory():
     """
-    Get inventory items - Returns all items with ownership status if logged in
-    NO AUTHENTICATION REQUIRED - Public endpoint
+    Get inventory items - Returns all items with ownership status if logged in.
+    NO AUTHENTICATION REQUIRED - Public endpoint.
     """
     try:
-        # Try to get user ID if they're logged in (optional)
+        # Try to get user ID if logged in (optional)
         user_id = None
         try:
-            from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
             verify_jwt_in_request(optional=True)
             user_id = get_jwt_identity()
         except:
-            pass  # User not logged in, that's okay
-
+            pass
+        
         items = DEFAULT_ITEMS.copy()
-
+        
         # If user is logged in, mark owned items
         if user_id:
             owned_items = UnlockedItem.query.filter_by(user_id=user_id).all()
@@ -228,132 +61,59 @@ def get_inventory():
                 item['owned'] = item['id'] in owned_ids
                 item['equipped'] = False  # TODO: Track equipped status
         else:
-            # Not logged in - mark nothing as owned
             for item in items:
                 item['owned'] = False
                 item['equipped'] = False
-
+        
         return jsonify({
             'success': True,
             'items': items,
             'total': len(items),
             'authenticated': user_id is not None
         }), 200
-
+        
     except Exception as e:
         print(f"❌ Error fetching inventory: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching inventory',
-            'items': DEFAULT_ITEMS  # Return default items as fallback
-        }), 500
-
-
-@inventory_bp.route('/achievements', methods=['GET'])
-def get_achievements():
-    """
-    Get achievements - Returns all achievements with progress if logged in
-    NO AUTHENTICATION REQUIRED - Public endpoint
-    """
-    try:
-        # Try to get user ID if they're logged in (optional)
-        user_id = None
-        try:
-            from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-            verify_jwt_in_request(optional=True)
-            user_id = get_jwt_identity()
-        except:
-            pass  # User not logged in, that's okay
-
-        achievements = []
-        
-        for achievement in DEFAULT_ACHIEVEMENTS:
-            ach_data = achievement.copy()
-            
-            if user_id:
-                # Get user progress
-                progress = UserProgress.query.filter_by(user_id=user_id).first()
-                
-                if progress:
-                    # Calculate progress based on category
-                    current = 0
-                    target = achievement['target']
-                    
-                    if achievement['category'] == 'workouts':
-                        current = min(progress.total_points // 10, target)  # Rough estimate
-                    elif achievement['category'] == 'avatars':
-                        current = progress.avatars_created
-                    elif achievement['category'] == 'level':
-                        current = progress.level
-                    elif achievement['category'] == 'items':
-                        current = progress.items_unlocked
-                    elif achievement['category'] == 'streak':
-                        current = progress.streak_days
-                    else:
-                        current = 0
-                    
-                    ach_data['progress'] = min(int((current / target) * 100), 100)
-                    ach_data['unlocked'] = current >= target
-                else:
-                    ach_data['progress'] = 0
-                    ach_data['unlocked'] = False
-            else:
-                # Not logged in - show 0 progress
-                ach_data['progress'] = 0
-                ach_data['unlocked'] = False
-            
-            achievements.append(ach_data)
-
-        return jsonify({
-            'success': True,
-            'achievements': achievements,
-            'total': len(achievements),
-            'authenticated': user_id is not None
-        }), 200
-
-    except Exception as e:
-        print(f"❌ Error fetching achievements: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Error fetching achievements',
-            'achievements': DEFAULT_ACHIEVEMENTS  # Return default as fallback
+            'items': DEFAULT_ITEMS
         }), 500
 
 
 # ===================================
-# 🔒 AUTHENTICATED ENDPOINTS
+# 🔐 AUTHENTICATED INVENTORY ENDPOINTS
 # ===================================
 
 @inventory_bp.route('/inventory/my-items', methods=['GET'])
 @jwt_required()
 def get_my_items():
-    """Get only items owned by the logged-in user"""
+    """Get all items owned by the current user."""
     try:
         user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        progress = user.progress or UserProgress(user_id=user_id)
         
-        # Get user's unlocked items
-        unlocked_items = UnlockedItem.query.filter_by(user_id=user_id).all()
+        # Get owned items
+        owned_items = UnlockedItem.query.filter_by(user_id=user_id).all()
+        owned_ids = {item.item_catalog_id for item in owned_items}
         
-        # Build list of owned items
-        owned_items = []
-        for unlocked in unlocked_items:
-            # Find the item in catalog
-            item = next((i for i in DEFAULT_ITEMS if i['id'] == unlocked.item_catalog_id), None)
-            if item:
-                item_data = item.copy()
-                item_data['owned'] = True
-                item_data['equipped'] = False  # TODO: Track equipped status
-                item_data['unlocked_at'] = unlocked.unlocked_at.isoformat()
-                owned_items.append(item_data)
+        # Filter for owned items
+        my_items = [item for item in DEFAULT_ITEMS if item['id'] in owned_ids]
         
         return jsonify({
             'success': True,
-            'items': owned_items,
-            'total': len(owned_items)
+            'items': my_items,
+            'total_owned': len(my_items),
+            'user_stats': {
+                'level': user.level,
+                'coins': user.coins,
+                'items_unlocked': progress.items_unlocked
+            }
         }), 200
-
+        
     except Exception as e:
-        print(f"❌ Error fetching user items: {e}")
+        print(f"❌ Error fetching my items: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching your items'
@@ -363,7 +123,10 @@ def get_my_items():
 @inventory_bp.route('/inventory/purchase/<int:item_id>', methods=['POST'])
 @jwt_required()
 def purchase_item(item_id):
-    """Purchase an item from the shop"""
+    """
+    Purchase an item from the shop.
+    Uses User.coins and User.spend_coins() from the centralized system.
+    """
     try:
         user_id = get_jwt_identity()
         
@@ -375,26 +138,24 @@ def purchase_item(item_id):
                 'message': 'Item not found'
             }), 404
         
-        # Get user progress
-        progress = UserProgress.query.filter_by(user_id=user_id).first()
-        if not progress:
-            return jsonify({
-                'success': False,
-                'message': 'User progress not found'
-            }), 404
+        # Get user and progress
+        user = User.query.get(user_id)
+        progress = user.progress or UserProgress(user_id=user_id)
+        if not progress.user_id:
+            db.session.add(progress)
         
         # Check level requirement
-        if progress.level < item['levelRequired']:
+        if user.level < item['levelRequired']:
             return jsonify({
                 'success': False,
                 'message': f"Level {item['levelRequired']} required"
             }), 403
         
-        # Check if user has enough points
-        if progress.total_points < item['price']:
+        # Check if user has enough coins (using User.coins, not progress.total_points)
+        if not user.can_afford(item['price']):
             return jsonify({
                 'success': False,
-                'message': f"Not enough coins. Need {item['price']}, have {progress.total_points}"
+                'message': f"Not enough coins. Need {item['price']}, have {user.coins}"
             }), 403
         
         # Check if already owned
@@ -409,9 +170,15 @@ def purchase_item(item_id):
                 'message': 'Item already owned'
             }), 400
         
-        # Purchase the item
-        progress.total_points -= item['price']
-        progress.items_unlocked += 1
+        # 💰 Purchase the item (using centralized coin system)
+        if not user.spend_coins(item['price']):
+            return jsonify({
+                'success': False,
+                'message': 'Transaction failed'
+            }), 500
+        
+        # Track unlocked item
+        progress.unlock_item()
         
         # Create unlocked item record
         new_item = UnlockedItem(
@@ -425,11 +192,12 @@ def purchase_item(item_id):
         
         return jsonify({
             'success': True,
-            'message': f"Successfully purchased {item['name']}!",
-            'remaining_points': progress.total_points,
+            'message': f"✅ Successfully purchased {item['name']}!",
+            'remaining_coins': user.coins,
+            'items_unlocked': progress.items_unlocked,
             'item': item
         }), 201
-
+        
     except Exception as e:
         db.session.rollback()
         print(f"❌ Error purchasing item: {e}")
@@ -442,7 +210,7 @@ def purchase_item(item_id):
 @inventory_bp.route('/inventory/equip/<int:item_id>', methods=['POST'])
 @jwt_required()
 def equip_item(item_id):
-    """Equip an owned item"""
+    """Equip an owned item."""
     try:
         user_id = get_jwt_identity()
         
@@ -458,15 +226,18 @@ def equip_item(item_id):
                 'message': 'You do not own this item'
             }), 404
         
-        # TODO: Implement equipped status in database
-        # For now, just return success
+        # Update equipped status
+        unlocked.is_equipped = not unlocked.is_equipped
+        db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': 'Item equipped successfully'
+            'message': 'Item equipped' if unlocked.is_equipped else 'Item unequipped',
+            'is_equipped': unlocked.is_equipped
         }), 200
-
+        
     except Exception as e:
+        db.session.rollback()
         print(f"❌ Error equipping item: {e}")
         return jsonify({
             'success': False,
@@ -478,42 +249,200 @@ def equip_item(item_id):
 # 🏆 ACHIEVEMENT ENDPOINTS
 # ===================================
 
-@inventory_bp.route('/achievements/claim/<int:achievement_id>', methods=['POST'])
+@inventory_bp.route('/achievements', methods=['GET'])
+def get_achievements():
+    """
+    Get achievements - Returns user's achievements if logged in, demo otherwise.
+    """
+    try:
+        # Try to get user ID if logged in (optional)
+        user_id = None
+        try:
+            verify_jwt_in_request(optional=True)
+            user_id = get_jwt_identity()
+        except:
+            pass
+        
+        if user_id:
+            # Get user's real achievements
+            user = User.query.get(user_id)
+            progress = user.progress or UserProgress(user_id=user_id)
+            achievements = UserAchievement.query.filter_by(user_id=user_id).all()
+            
+            # Also calculate potential achievements based on stats
+            achievement_data = [
+                {
+                    'id': 'first_workout',
+                    'name': 'First Steps',
+                    'description': 'Complete your first workout',
+                    'icon': '🏃',
+                    'progress': min(progress.workouts_completed, 1),
+                    'target': 1,
+                    'unlocked': progress.workouts_completed >= 1,
+                    'reward': 50
+                },
+                {
+                    'id': 'week_warrior',
+                    'name': 'Week Warrior',
+                    'description': 'Maintain a 7-day streak',
+                    'icon': '🔥',
+                    'progress': min(user.streak_days, 7),
+                    'target': 7,
+                    'unlocked': user.streak_days >= 7,
+                    'reward': 100
+                },
+                {
+                    'id': 'century_club',
+                    'name': 'Century Club',
+                    'description': 'Complete 100 workouts',
+                    'icon': '💯',
+                    'progress': min(progress.workouts_completed, 100),
+                    'target': 100,
+                    'unlocked': progress.workouts_completed >= 100,
+                    'reward': 500
+                },
+                {
+                    'id': 'avatar_creator',
+                    'name': 'Avatar Creator',
+                    'description': 'Create 5 unique avatars',
+                    'icon': '🎨',
+                    'progress': min(progress.avatars_created, 5),
+                    'target': 5,
+                    'unlocked': progress.avatars_created >= 5,
+                    'reward': 150
+                },
+                {
+                    'id': 'legend_status',
+                    'name': 'Legend Status',
+                    'description': 'Reach level 10',
+                    'icon': '⭐',
+                    'progress': min(user.level, 10),
+                    'target': 10,
+                    'unlocked': user.level >= 10,
+                    'reward': 1000
+                },
+                {
+                    'id': 'fashionista',
+                    'name': 'Fashionista',
+                    'description': 'Unlock 10 items',
+                    'icon': '👗',
+                    'progress': min(progress.items_unlocked, 10),
+                    'target': 10,
+                    'unlocked': progress.items_unlocked >= 10,
+                    'reward': 200
+                }
+            ]
+            
+            return jsonify({
+                'success': True,
+                'achievements': achievement_data,
+                'source': 'database',
+                'user_authenticated': True
+            }), 200
+        else:
+            # Return demo achievements
+            demo_achievements = [
+                {'id': 1, 'name': 'First Steps', 'description': 'Complete your first workout', 'icon': '🏃', 'unlocked': True, 'progress': 100},
+                {'id': 2, 'name': 'Week Warrior', 'description': 'Work out 7 days in a row', 'icon': '🔥', 'unlocked': True, 'progress': 100},
+                {'id': 3, 'name': 'Century Club', 'description': 'Complete 100 workouts', 'icon': '💯', 'unlocked': False, 'progress': 45},
+                {'id': 4, 'name': 'Avatar Creator', 'description': 'Customize your avatar', 'icon': '🎨', 'unlocked': True, 'progress': 100},
+                {'id': 5, 'name': 'Legend Status', 'description': 'Reach level 10', 'icon': '⭐', 'unlocked': False, 'progress': 30},
+                {'id': 6, 'name': 'Fashionista', 'description': 'Collect 10 items', 'icon': '👗', 'unlocked': False, 'progress': 60}
+            ]
+            
+            return jsonify({
+                'success': True,
+                'achievements': demo_achievements,
+                'source': 'demo',
+                'user_authenticated': False,
+                'message': 'Showing demo data - login to track your achievements'
+            }), 200
+            
+    except Exception as e:
+        print(f"❌ Error fetching achievements: {e}")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+@inventory_bp.route('/achievements/claim/<achievement_id>', methods=['POST'])
 @jwt_required()
 def claim_achievement(achievement_id):
-    """Claim reward for a completed achievement"""
+    """
+    Claim reward for a completed achievement.
+    Awards coins using the centralized User.add_coins() method.
+    """
     try:
         user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        progress = user.progress or UserProgress(user_id=user_id)
         
-        # Find the achievement
-        achievement = next((a for a in DEFAULT_ACHIEVEMENTS if a['id'] == achievement_id), None)
+        # Achievement definitions with rewards
+        achievements = {
+            'first_workout': {'name': 'First Steps', 'reward': 50, 'check': lambda: progress.workouts_completed >= 1},
+            'week_warrior': {'name': 'Week Warrior', 'reward': 100, 'check': lambda: user.streak_days >= 7},
+            'century_club': {'name': 'Century Club', 'reward': 500, 'check': lambda: progress.workouts_completed >= 100},
+            'avatar_creator': {'name': 'Avatar Creator', 'reward': 150, 'check': lambda: progress.avatars_created >= 5},
+            'legend_status': {'name': 'Legend Status', 'reward': 1000, 'check': lambda: user.level >= 10},
+            'fashionista': {'name': 'Fashionista', 'reward': 200, 'check': lambda: progress.items_unlocked >= 10}
+        }
+        
+        achievement = achievements.get(achievement_id)
         if not achievement:
             return jsonify({
                 'success': False,
                 'message': 'Achievement not found'
             }), 404
         
-        # Get user progress
-        progress = UserProgress.query.filter_by(user_id=user_id).first()
-        if not progress:
+        # Check if achievement is completed
+        if not achievement['check']():
             return jsonify({
                 'success': False,
-                'message': 'User progress not found'
-            }), 404
+                'message': 'Achievement not yet completed'
+            }), 400
         
-        # Check if achievement is completed
-        # TODO: Track claimed achievements in database
+        # Check if already claimed
+        existing = UserAchievement.query.filter_by(
+            user_id=user_id,
+            achievement_name=achievement_id
+        ).first()
         
-        # Add reward points
-        progress.total_points += achievement['reward']
+        if existing and existing.is_completed:
+            return jsonify({
+                'success': False,
+                'message': 'Achievement already claimed'
+            }), 400
+        
+        # 💰 Award coins using centralized system
+        reward_coins = achievement['reward']
+        user.add_coins(reward_coins, source='achievement')
+        
+        # Create or update achievement record
+        if not existing:
+            new_achievement = UserAchievement(
+                user_id=user_id,
+                achievement_name=achievement_id,
+                achievement_description=achievement['name'],
+                progress=100,
+                target=100,
+                is_completed=True,
+                completed_date=datetime.utcnow()
+            )
+            db.session.add(new_achievement)
+        else:
+            existing.is_completed = True
+            existing.completed_date = datetime.utcnow()
+        
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'message': f"Claimed {achievement['reward']} coins!",
-            'total_points': progress.total_points
+            'message': f"🎉 Claimed {reward_coins} coins!",
+            'reward_coins': reward_coins,
+            'total_coins': user.coins
         }), 200
-
+        
     except Exception as e:
         db.session.rollback()
         print(f"❌ Error claiming achievement: {e}")
@@ -530,94 +459,32 @@ def claim_achievement(achievement_id):
 @inventory_bp.route('/inventory/stats', methods=['GET'])
 @jwt_required()
 def get_inventory_stats():
-    """Get inventory statistics for the user"""
+    """Get inventory statistics for the user."""
     try:
         user_id = get_jwt_identity()
-        
-        # Get user progress
-        progress = UserProgress.query.filter_by(user_id=user_id).first()
+        user = User.query.get(user_id)
+        progress = user.progress or UserProgress(user_id=user_id)
         
         # Count owned items
         owned_count = UnlockedItem.query.filter_by(user_id=user_id).count()
         
-        # Count achievements
-        achievements_unlocked = 0
-        for achievement in DEFAULT_ACHIEVEMENTS:
-            if progress:
-                current = 0
-                target = achievement['target']
-                
-                if achievement['category'] == 'level':
-                    current = progress.level
-                elif achievement['category'] == 'avatars':
-                    current = progress.avatars_created
-                elif achievement['category'] == 'items':
-                    current = progress.items_unlocked
-                
-                if current >= target:
-                    achievements_unlocked += 1
-        
         return jsonify({
             'success': True,
             'stats': {
-                'level': progress.level if progress else 1,
-                'total_points': progress.total_points if progress else 0,
+                'level': user.level,
+                'xp': user.xp,
+                'coins': user.coins,  # Using User.coins, not progress.total_points
                 'items_owned': owned_count,
-                'achievements_unlocked': achievements_unlocked,
-                'avatars_created': progress.avatars_created if progress else 0
+                'items_unlocked': progress.items_unlocked,
+                'avatars_created': progress.avatars_created,
+                'workouts_completed': progress.workouts_completed,
+                'streak_days': user.streak_days
             }
         }), 200
-
+        
     except Exception as e:
         print(f"❌ Error fetching stats: {e}")
         return jsonify({
             'success': False,
             'message': 'Error fetching stats'
-        }), 500
-
-
-# ===================================
-# 🛠️ ADMIN/TESTING ENDPOINTS
-# ===================================
-
-@inventory_bp.route('/inventory/seed', methods=['POST'])
-def seed_item_catalog():
-    """Seed the item catalog (development only)"""
-    try:
-        # Check if items already exist
-        existing_count = ItemCatalog.query.count()
-        if existing_count > 0:
-            return jsonify({
-                'success': False,
-                'message': f'Catalog already has {existing_count} items'
-            }), 400
-        
-        # Add default items to catalog
-        for item_data in DEFAULT_ITEMS:
-            item = ItemCatalog(
-                id=item_data['id'],
-                item_name=item_data['name'],
-                item_category=item_data['category'],
-                item_value=item_data['icon'],
-                unlock_cost=item_data['price'],
-                unlock_level=item_data['levelRequired'],
-                rarity=item_data['rarity'],
-                is_default=False,
-                avatar_style='all'  # Works with all avatar styles
-            )
-            db.session.add(item)
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Successfully seeded {len(DEFAULT_ITEMS)} items'
-        }), 201
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"❌ Error seeding catalog: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Error seeding catalog'
         }), 500

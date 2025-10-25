@@ -2,11 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logout, getUserData, requireAuth } from '../utils/auth';
 import '../styles/Home.css';
+import { useUserStats } from '../hooks/useUserStats';
 
 const Home = () => {
   const navigate = useNavigate();
   const [isLoaded, setIsLoaded] = useState(false);
   const user = getUserData();
+  
+  // ===================================
+  // 📊 USE THE STATS HOOK
+  // ===================================
+  const { userStats, loading: statsLoading } = useUserStats();
 
   useEffect(() => {
     // Check authentication on component mount
@@ -67,7 +73,7 @@ const Home = () => {
   ];
 
   const stats = [
-    { number: '8+', label: 'Fun Games' },
+    { number: '12', label: 'Fun Games' },
     { number: '50+', label: 'Achievements' },
     { number: '1000+', label: 'Happy Users' },
     { number: '∞', label: 'Fun Levels' }
@@ -135,6 +141,10 @@ const Home = () => {
               </button>
             </div>
           </div>
+          
+          {/* ===================================
+              🎯 UPDATED: STAT CARD WITH REAL DATA
+              =================================== */}
           <div className="hero-visual">
             <div className="hero-card">
               <div className="card-header">
@@ -146,18 +156,30 @@ const Home = () => {
                     <span className="avatar-icon">👤</span>
                   </div>
                   <div className="avatar-info">
-                    <span className="avatar-level">Level 1</span>
-                    <span className="avatar-xp">0 XP</span>
+                    {/* ✅ REAL LEVEL FROM BACKEND */}
+                    <span className="avatar-level">
+                      Level {statsLoading ? '...' : userStats.level}
+                    </span>
+                    {/* ✅ REAL XP FROM BACKEND */}
+                    <span className="avatar-xp">
+                      {statsLoading ? '...' : userStats.xp} XP
+                    </span>
                   </div>
                 </div>
                 <div className="preview-stats">
                   <div className="preview-stat">
                     <span className="stat-icon">🏋️</span>
-                    <span className="stat-text">0 Workouts</span>
+                    {/* ✅ REAL WORKOUTS FROM BACKEND */}
+                    <span className="stat-text">
+                      {statsLoading ? '...' : userStats.totalGamesPlayed} Workouts
+                    </span>
                   </div>
                   <div className="preview-stat">
                     <span className="stat-icon">🔥</span>
-                    <span className="stat-text">0 Day Streak</span>
+                    {/* ✅ REAL STREAK FROM BACKEND */}
+                    <span className="stat-text">
+                      {statsLoading ? '...' : userStats.weeklyStreak} Day Streak
+                    </span>
                   </div>
                 </div>
               </div>

@@ -20,16 +20,12 @@ from api.admin import setup_admin
 from api.commands import setup_commands
 from api.auth import auth, init_oauth
 
-# Import avatar-related blueprints
+# Import all blueprints
+from api.game_routes import game_bp
+from api.achievement_routes import achievement_bp
+from api.inventory_routes import inventory_bp
 from api.avatar_routes import avatar_bp, items_bp, progress_bp, presets_bp
 
-# Try to import inventory routes (optional - might not exist yet)
-try:
-    from api.inventory_routes import inventory_bp
-    HAS_INVENTORY = True
-except ImportError:
-    print("⚠️  inventory_routes not found - skipping inventory features")
-    HAS_INVENTORY = False
 
 # ===============================
 # CONFIGURATION
@@ -94,6 +90,12 @@ def create_app():
             f"https://{CODESPACE_NAME}-3001.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
             # Vite dev server (port 5173)
             f"https://{CODESPACE_NAME}-5173.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3000",
+            # Frontend
+            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3001",
+            # Backend
+            f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:5173",
+            # Vite
             # Base domain (no port)
             f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
         ]
@@ -190,18 +192,24 @@ def create_app():
     # Register main API routes
     app.register_blueprint(api, url_prefix='/api')
 
+    # Register game-related routes
+    app.register_blueprint(game_bp, url_prefix='/api')
+    print("✅ Game routes registered")
+
+    # Register achievement routes
+    app.register_blueprint(achievement_bp, url_prefix='/api')
+    print("✅ Achievement routes registered")
+
+    # Register inventory routes
+    app.register_blueprint(inventory_bp, url_prefix='/api')
+    print("✅ Inventory routes registered")
+
     # Register avatar-related routes
     app.register_blueprint(avatar_bp)
     app.register_blueprint(items_bp)
     app.register_blueprint(progress_bp)
     app.register_blueprint(presets_bp)
-    
-    # Register inventory routes (if available)
-    if HAS_INVENTORY:
-        app.register_blueprint(inventory_bp, url_prefix='/api')
-        print("✅ Inventory routes registered")
-    else:
-        print("⚠️  Inventory routes skipped (module not found)")
+    print("✅ Avatar routes registered")
 
     # ===============================
     # JWT ERROR HANDLERS
@@ -288,22 +296,22 @@ def create_app():
         if os.path.isfile(os.path.join(static_file_dir, 'index.html')):
             return send_from_directory(static_file_dir, 'index.html')
         else:
-            endpoints = {
-                'auth': '/api/auth',
-                'avatar': '/api/avatar',
-                'items': '/api/items',
-                'progress': '/api/progress',
-                'presets': '/api/presets',
-                'health': '/api/health'
-            }
-            if HAS_INVENTORY:
-                endpoints['inventory'] = '/api/inventory'
-            
             return jsonify({
                 'message': 'Welcome to PixelPlay Fitness API!',
                 'version': '1.0.0',
                 'status': 'healthy',
-                'endpoints': endpoints
+                'endpoints': {
+                    'auth': '/api/auth',
+                    'games': '/api/gamehub/games',
+                    'stats': '/api/users/<id>/stats',
+                    'achievements': '/api/achievements',
+                    'inventory': '/api/inventory',
+                    'avatar': '/api/avatar',
+                    'items': '/api/items',
+                    'progress': '/api/progress',
+                    'presets': '/api/presets',
+                    'health': '/api/health'
+                }
             })
 
     @app.route('/api/health', methods=['GET'])
@@ -315,7 +323,10 @@ def create_app():
             'environment': ENV,
             'database': 'connected',
             'features': {
-                'inventory': HAS_INVENTORY
+                'games': True,
+                'achievements': True,
+                'inventory': True,
+                'avatar': True
             }
         }), 200
 
@@ -371,8 +382,15 @@ if __name__ == '__main__':
     print(f"📍 Running on: http://localhost:{PORT}")
     print(f"🔧 Environment: {ENV}")
     print(f"🗄️  Database: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
-    print(f"🔐 Google OAuth: {'✅ Configured' if os.getenv('GOOGLE_CLIENT_ID') else '❌ Not configured'}")
-    print(f"📦 Inventory: {'✅ Enabled' if HAS_INVENTORY else '⚠️  Disabled (module not found)'}")
+    print(
+        f"🔐 Google OAuth: {'✅ Configured' if os.getenv('GOOGLE_CLIENT_ID') else '❌ Not configured'}")
+    print("=" * 60)
+    print("\n📦 Registered Features:")
+    print("   ✅ Authentication")
+    print("   ✅ Games & GameHub")
+    print("   ✅ Achievements")
+    print("   ✅ Inventory")
+    print("   ✅ Avatar System")
     print("=" * 60 + "\n")
 
     # Start the server

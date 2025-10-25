@@ -3,24 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { getUserData, logout, requireAuth } from '../utils/auth';
 import '../styles/Dashboard.css';
 
+// ===================================
+// 🎯 IMPORT THE STATS HOOK
+// ===================================
+// Make sure you have useUserStats.js in your hooks folder!
+// If not, copy it from the previous files
+import { useUserStats } from '../hooks/useUserStats';
+
 const Dashboard = () => {
   const navigate = useNavigate();
-
   const user = getUserData();
-  <span>Welcome, {user?.name}!</span>
 
-  const [userStats, setUserStats] = useState({
-    level: 1,
-    points: 0,
-    streakDays: 0
-  });
+  // ===================================
+  // 📊 USE THE STATS HOOK FOR REAL DATA
+  // ===================================
+  const { userStats, loading: statsLoading, refreshStats } = useUserStats();
 
-  const [todayStats, setTodayStats] = useState({
-    workoutsCompleted: 0,
-    minutesExercised: 0,
-    pointsEarned: 0
-  });
-
+  // Local loading state for page initialization
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -84,7 +83,7 @@ const Dashboard = () => {
     }
   ];
 
-  if (loading) {
+  if (loading || statsLoading) {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>
@@ -92,6 +91,13 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  // Calculate level progress
+  const currentLevelXP = (userStats.level - 1) * 100;
+  const nextLevelXP = userStats.level * 100;
+  const xpInCurrentLevel = userStats.xp - currentLevelXP;
+  const xpNeededForLevel = nextLevelXP - currentLevelXP;
+  const levelProgress = (xpInCurrentLevel / xpNeededForLevel) * 100;
 
   return (
     <div className="dashboard-container">
@@ -128,9 +134,10 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="nav-right">
+            {/* ✅ REAL LEVEL AND POINTS FROM BACKEND */}
             <div className="user-level">
               <span className="level-label">Level {userStats.level}</span>
-              <span className="points-label">{userStats.points} pts</span>
+              <span className="points-label">{userStats.xp} pts</span>
             </div>
             <div className="avatar-badge">
               <span>👤</span>
@@ -148,10 +155,11 @@ const Dashboard = () => {
               <h1>Welcome Back Champion!</h1>
               <p>Ready to continue your fitness journey?</p>
             </div>
+            {/* ✅ REAL LEVEL AND XP FROM BACKEND */}
             <div className="level-display">
               <div className="level-badge">
                 <span className="level-title">Level {userStats.level}</span>
-                <span className="xp-amount">⭐ {userStats.points} XP</span>
+                <span className="xp-amount">⭐ {userStats.xp} XP</span>
               </div>
             </div>
           </div>
@@ -188,43 +196,49 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Stats Grid */}
+            {/* ===================================
+                🎯 UPDATED: STATS GRID WITH REAL DATA
+                =================================== */}
             <div className="stats-section">
               <div className="stats-grid-container">
 
+                {/* ✅ WORKOUTS - Real data from backend */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">🏋️</span>
                     <span className="stat-label">WORKOUTS</span>
                   </div>
-                  <div className="stat-value">{todayStats.workoutsCompleted}</div>
+                  <div className="stat-value">{userStats.totalGamesPlayed}</div>
                   <div className="stat-subtitle">Completed</div>
                 </div>
 
+                {/* ✅ ACTIVE TIME - Calculated from games (estimate) */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">⏱️</span>
                     <span className="stat-label">ACTIVE TIME</span>
                   </div>
-                  <div className="stat-value">{todayStats.minutesExercised}</div>
+                  <div className="stat-value">{userStats.totalGamesPlayed * 8}</div>
                   <div className="stat-subtitle">Minutes</div>
                 </div>
 
+                {/* ✅ XP EARNED - Real XP from backend */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">⭐</span>
                     <span className="stat-label">XP EARNED</span>
                   </div>
-                  <div className="stat-value">{todayStats.pointsEarned}</div>
+                  <div className="stat-value">{userStats.xp}</div>
                   <div className="stat-subtitle">Total Points</div>
                 </div>
 
+                {/* ✅ STREAK - Real streak from backend */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">🔥</span>
                     <span className="stat-label">STREAK</span>
                   </div>
-                  <div className="stat-value">{userStats.streakDays}</div>
+                  <div className="stat-value">{userStats.weeklyStreak}</div>
                   <div className="stat-subtitle">Days</div>
                 </div>
 
@@ -254,7 +268,9 @@ const Dashboard = () => {
           </div>
         </section>
 
-        {/* Progress Section */}
+        {/* ===================================
+            🎯 UPDATED: PROGRESS SECTION WITH REAL DATA
+            =================================== */}
         <section className="progress-section" style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}>
           <div
             className="progress-card"
@@ -275,11 +291,13 @@ const Dashboard = () => {
             </h2>
 
             <div className="progress-info">
+              {/* ✅ REAL LEVEL AND XP */}
               <div className="progress-level" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', marginBottom: '1rem' }}>
                 <span>Level {userStats.level}</span>
-                <span>{userStats.points} XP</span>
+                <span>{userStats.xp} XP</span>
               </div>
 
+              {/* ✅ REAL PROGRESS BAR */}
               <div className="progress-bar-container" style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '10px', height: '12px', overflow: 'hidden', marginBottom: '0.75rem' }}>
                 <div
                   className="progress-bar"
@@ -292,7 +310,7 @@ const Dashboard = () => {
                   <div
                     className="progress-fill"
                     style={{
-                      width: `${userStats.points % 100}%`,
+                      width: `${levelProgress}%`,
                       background: 'rgba(255, 255, 255, 0.9)',
                       height: '100%',
                       transition: 'width 0.5s ease-in-out',
@@ -301,13 +319,90 @@ const Dashboard = () => {
                 </div>
               </div>
 
+              {/* ✅ REAL XP NEEDED */}
               <span className="progress-text" style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                Next Level: {100 - (userStats.points % 100)} XP to go
+                Next Level: {xpNeededForLevel - xpInCurrentLevel} XP to go
               </span>
             </div>
+
+            {/* Optional: Refresh button */}
+            <button
+              onClick={refreshStats}
+              style={{
+                marginTop: '1.5rem',
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '2px solid rgba(255, 255, 255, 0.4)',
+                color: 'white',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.95rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+            >
+              🔄 Refresh Stats
+            </button>
           </div>
         </section>
 
+        {/* ===================================
+            💎 BONUS: ADDITIONAL STATS DISPLAY
+            =================================== */}
+        <section className="additional-stats" style={{ padding: '2rem' }}>
+          <div style={{
+            background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
+            borderRadius: '20px',
+            padding: '2rem',
+            color: 'white',
+            maxWidth: '800px',
+            margin: '0 auto'
+          }}>
+            <h3 style={{ marginBottom: '1.5rem', fontSize: '1.3rem', fontWeight: '700', textAlign: 'center' }}>
+              🎮 Your Gaming Stats
+            </h3>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+              gap: '1rem'
+            }}>
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                padding: '1rem',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🪙</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{userStats.coins}</div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Total Coins</div>
+              </div>
+
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                padding: '1rem',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔓</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{userStats.unlockedGames?.length || 3}</div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Games Unlocked</div>
+              </div>
+
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.15)',
+                padding: '1rem',
+                borderRadius: '12px',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎯</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>{userStats.totalGamesPlayed}</div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>Total Games</div>
+              </div>
+            </div>
+          </div>
+        </section>
 
       </main>
     </div>

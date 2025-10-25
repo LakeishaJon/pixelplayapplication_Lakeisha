@@ -1,210 +1,30 @@
 # src/api/routes.py
 """
-API routes for PixelPlay application.
-Handles authentication, game management, inventory, and achievements.
+Main API routes for PixelPlay application - UPDATED with Centralized Stat Tracking
+General endpoints for stats, dashboard, and user data using the new system.
 """
 
-from flask import Flask, request, jsonify, url_for, Blueprint
-from datetime import datetime, timedelta
-from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token, create_refresh_token
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime, date
+from api.models import db, User, UserProgress, UserGameStats, GameSession, UserAchievement
 
-from api.models import db, User, Task, Game, InventoryItem, UserInventory, Achievement, UserAchievement, UserGameStats, GameSession
-
-
+# Create main API blueprint
 api = Blueprint('api', __name__)
 
 
 # ===============================
-# GAME STATS ENDPOINTS (Added to existing api blueprint)
+# 🏠 DASHBOARD / HOME ENDPOINTS
 # ===============================
 
-@api.route('/users/<int:user_id>/stats', methods=['GET'])
+@api.route('/dashboard/stats', methods=['GET'])
 @jwt_required()
-def get_user_stats(user_id):
-    """Get user's game statistics"""
-    try:
-        current_user_id = get_jwt_identity()
-
-        # Verify user can only access their own stats
-        if current_user_id != user_id:
-            return jsonify({'error': 'Unauthorized'}), 403
-
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Get user stats
-        stats = UserGameStats.query.filter_by(user_id=user_id).first()
-
-        if not stats:
-            # Create default stats if none exist
-            stats = UserGameStats(user_id=user_id)
-            db.session.add(stats)
-            db.session.commit()
-
-        # Calculate weekly streak
-        weekly_streak = calculate_weekly_streak(user_id)
-        stats.weekly_streak = weekly_streak
-        db.session.commit()
-
-        return jsonify({
-            'level': stats.level,
-            'xp': stats.xp,
-            'total_games_played': stats.total_games_played,
-            'weekly_streak': stats.weekly_streak,
-            'unlocked_games': stats.unlocked_games or ['dance', 'yoga', 'memory-match'],
-            'completed_games': stats.completed_games or [],
-            'favorite_games': stats.favorite_games or []
-        }), 200
-
-    except Exception as e:
-        print(f"Error fetching user stats: {e}")
-        return jsonify({'error': 'Failed to fetch stats'}), 500
-
-
-@api.route('/users/<int:user_id>/stats', methods=['PUT'])
-@jwt_required()
-def update_user_stats(user_id):
-    """Update user statistics after completing a game"""
-    try:
-        current_user_id = get_jwt_identity()
-
-        if current_user_id != user_id:
-            return jsonify({'error': 'Unauthorized'}), 403
-
-        data = request.json
-        game_id = data.get('game_id')
-        xp_earned = data.get('xp_earned', 0)
-        score = data.get('score', 0)
-        duration_minutes = data.get('duration_minutes', 0)
-        completed = data.get('completed', False)
-
-        # Get or create user stats
-        stats = UserGameStats.query.filter_by(user_id=user_id).first()
-        if not stats:
-            stats = UserGameStats(user_id=user_id)
-            db.session.add(stats)
-
-        # Update stats
-        leveled_up = stats.add_xp(xp_earned)
-        stats.total_games_played += 1
-
-        # Unlock new games if leveled up
-        if leveled_up:
-            unlock_games_for_level(stats, stats.level)
-
-        # Mark game as completed
-        if completed and game_id:
-            stats.complete_game(game_id)
-
-        # Record game session
-        session = GameSession(
-            user_id=user_id,
-            game_id=game_id,
-            xp_earned=xp_earned,
-            score=score,
-            duration_minutes=duration_minutes,
-            completed=completed
-        )
-        db.session.add(session)
-
-        # Update streak
-        weekly_streak = calculate_weekly_streak(user_id)
-        stats.weekly_streak = weekly_streak
-
-        # Update user's main stats too
-        user = User.query.get(user_id)
-        if user:
-            user.add_xp(xp_earned)
-            user.last_activity = datetime.utcnow()
-            user.total_playtime += duration_minutes
-
-        db.session.commit()
-
-        response = {
-            'level': stats.level,
-            'xp': stats.xp,
-            'total_games_played': stats.total_games_played,
-            'weekly_streak': stats.weekly_streak,
-            'completed_games': stats.completed_games,
-            'unlocked_games': stats.unlocked_games
-        }
-
-        if leveled_up:
-            response['level_up'] = True
-            response['new_level'] = stats.level
-
-        return jsonify(response), 200
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error updating user stats: {e}")
-        return jsonify({'error': 'Failed to update stats'}), 500
-
-
-# ===== HELPER FUNCTIONS =====
-def calculate_weekly_streak(user_id):
-    """Calculate how many consecutive days user has played this week"""
-    try:
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
-        sessions = GameSession.query.filter(
-            GameSession.user_id == user_id,
-            GameSession.played_at >= seven_days_ago
-        ).order_by(GameSession.played_at.desc()).all()
-
-        if not sessions:
-            return 0
-
-        # Count unique days played
-        unique_days = set()
-        for session in sessions:
-            day = session.played_at.date()
-            unique_days.add(day)
-
-        # Calculate streak
-        today = datetime.utcnow().date()
-        streak = 0
-        current_day = today
-
-        for i in range(7):
-            if current_day in unique_days:
-                streak += 1
-                current_day -= timedelta(days=1)
-            else:
-                break
-
-        return streak
-
-    except Exception as e:
-        print(f"Error calculating streak: {e}")
-        return 0
-
-
-def unlock_games_for_level(stats, level):
-    """Unlock games based on user level"""
-    level_unlocks = {
-        2: ['sports', 'sequence-memory'],
-        3: ['ninja', 'lightning-ladders'],
-        4: ['rhythm', 'shadow-punch', 'adventure'],
-        5: ['magic'],
-        6: ['superhero']
-    }
-
-    for unlock_level, games in level_unlocks.items():
-        if level >= unlock_level:
-            for game in games:
-                stats.unlock_game(game)
-
-
-# ===============================
-# GAMEHUB ENDPOINTS
-# ===============================
-
-@api.route('/gamehub/games', methods=['GET'])
-@jwt_required()
-def get_gamehub_games():
-    """Get all available games with user progress for GameHub"""
+def get_dashboard_stats():
+    """
+    🎯 MAIN DASHBOARD ENDPOINT
+    Get all stats for displaying on dashboard/homepage.
+    Returns comprehensive data from User, UserProgress, and UserGameStats.
+    """
     try:
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
@@ -215,886 +35,326 @@ def get_gamehub_games():
                 'message': 'User not found'
             }), 404
 
-        # Get user's game progress
-        user_games = {
-            game.name.lower().replace(' ', ''): game
-            for game in Game.query.filter_by(user_id=user_id).all()
-        }
+        # Get related stats
+        progress = user.progress or UserProgress(user_id=user_id)
+        game_stats = user.game_stats or UserGameStats(user_id=user_id)
 
-        # Define all available games in GameHub (matches frontend)
-        games_catalog = [
-            {
-                'id': 'dance',
-                'name': 'Dance Party',
-                'emoji': '💃',
-                'description': 'Dance to fun music and copy the moves! Perfect for getting your groove on.',
-                'category': 'cardio',
-                'difficulty': 'Easy',
-                'duration': '5-10 min',
-                'xp_reward': 50,
-                'energy_required': 20,
-                'unlock_level': 1,
-                'player_count': '1-4 players',
-                'has_music': True
-            },
-            {
-                'id': 'ninja',
-                'name': 'Ninja Training',
-                'emoji': '🥷',
-                'description': 'Jump, duck, and punch like a ninja! Master the ancient arts of fitness.',
-                'category': 'strength',
-                'difficulty': 'Medium',
-                'duration': '8-12 min',
-                'xp_reward': 75,
-                'energy_required': 30,
-                'unlock_level': 3,
-                'player_count': '1-2 players',
-                'has_music': True
-            },
-            {
-                'id': 'yoga',
-                'name': 'Animal Yoga',
-                'emoji': '🧘',
-                'description': 'Stretch like different animals! Calm your mind and strengthen your body.',
-                'category': 'flexibility',
-                'difficulty': 'Easy',
-                'duration': '10-15 min',
-                'xp_reward': 60,
-                'energy_required': 15,
-                'unlock_level': 1,
-                'player_count': '1+ players',
-                'has_music': True
-            },
-            {
-                'id': 'rhythm',
-                'name': 'Rhythm Master',
-                'emoji': '🥁',
-                'description': 'Create beats with your body! Musical fitness that gets your heart pumping.',
-                'category': 'cardio',
-                'difficulty': 'Medium',
-                'duration': '5-12 min',
-                'xp_reward': 75,
-                'energy_required': 30,
-                'unlock_level': 4,
-                'player_count': '1-8 players',
-                'has_music': True
-            },
-            {
-                'id': 'lightning-ladders',
-                'name': 'Lightning Ladders',
-                'emoji': '⚡',
-                'description': 'Sprint in place to climb the lightning ladder and reach the sky!',
-                'category': 'cardio',
-                'difficulty': 'Medium',
-                'duration': '6-8 min',
-                'xp_reward': 75,
-                'energy_required': 30,
-                'unlock_level': 3,
-                'player_count': '1-6 players',
-                'has_music': True
-            },
-            {
-                'id': 'shadow-punch',
-                'name': 'Shadow Boxing',
-                'emoji': '👊',
-                'description': 'Punch targets in rhythm to defeat shadow opponents!',
-                'category': 'strength',
-                'difficulty': 'Medium',
-                'duration': '7-10 min',
-                'xp_reward': 60,
-                'energy_required': 35,
-                'unlock_level': 4,
-                'player_count': '1-4 players',
-                'has_music': True
-            },
-            {
-                'id': 'adventure',
-                'name': 'Quest Adventure',
-                'emoji': '🗺️',
-                'description': 'Go on epic fitness quests! Explore magical worlds through exercise.',
-                'category': 'adventure',
-                'difficulty': 'Medium',
-                'duration': '15-20 min',
-                'xp_reward': 100,
-                'energy_required': 40,
-                'unlock_level': 4,
-                'player_count': '1-6 players',
-                'has_music': True
-            },
-            {
-                'id': 'superhero',
-                'name': 'Superhero Training',
-                'emoji': '🦸',
-                'description': 'Train like your favorite superheroes! Develop super strength and speed.',
-                'category': 'strength',
-                'difficulty': 'Hard',
-                'duration': '12-18 min',
-                'xp_reward': 120,
-                'energy_required': 50,
-                'unlock_level': 6,
-                'player_count': '1-4 players',
-                'has_music': True
-            },
-            {
-                'id': 'magic',
-                'name': 'Magic Academy',
-                'emoji': '🪄',
-                'description': 'Learn magical spells through movement! Cast fitness spells and brew potions.',
-                'category': 'flexibility',
-                'difficulty': 'Easy',
-                'duration': '8-12 min',
-                'xp_reward': 70,
-                'energy_required': 25,
-                'unlock_level': 5,
-                'player_count': '1-4 players',
-                'has_music': True
-            },
-            {
-                'id': 'sports',
-                'name': 'Mini Sports',
-                'emoji': '⚽',
-                'description': 'Play soccer, basketball, and more! Compete in fun mini sporting events.',
-                'category': 'sports',
-                'difficulty': 'Medium',
-                'duration': '8-15 min',
-                'xp_reward': 80,
-                'energy_required': 35,
-                'unlock_level': 2,
-                'player_count': '2-8 players',
-                'has_music': True
-            },
-            {
-                'id': 'memory-match',
-                'name': 'Fitness Match Pairs',
-                'emoji': '🎴',
-                'description': 'Flip cards to find matching pairs of fitness items! Test your visual memory.',
-                'category': 'cognitive',
-                'difficulty': 'Easy',
-                'duration': '5-10 min',
-                'xp_reward': 60,
-                'energy_required': 10,
-                'unlock_level': 1,
-                'player_count': '1-4 players',
-                'game_type': 'memory-match',
-                'has_music': True
-            },
-            {
-                'id': 'sequence-memory',
-                'name': 'Exercise Sequence',
-                'emoji': '🧠',
-                'description': 'Watch exercises light up, then repeat the pattern! Challenge your memory.',
-                'category': 'cognitive',
-                'difficulty': 'Medium',
-                'duration': '8-15 min',
-                'xp_reward': 85,
-                'energy_required': 15,
-                'unlock_level': 2,
-                'player_count': '1-6 players',
-                'game_type': 'sequence-memory',
-                'has_music': True
-            }
-        ]
-
-        # Add user progress to each game
-        for game_data in games_catalog:
-            game_key = game_data['id']
-            user_game = user_games.get(game_key)
-
-            # Add user-specific data
-            game_data['is_unlocked'] = user.level >= game_data['unlock_level']
-            game_data['progress'] = user_game.progress if user_game else 0
-            game_data['is_completed'] = user_game.is_completed(
-            ) if user_game else False
-            game_data['personal_best'] = user_game.personal_best if user_game else 0
-            game_data['times_played'] = user_game.times_played if user_game else 0
-            game_data['is_favorite'] = user_game.is_favorite if user_game else False
-            game_data['last_played'] = user_game.last_played.isoformat(
-            ) if user_game and user_game.last_played else None
-
-        return jsonify({
-            'success': True,
-            'games': games_catalog,
-            'user_level': user.level,
-            'user_xp': user.xp,
-            'user_coins': user.coins,
-            'total_games': len(games_catalog),
-            'unlocked_games': len([g for g in games_catalog if g['is_unlocked']])
-        }), 200
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error fetching games: {str(e)}'
-        }), 500
-
-
-@api.route('/gamehub/start-game', methods=['POST'])
-@jwt_required()
-def start_game_session():
-    """Start a new game session"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-
-        if not data or not data.get('game_id'):
-            return jsonify({'success': False, 'message': 'Game ID is required'}), 400
-
-        game_id = data['game_id']
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-
-        # Game unlock levels
-        game_unlock_levels = {
-            'dance': 1, 'yoga': 1, 'sports': 2, 'ninja': 3,
-            'rhythm': 4, 'adventure': 4, 'lightning-ladders': 3,
-            'shadow-punch': 4, 'magic': 5, 'superhero': 6,
-            'memory-match': 1, 'sequence-memory': 2
-        }
-
-        required_level = game_unlock_levels.get(game_id, 1)
-        if user.level < required_level:
-            return jsonify({
-                'success': False,
-                'message': f'Level {required_level} required to play this game'
-            }), 403
-
-        # Create or get existing game record
-        game = Game.query.filter_by(name=game_id, user_id=user_id).first()
-        if not game:
-            game = Game(name=game_id, user_id=user_id, progress=0)
-            db.session.add(game)
-
-        game.last_played = datetime.utcnow()
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Game session started',
-            'game_session': {
-                'game_id': game_id,
-                'session_id': f"{user_id}_{game_id}_{int(datetime.utcnow().timestamp())}",
-                'start_time': datetime.utcnow().isoformat(),
-                'user_level': user.level
-            }
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': f'Error starting game: {str(e)}'}), 500
-
-
-@api.route('/gamehub/complete-game', methods=['POST'])
-@jwt_required()
-def complete_game_session():
-    """Complete a game session and award XP"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-
-        required_fields = ['game_id', 'score', 'duration_seconds']
-        if not data or not all(field in data for field in required_fields):
-            return jsonify({
-                'success': False,
-                'message': 'Missing required fields: game_id, score, duration_seconds'
-            }), 400
-
-        game_id = data['game_id']
-        score = data['score']
-        duration = data['duration_seconds']
-        duration_minutes = duration // 60
-
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-
-        # Get or create game record
-        game = Game.query.filter_by(name=game_id, user_id=user_id).first()
-        if not game:
-            game = Game(name=game_id, user_id=user_id, progress=0)
-            db.session.add(game)
-
-        # Calculate XP reward
-        base_xp_rewards = {
-            'dance': 50, 'ninja': 75, 'yoga': 60, 'rhythm': 75,
-            'lightning-ladders': 75, 'shadow-punch': 60,
-            'adventure': 100, 'superhero': 120, 'magic': 70,
-            'sports': 80, 'memory-match': 60, 'sequence-memory': 85
-        }
-
-        base_xp = base_xp_rewards.get(game_id, 50)
-        performance_bonus = int(base_xp * (score / 100) * 0.5)
-        duration_bonus = min(int(duration / 60) * 5, 25)
-        total_xp = base_xp + performance_bonus + duration_bonus
-
-        # Award XP and check for level up
-        level_up = user.add_xp(total_xp)
-
-        # Update game progress
-        if score > game.progress:
-            game.progress = min(score, 100)
-
-        # Record play session
-        game.record_play_session(duration_minutes, score)
-
-        # Award coins
-        coins_earned = 10 + (score // 10)
-        user.coins += coins_earned
-
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Game completed successfully!',
-            'rewards': {
-                'xp_earned': total_xp,
-                'base_xp': base_xp,
-                'performance_bonus': performance_bonus,
-                'duration_bonus': duration_bonus,
-                'coins_earned': coins_earned,
-                'level_up': level_up,
-                'new_level': user.level,
-                'new_xp_total': user.xp,
-                'new_coin_total': user.coins
-            },
-            'game_stats': {
-                'progress': game.progress,
-                'personal_best': game.personal_best,
-                'times_played': game.times_played,
-                'total_time': game.total_time
-            }
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': f'Error completing game: {str(e)}'}), 500
-
-
-@api.route('/gamehub/favorites', methods=['POST'])
-@jwt_required()
-def toggle_favorite_game():
-    """Add or remove a game from user's favorites"""
-    try:
-        user_id = get_jwt_identity()
-        data = request.get_json()
-
-        if not data or not data.get('game_id'):
-            return jsonify({'success': False, 'message': 'Game ID is required'}), 400
-
-        game_id = data['game_id']
-
-        # Get or create game record
-        game = Game.query.filter_by(name=game_id, user_id=user_id).first()
-        if not game:
-            game = Game(name=game_id, user_id=user_id, progress=0)
-            db.session.add(game)
-
-        # Toggle favorite status
-        is_favorite = game.toggle_favorite()
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': f'Game {"added to" if is_favorite else "removed from"} favorites',
-            'game_id': game_id,
-            'is_favorite': is_favorite
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'message': f'Error updating favorites: {str(e)}'}), 500
-
-
-@api.route('/gamehub/stats', methods=['GET'])
-@jwt_required()
-def get_gamehub_stats():
-    """Get overall gaming statistics for the user"""
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-
-        # Get user's game statistics
-        user_games = Game.query.filter_by(user_id=user_id).all()
-        total_games_played = len(user_games)
-        completed_games = len([g for g in user_games if g.progress >= 100])
-        total_playtime = sum(game.total_time for game in user_games)
-        avg_progress = sum(game.progress for game in user_games) / \
-            len(user_games) if user_games else 0
+        # Get recent game sessions
+        recent_sessions = GameSession.query.filter_by(user_id=user_id)\
+            .order_by(GameSession.played_at.desc())\
+            .limit(5)\
+            .all()
 
         return jsonify({
             'success': True,
             'stats': {
-                'total_games_played': total_games_played,
-                'completed_games': completed_games,
-                'completion_rate': round((completed_games / total_games_played * 100), 2) if total_games_played > 0 else 0,
-                'average_progress': round(avg_progress, 1),
-                'total_playtime_minutes': total_playtime,
-                'user_level': user.level,
-                'total_xp': user.xp,
+                # 👤 User stats (PRIMARY)
+                'level': user.level,
+                'xp': user.xp,
+                'coins': user.coins,
+                'streak_days': user.streak_days,
+                'last_activity': user.last_activity.isoformat() if user.last_activity else None,
+                'last_activity_date': user.last_activity_date.isoformat() if user.last_activity_date else None,
+
+                # 📊 Activity counts
+                'total_games_played': progress.total_games_played,
+                'workouts_completed': progress.workouts_completed,
+                'items_unlocked': progress.items_unlocked,
+                'avatars_created': progress.avatars_created,
+
+                # 🎮 Game-specific
+                'completed_games': game_stats.completed_games or [],
+                'favorite_games': game_stats.favorite_games or [],
+                'unlocked_games': game_stats.unlocked_games or [],
+
+                # 🎁 Daily rewards
+                'can_claim_daily_reward': progress.can_claim_daily_reward(),
+                'daily_reward_streak': progress.daily_reward_streak,
+
+                # 📈 Recent activity
+                'recent_sessions': [s.serialize() for s in recent_sessions]
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error fetching dashboard stats: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+@api.route('/stats/summary', methods=['GET'])
+@jwt_required()
+def get_stats_summary():
+    """
+    Get a quick summary of user stats.
+    Useful for displaying in headers/navbars.
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+
+        # Use the helper method from User model
+        stats = user.get_complete_stats()
+
+        return jsonify({
+            'success': True,
+            'summary': stats
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error fetching summary: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ===============================
+# 👤 USER PROFILE ENDPOINTS
+# ===============================
+
+@api.route('/profile', methods=['GET'])
+@jwt_required()
+def get_profile():
+    """Get current user's complete profile."""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+
+        progress = user.progress or UserProgress(user_id=user_id)
+
+        return jsonify({
+            'success': True,
+            'profile': {
+                # Basic info
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+
+                # Stats
+                'level': user.level,
+                'xp': user.xp,
+                'coins': user.coins,
+                'streak_days': user.streak_days,
+
+                # Avatar
+                'avatar_style': user.avatar_style,
+                'avatar_seed': user.avatar_seed,
+                'avatar_background_color': user.avatar_background_color,
+                'avatar_theme': user.avatar_theme,
+                'avatar_mood': user.avatar_mood,
+
+                # Activity
+                'workouts_completed': progress.workouts_completed,
+                'total_games_played': progress.total_games_played,
+                'items_unlocked': progress.items_unlocked,
+                'avatars_created': progress.avatars_created,
+
+                # Timestamps
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'last_activity': user.last_activity.isoformat() if user.last_activity else None
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error fetching profile: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+@api.route('/profile/update', methods=['PUT'])
+@jwt_required()
+def update_profile():
+    """Update user profile information."""
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+
+        data = request.get_json()
+
+        # Update allowed fields
+        if 'username' in data:
+            user.username = data['username']
+        if 'avatar_style' in data:
+            user.avatar_style = data['avatar_style']
+        if 'avatar_seed' in data:
+            user.avatar_seed = data['avatar_seed']
+        if 'avatar_background_color' in data:
+            user.avatar_background_color = data['avatar_background_color']
+        if 'avatar_theme' in data:
+            user.avatar_theme = data['avatar_theme']
+        if 'avatar_mood' in data:
+            user.avatar_mood = data['avatar_mood']
+
+        user.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Profile updated successfully',
+            'profile': user.serialize()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Error updating profile: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ===============================
+# 📊 LEADERBOARD ENDPOINTS
+# ===============================
+
+@api.route('/leaderboard', methods=['GET'])
+def get_leaderboard():
+    """
+    Get leaderboard of top users.
+    Public endpoint (no auth required).
+    """
+    try:
+        # Get leaderboard type from query params
+        leaderboard_type = request.args.get(
+            'type', 'level')  # level, xp, streak, games
+        limit = request.args.get('limit', 10, type=int)
+        limit = min(limit, 100)  # Max 100 users
+
+        # Query based on type
+        if leaderboard_type == 'level':
+            users = User.query.order_by(
+                User.level.desc(), User.xp.desc()).limit(limit).all()
+        elif leaderboard_type == 'xp':
+            users = User.query.order_by(User.xp.desc()).limit(limit).all()
+        elif leaderboard_type == 'streak':
+            users = User.query.order_by(
+                User.streak_days.desc()).limit(limit).all()
+        elif leaderboard_type == 'games':
+            # Join with UserProgress to get games played
+            users = db.session.query(User).join(UserProgress)\
+                .order_by(UserProgress.total_games_played.desc())\
+                .limit(limit).all()
+        else:
+            users = User.query.order_by(User.level.desc()).limit(limit).all()
+
+        # Format leaderboard
+        leaderboard = []
+        for rank, user in enumerate(users, start=1):
+            progress = user.progress or UserProgress(user_id=user.id)
+            leaderboard.append({
+                'rank': rank,
+                'username': user.username or f'User{user.id}',
+                'level': user.level,
+                'xp': user.xp,
+                'streak_days': user.streak_days,
+                'total_games_played': progress.total_games_played,
+                'workouts_completed': progress.workouts_completed
+            })
+
+        return jsonify({
+            'success': True,
+            'leaderboard': leaderboard,
+            'type': leaderboard_type,
+            'total_users': len(leaderboard)
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error fetching leaderboard: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ===============================
+# 🎁 REWARDS ENDPOINTS
+# ===============================
+
+@api.route('/rewards/daily', methods=['POST'])
+@jwt_required()
+def claim_daily_reward():
+    """
+    Claim daily login reward.
+    Uses UserProgress.claim_daily_reward() from centralized system.
+    """
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        progress = user.progress or UserProgress(user_id=user_id)
+        if not progress.user_id:
+            db.session.add(progress)
+
+        # 🎁 Use centralized daily reward system
+        success, reward_coins, streak = progress.claim_daily_reward()
+
+        if not success:
+            return jsonify({
+                'success': False,
+                'message': 'Daily reward already claimed today'
+            }), 400
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'🎁 Daily reward claimed! +{reward_coins} coins',
+            'reward': {
+                'coins_earned': reward_coins,
+                'daily_streak': streak,
                 'total_coins': user.coins
             }
         }), 200
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Error fetching stats: {str(e)}'}), 500
-
-
-# ===============================
-# INVENTORY MANAGEMENT ENDPOINTS
-# ===============================
-
-@api.route('/inventory', methods=['GET'])
-@jwt_required()
-def get_user_inventory():
-    """Get all inventory items owned by the authenticated user"""
-    try:
-        user_id = get_jwt_identity()
-        category = request.args.get('category')
-        equipped_only = request.args.get('equipped', type=bool)
-
-        query = UserInventory.query.filter_by(
-            user_id=user_id).join(InventoryItem)
-
-        if category:
-            query = query.filter(InventoryItem.category == category)
-        if equipped_only:
-            query = query.filter(UserInventory.is_equipped == True)
-
-        inventory_items = query.order_by(
-            UserInventory.acquired_at.desc()).all()
-
-        return jsonify({
-            'success': True,
-            'inventory': [item.serialize() for item in inventory_items],
-            'count': len(inventory_items)
-        }), 200
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error fetching inventory: {str(e)}'}), 500
-
-
-@api.route('/inventory/available', methods=['GET'])
-@jwt_required()
-def get_available_items():
-    """Get all items available for purchase/unlock"""
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({'success': False, 'message': 'User not found'}), 404
-
-        available_items = InventoryItem.query.filter_by(
-            is_active=True, is_unlockable=True).all()
-        owned_item_ids = [
-            inv.item_id for inv in UserInventory.query.filter_by(user_id=user_id).all()]
-
-        result = {'owned': [], 'affordable': [], 'locked': []}
-
-        for item in available_items:
-            item_data = item.serialize()
-            item_data['can_afford'] = (
-                user.xp >= (item.xp_cost or 0) and
-                user.coins >= (item.coin_cost or 0) and
-                user.level >= item.level_required
-            )
-
-            if item.id in owned_item_ids:
-                result['owned'].append(item_data)
-            elif item_data['can_afford']:
-                result['affordable'].append(item_data)
-            else:
-                result['locked'].append(item_data)
-
-        return jsonify({
-            'success': True,
-            'user_level': user.level,
-            'user_xp': user.xp,
-            'user_coins': user.coins,
-            'items': result
-        }), 200
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error fetching available items: {str(e)}'}), 500
-
-
-@api.route('/inventory/purchase/<int:item_id>', methods=['POST'])
-@jwt_required()
-def purchase_item(item_id):
-    """Purchase/unlock an inventory item"""
-    try:
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        item = InventoryItem.query.get(item_id)
-
-        if not user or not item:
-            return jsonify({'success': False, 'message': 'User or item not found'}), 404
-
-        # Check if user already owns this item
-        if UserInventory.query.filter_by(user_id=user_id, item_id=item_id).first():
-            return jsonify({'success': False, 'message': 'Item already owned'}), 409
-
-        # Validate requirements
-        if user.level < item.level_required:
-            return jsonify({'success': False, 'message': f'Level {item.level_required} required'}), 403
-        if item.xp_cost > 0 and user.xp < item.xp_cost:
-            return jsonify({'success': False, 'message': 'Insufficient XP'}), 403
-        if item.coin_cost > 0 and user.coins < item.coin_cost:
-            return jsonify({'success': False, 'message': 'Insufficient coins'}), 403
-
-        # Deduct costs
-        if item.xp_cost > 0:
-            user.xp -= item.xp_cost
-        if item.coin_cost > 0:
-            user.coins -= item.coin_cost
-
-        # Add to inventory
-        user_inventory = UserInventory(user_id=user_id, item_id=item_id)
-        db.session.add(user_inventory)
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Item purchased successfully',
-            'item': user_inventory.serialize(),
-            'user_xp': user.xp,
-            'user_coins': user.coins
-        }), 201
-
-    except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'message': f'Error purchasing item: {str(e)}'}), 500
-
-
-# ===============================
-# ACHIEVEMENTS ENDPOINTS
-# ===============================
-
-@api.route('/achievements', methods=['GET'])
-@jwt_required()
-def get_user_achievements():
-    """Get all achievements and user progress"""
-    try:
-        user_id = get_jwt_identity()
-
-        all_achievements = Achievement.query.filter_by(is_active=True).all()
-        user_achievements = {
-            ua.achievement_id: ua
-            for ua in UserAchievement.query.filter_by(user_id=user_id).all()
-        }
-
-        result = []
-        for achievement in all_achievements:
-            user_progress = user_achievements.get(achievement.id)
-            achievement_data = achievement.serialize()
-            achievement_data['user_progress'] = user_progress.progress if user_progress else 0
-            achievement_data['is_completed'] = user_progress.is_completed if user_progress else False
-            achievement_data['earned_at'] = user_progress.earned_at.isoformat(
-            ) if user_progress and user_progress.earned_at else None
-            result.append(achievement_data)
-
-        return jsonify({
-            'success': True,
-            'achievements': result,
-            'total_achievements': len(all_achievements),
-            'completed_achievements': len([a for a in result if a['is_completed']])
-        }), 200
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Error fetching achievements: {str(e)}'}), 500
-
-
-@api.route('/habits/<int:user_id>', methods=['GET'])
-@jwt_required()
-def get_user_habits(user_id):
-    """Get user's habit tracker data"""
-    try:
-        current_user_id = get_jwt_identity()
-
-        # Verify user can only access their own habits
-        if current_user_id != user_id:
-            return jsonify({'error': 'Unauthorized'}), 403
-
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Get or create habit tracker data
-        from datetime import datetime, date
-
-        # Check if we have stored habit data (you can store this in a new model or use existing fields)
-        # For now, we'll use a simple approach with User fields
-        # You may want to create a separate HabitTracker model for better organization
-
-        # Get today's date
-        today = date.today().isoformat()
-
-        # Check if data needs to be reset (new day)
-        if hasattr(user, 'habit_last_reset') and user.habit_last_reset != today:
-            # Reset daily data but keep streak if all tasks were completed yesterday
-            if hasattr(user, 'habit_completed_tasks') and len(user.habit_completed_tasks or []) == 6:
-                user.habit_streak_days = (user.habit_streak_days or 0) + 1
-            else:
-                user.habit_streak_days = 0
-
-            user.habit_completed_tasks = []
-            user.habit_daily_points = 0
-            user.habit_game_states = {}
-            user.habit_last_reset = today
-            db.session.commit()
-
-        return jsonify({
-            'daily_points': getattr(user, 'habit_daily_points', 0),
-            'completed_tasks': getattr(user, 'habit_completed_tasks', []),
-            'last_reset_date': getattr(user, 'habit_last_reset', today),
-            'streak_days': getattr(user, 'habit_streak_days', 0),
-            'game_states': getattr(user, 'habit_game_states', {})
-        }), 200
-
-    except Exception as e:
-        print(f"Error fetching user habits: {e}")
-        return jsonify({'error': 'Failed to fetch habits'}), 500
-
-
-@api.route('/habits/<int:user_id>/complete', methods=['POST'])
-@jwt_required()
-def complete_habit_task(user_id):
-    """Complete a habit task and update points/streak"""
-    try:
-        current_user_id = get_jwt_identity()
-
-        # Verify user can only update their own habits
-        if current_user_id != user_id:
-            return jsonify({'error': 'Unauthorized'}), 403
-
-        data = request.json
-        routine_id = data.get('routine_id')
-        points_earned = data.get('points_earned', 10)
-        all_completed = data.get('all_completed', False)
-
-        if not routine_id:
-            return jsonify({'error': 'routine_id is required'}), 400
-
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Initialize fields if they don't exist
-        if not hasattr(user, 'habit_completed_tasks') or user.habit_completed_tasks is None:
-            user.habit_completed_tasks = []
-        if not hasattr(user, 'habit_daily_points') or user.habit_daily_points is None:
-            user.habit_daily_points = 0
-        if not hasattr(user, 'habit_streak_days') or user.habit_streak_days is None:
-            user.habit_streak_days = 0
-
-        # Check if already completed
-        completed_tasks = user.habit_completed_tasks or []
-        if routine_id in completed_tasks:
-            return jsonify({'error': 'Task already completed'}), 400
-
-        # Update completed tasks
-        completed_tasks.append(routine_id)
-        user.habit_completed_tasks = completed_tasks
-
-        # Update points
-        user.habit_daily_points = (
-            user.habit_daily_points or 0) + points_earned
-
-        # Update total user XP as well
-        user.add_xp(points_earned)
-
-        # If all tasks completed, update streak
-        if all_completed:
-            # Streak will be updated on next day's reset
-            # This ensures streak counts full days, not partial completions
-            pass
-
-        db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'daily_points': user.habit_daily_points,
-            'completed_tasks': user.habit_completed_tasks,
-            'streak_days': user.habit_streak_days,
-            'total_xp': user.xp
-        }), 200
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error completing habit task: {e}")
-        return jsonify({'error': 'Failed to complete task'}), 500
-# Add these routes to your api/routes.py or create a new inventory_routes.py
-
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
-from api.models import db, User, InventoryItem, Achievement
-
-# Create blueprint
-inventory_bp = Blueprint('inventory', __name__)
-
-# ⭐ Helper function to check if user is authenticated (optional)
-def get_current_user_optional():
-    """Get current user if authenticated, otherwise return None"""
-    try:
-        verify_jwt_in_request(optional=True)
-        user_id = get_jwt_identity()
-        if user_id:
-            return User.query.get(user_id)
-        return None
-    except:
-        return None
-
-
-# ===============================
-# INVENTORY ROUTES (NO AUTH REQUIRED)
-# ===============================
-
-@inventory_bp.route('/inventory', methods=['GET'])
-def get_inventory():
-    """
-    Get inventory items
-    - If authenticated: returns user's inventory
-    - If not authenticated: returns demo/default items
-    """
-    try:
-        user = get_current_user_optional()
-        
-        if user:
-            # Return user's actual inventory from database
-            items = InventoryItem.query.filter_by(user_id=user.id).all()
-            return jsonify({
-                'success': True,
-                'items': [item.serialize() for item in items],
-                'source': 'database',
-                'user_authenticated': True
-            }), 200
-        else:
-            # Return demo items for non-authenticated users
-            demo_items = [
-                {
-                    'id': 1,
-                    'name': 'Cool Sunglasses',
-                    'category': 'accessories',
-                    'icon': '🕶️',
-                    'owned': True,
-                    'equipped': False,
-                    'price': 100
-                },
-                {
-                    'id': 2,
-                    'name': 'Red Cap',
-                    'category': 'clothing',
-                    'icon': '🧢',
-                    'owned': True,
-                    'equipped': True,
-                    'price': 50
-                },
-                {
-                    'id': 3,
-                    'name': 'Blue T-Shirt',
-                    'category': 'clothing',
-                    'icon': '👕',
-                    'owned': True,
-                    'equipped': False,
-                    'price': 75
-                },
-                {
-                    'id': 4,
-                    'name': 'Sneakers',
-                    'category': 'clothing',
-                    'icon': '👟',
-                    'owned': True,
-                    'equipped': False,
-                    'price': 150
-                }
-            ]
-            
-            return jsonify({
-                'success': True,
-                'items': demo_items,
-                'source': 'demo',
-                'user_authenticated': False,
-                'message': 'Showing demo data - login to see your items'
-            }), 200
-            
-    except Exception as e:
-        print(f"Error fetching inventory: {str(e)}")
+        print(f"❌ Error claiming reward: {e}")
         return jsonify({
             'success': False,
             'message': f'Error: {str(e)}'
         }), 500
 
 
-@inventory_bp.route('/achievements', methods=['GET'])
-def get_achievements():
-    """
-    Get achievements
-    - If authenticated: returns user's achievements
-    - If not authenticated: returns demo achievements
-    """
+@api.route('/rewards/status', methods=['GET'])
+@jwt_required()
+def get_reward_status():
+    """Check if daily reward can be claimed."""
     try:
-        user = get_current_user_optional()
-        
-        if user:
-            # Return user's actual achievements from database
-            achievements = Achievement.query.filter_by(user_id=user.id).all()
-            return jsonify({
-                'success': True,
-                'achievements': [ach.serialize() for ach in achievements],
-                'source': 'database',
-                'user_authenticated': True
-            }), 200
-        else:
-            # Return demo achievements for non-authenticated users
-            demo_achievements = [
-                {
-                    'id': 1,
-                    'name': 'First Steps',
-                    'description': 'Complete your first workout',
-                    'icon': '🏃',
-                    'unlocked': True,
-                    'progress': 100
-                },
-                {
-                    'id': 2,
-                    'name': 'Week Warrior',
-                    'description': 'Work out 7 days in a row',
-                    'icon': '🔥',
-                    'unlocked': True,
-                    'progress': 100
-                },
-                {
-                    'id': 3,
-                    'name': 'Century Club',
-                    'description': 'Complete 100 workouts',
-                    'icon': '💯',
-                    'unlocked': False,
-                    'progress': 45
-                },
-                {
-                    'id': 4,
-                    'name': 'Marathon Master',
-                    'description': 'Run 26 miles total',
-                    'icon': '🏅',
-                    'unlocked': False,
-                    'progress': 68
-                }
-            ]
-            
-            return jsonify({
-                'success': True,
-                'achievements': demo_achievements,
-                'source': 'demo',
-                'user_authenticated': False,
-                'message': 'Showing demo data - login to track your achievements'
-            }), 200
-            
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        progress = user.progress or UserProgress(user_id=user_id)
+
+        return jsonify({
+            'success': True,
+            'can_claim': progress.can_claim_daily_reward(),
+            'daily_streak': progress.daily_reward_streak,
+            'last_claimed': progress.last_daily_reward.isoformat() if progress.last_daily_reward else None
+        }), 200
+
     except Exception as e:
-        print(f"Error fetching achievements: {str(e)}")
+        print(f"❌ Error checking reward status: {e}")
         return jsonify({
             'success': False,
             'message': f'Error: {str(e)}'
@@ -1102,13 +362,170 @@ def get_achievements():
 
 
 # ===============================
-# REGISTER BLUEPRINT IN app.py
+# 📈 ANALYTICS ENDPOINTS
 # ===============================
+
+@api.route('/analytics/activity', methods=['GET'])
+@jwt_required()
+def get_activity_analytics():
+    """Get user activity analytics."""
+    try:
+        user_id = get_jwt_identity()
+
+        # Get sessions from last 30 days
+        from datetime import timedelta
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+
+        sessions = GameSession.query.filter(
+            GameSession.user_id == user_id,
+            GameSession.played_at >= thirty_days_ago
+        ).order_by(GameSession.played_at.desc()).all()
+
+        # Calculate stats
+        total_sessions = len(sessions)
+        total_xp = sum(s.xp_earned for s in sessions)
+        total_minutes = sum(s.duration_minutes for s in sessions)
+        avg_score = sum(s.score for s in sessions) / \
+            total_sessions if total_sessions > 0 else 0
+
+        # Group by date
+        activity_by_date = {}
+        for session in sessions:
+            date_key = session.played_at.date().isoformat()
+            if date_key not in activity_by_date:
+                activity_by_date[date_key] = {
+                    'sessions': 0,
+                    'xp_earned': 0,
+                    'minutes_played': 0
+                }
+            activity_by_date[date_key]['sessions'] += 1
+            activity_by_date[date_key]['xp_earned'] += session.xp_earned
+            activity_by_date[date_key]['minutes_played'] += session.duration_minutes
+
+        return jsonify({
+            'success': True,
+            'analytics': {
+                'total_sessions': total_sessions,
+                'total_xp_earned': total_xp,
+                'total_minutes_played': total_minutes,
+                'average_score': round(avg_score, 2),
+                'activity_by_date': activity_by_date
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error fetching analytics: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ===============================
+# ❤️ HEALTH CHECK
+# ===============================
+
+@api.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint - tells you if the API is working."""
+    try:
+        # Test database connection
+        db.session.execute('SELECT 1')
+
+        return jsonify({
+            'status': 'healthy',
+            'message': 'PixelPlay API is running!',
+            'timestamp': datetime.utcnow().isoformat(),
+            'features': {
+                'games': True,
+                'achievements': True,
+                'inventory': True,
+                'avatar': True,
+                'stats_tracking': True
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ===============================
+# 🔍 SEARCH / DISCOVERY
+# ===============================
+
+@api.route('/search/users', methods=['GET'])
+@jwt_required()
+def search_users():
+    """Search for users by username."""
+    try:
+        query = request.args.get('q', '')
+        limit = request.args.get('limit', 10, type=int)
+
+        if not query or len(query) < 2:
+            return jsonify({
+                'success': False,
+                'message': 'Query must be at least 2 characters'
+            }), 400
+
+        # Search users
+        users = User.query.filter(
+            User.username.ilike(f'%{query}%')
+        ).limit(limit).all()
+
+        results = [{
+            'id': user.id,
+            'username': user.username,
+            'level': user.level,
+            'avatar_seed': user.avatar_seed,
+            'avatar_style': user.avatar_style
+        } for user in users]
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': len(results)
+        }), 200
+
+    except Exception as e:
+        print(f"❌ Error searching users: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+
+# ===============================
+# 📝 NOTES
+# ===============================
+
 """
-Add to your app.py:
+🎯 USAGE EXAMPLES:
 
-from api.inventory_routes import inventory_bp
+1. Get dashboard stats:
+   GET /api/dashboard/stats
+   Returns: Complete stats for homepage/dashboard
 
-# Register blueprint
-app.register_blueprint(inventory_bp, url_prefix='/api')
+2. Get quick summary:
+   GET /api/stats/summary
+   Returns: User stats for navbar/header
+
+3. Get user profile:
+   GET /api/profile
+   Returns: Complete user profile data
+
+4. Claim daily reward:
+   POST /api/rewards/daily
+   Returns: Coins earned + streak info
+
+5. View leaderboard:
+   GET /api/leaderboard?type=level&limit=10
+   Returns: Top 10 users by level
+
+6. Get activity analytics:
+   GET /api/analytics/activity
+   Returns: 30-day activity breakdown
+
+All endpoints use the centralized stat tracking system from models_updated.py
 """

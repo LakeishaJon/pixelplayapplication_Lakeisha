@@ -2,12 +2,18 @@
 Database models for PixelPlay application.
 This module contains all database table definitions using SQLAlchemy ORM.
 Includes User, Task, Game, Inventory, and Achievement systems.
+
+STAT TRACKING ORGANIZATION:
+- User model: Overall account stats (level, xp, coins, overall streak)
+- UserProgress model: Activity tracking (workouts, games played, daily rewards)
+- UserGameStats model: Game-specific stats (game progress, favorites)
+- GameSession model: Individual play sessions (scores, duration)
 """
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import JSON
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 
 # Initialize SQLAlchemy instance
@@ -15,12 +21,12 @@ db = SQLAlchemy()
 
 
 # ===================================
-# USER MODEL
+# USER MODEL - PRIMARY STATS
 # ===================================
 class User(db.Model):
     """
     User model for authentication and profile management.
-    Includes avatar customization system and gamification features.
+    PRIMARY SOURCE for: Level, XP, Coins, Overall Streak
     """
     __tablename__ = 'users'
 
@@ -33,10 +39,15 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean(), default=True, nullable=False)
 
-    # Gamification fields
+    # 🎮 GAMIFICATION FIELDS (PRIMARY STATS)
     level = db.Column(db.Integer(), default=1, nullable=False)
     xp = db.Column(db.Integer, default=0, nullable=False)
     coins = db.Column(db.Integer, default=100, nullable=False)
+
+    # 🔥 STREAK TRACKING (OVERALL ACTIVITY STREAK)
+    streak_days = db.Column(db.Integer, default=0, nullable=False)
+    last_activity_date = db.Column(
+        db.Date, nullable=True)  # Track last active day
 
     # Avatar System Fields
     avatar_style = db.Column(
@@ -48,17 +59,16 @@ class User(db.Model):
         db.String(50), default="superhero", nullable=False)
     avatar_mood = db.Column(db.String(20), default="happy", nullable=False)
 
-    # Habit Tracker fields
+    # 📊 LEGACY HABIT TRACKER FIELDS (can be deprecated if not used)
     habit_daily_points = db.Column(db.Integer, default=0)
     habit_completed_tasks = db.Column(JSON, default=list)
     habit_last_reset = db.Column(db.String(10))
     habit_streak_days = db.Column(db.Integer, default=0)
     habit_game_states = db.Column(JSON, default=dict)
 
-    # Gaming stats
+    # Legacy fields
     total_playtime = db.Column(db.Integer, default=0, nullable=False)
     favorite_games = db.Column(db.Text, nullable=True)
-    streak_days = db.Column(db.Integer, default=0, nullable=False)
     last_activity = db.Column(db.DateTime, nullable=True)
     last_login = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -83,10 +93,10 @@ class User(db.Model):
         'UnlockedItem', backref='user', lazy=True, cascade='all, delete-orphan')
     progress = db.relationship(
         'UserProgress', backref='user', uselist=False, cascade='all, delete-orphan')
-    presets = db.relationship(
-        'SavedAvatarPreset', backref='user', lazy=True, cascade='all, delete-orphan')
     game_sessions_data = db.relationship(
         'GameSession', backref='user', lazy=True)
+    game_stats = db.relationship(
+        'UserGameStats', backref='user', uselist=False, cascade='all, delete-orphan')
 
     def __init__(self, email, password, username=None):
         self.email = email
@@ -94,6 +104,7 @@ class User(db.Model):
         self.set_password(password)
         self.created_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
+        self.last_activity_date = date.today()  # Initialize activity tracking
 
     def set_password(self, password):
         """Hash and store password."""
@@ -103,28 +114,101 @@ class User(db.Model):
         """Check if provided password matches hash."""
         return check_password_hash(self.password_hash, password)
 
-    def add_xp(self, amount):
-        """Add XP and check for level up."""
+    # 🎯 CENTRALIZED XP AND LEVELING
+    def add_xp(self, amount, source="game"):
+        """
+        Add XP and check for level up.
+        Returns: (leveled_up: bool, new_level: int, coins_earned: int)
+        """
         self.xp += amount
         old_level = self.level
         new_level = (self.xp // 100) + 1
 
+        coins_earned = 0
         if new_level > old_level:
             self.level = new_level
-            self.coins += (new_level - old_level) * 50
-            return True
-        return False
+            coins_earned = (new_level - old_level) * 50
+            self.coins += coins_earned
+            leveled_up = True
+        else:
+            leveled_up = False
 
+        # Update activity tracking
+        self.update_activity()
+
+        return leveled_up, new_level, coins_earned
+
+    # 🔥 CENTRALIZED STREAK TRACKING
+    def update_streak(self):
+        """
+        Update streak based on last activity date.
+        Call this whenever user completes an activity.
+        Returns: (streak_continued: bool, new_streak: int)
+        """
+        today = date.today()
+
+        if self.last_activity_date is None:
+            # First activity ever
+            self.streak_days = 1
+            self.last_activity_date = today
+            return True, 1
+
+        days_since_activity = (today - self.last_activity_date).days
+
+        if days_since_activity == 0:
+            # Already active today, no change
+            return False, self.streak_days
+        elif days_since_activity == 1:
+            # Active yesterday, continue streak
+            self.streak_days += 1
+            self.last_activity_date = today
+            return True, self.streak_days
+        else:
+            # Streak broken (missed a day)
+            self.streak_days = 1
+            self.last_activity_date = today
+            return False, 1
+
+    def update_activity(self):
+        """Update last activity timestamp and date."""
+        self.last_activity = datetime.utcnow()
+        # This will trigger streak check
+        self.update_streak()
+
+    # 💰 COIN MANAGEMENT
     def can_afford(self, cost):
         """Check if user can afford an item."""
         return self.coins >= cost
 
     def spend_coins(self, amount):
-        """Spend coins if user has enough."""
+        """Spend coins if user has enough. Returns True if successful."""
         if self.can_afford(amount):
             self.coins -= amount
             return True
         return False
+
+    def add_coins(self, amount, source="reward"):
+        """Add coins to user account."""
+        self.coins += amount
+        return self.coins
+
+    # 📊 GET COMPLETE STATS
+    def get_complete_stats(self):
+        """Get all user stats from across tables."""
+        # Get progress data
+        progress = self.progress or UserProgress(user_id=self.id)
+        game_stats = self.game_stats or UserGameStats(user_id=self.id)
+
+        return {
+            'level': self.level,
+            'xp': self.xp,
+            'coins': self.coins,
+            'streak_days': self.streak_days,
+            'total_games_played': game_stats.total_games_played,
+            'workouts_completed': progress.workouts_completed,
+            'items_unlocked': progress.items_unlocked,
+            'last_activity': self.last_activity.isoformat() if self.last_activity else None
+        }
 
     def serialize(self):
         """Convert user to dictionary for JSON responses"""
@@ -135,13 +219,14 @@ class User(db.Model):
             'level': self.level,
             'xp': self.xp,
             'coins': self.coins,
+            'streak_days': self.streak_days,
+            'last_activity_date': self.last_activity_date.isoformat() if self.last_activity_date else None,
             'avatar_style': self.avatar_style,
             'avatar_seed': self.avatar_seed,
             'avatar_background_color': self.avatar_background_color,
             'avatar_theme': self.avatar_theme,
             'avatar_mood': self.avatar_mood,
             'total_playtime': self.total_playtime,
-            'streak_days': self.streak_days,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
@@ -149,6 +234,354 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.email}>'
+
+
+# ===================================
+# USER PROGRESS MODEL - ACTIVITY TRACKING
+# ===================================
+class UserProgress(db.Model):
+    """
+    Tracks user activity and achievements.
+    PRIMARY SOURCE for: Workouts Completed, Games Played Count, Items Unlocked
+    """
+    __tablename__ = 'user_progress'
+
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'users.id'), primary_key=True)
+
+    # 🏃 ACTIVITY TRACKING
+    workouts_completed = db.Column(db.Integer, default=0, nullable=False)
+    total_games_played = db.Column(
+        db.Integer, default=0, nullable=False)  # Total across all games
+
+    # 🎨 CUSTOMIZATION TRACKING
+    avatars_created = db.Column(db.Integer, default=0, nullable=False)
+    items_unlocked = db.Column(db.Integer, default=0, nullable=False)
+
+    # 🎁 DAILY REWARDS
+    last_daily_reward = db.Column(db.Date, nullable=True)
+    daily_reward_streak = db.Column(db.Integer, default=0)
+
+    # Legacy fields (mirror from User for backwards compatibility)
+    total_points = db.Column(db.Integer, default=0)
+    level = db.Column(db.Integer, default=1)
+    experience_points = db.Column(db.Integer, default=0)
+    streak_days = db.Column(db.Integer, default=0)
+    last_activity_date = db.Column(db.Date, nullable=True)
+
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # 🎮 ACTIVITY TRACKING METHODS
+    def record_game_played(self, xp_earned=0):
+        """
+        Record that a game was played.
+        Returns: dict with updated stats
+        """
+        self.total_games_played += 1
+        self.updated_at = datetime.utcnow()
+
+        # Also update user's XP if provided
+        if xp_earned > 0 and self.user:
+            leveled_up, new_level, coins = self.user.add_xp(
+                xp_earned, source="game")
+            return {
+                'games_played': self.total_games_played,
+                'xp_earned': xp_earned,
+                'leveled_up': leveled_up,
+                'new_level': new_level,
+                'coins_earned': coins
+            }
+
+        return {
+            'games_played': self.total_games_played,
+            'xp_earned': 0
+        }
+
+    def record_workout(self, xp_earned=10):
+        """
+        Record a completed workout.
+        Returns: dict with updated stats
+        """
+        self.workouts_completed += 1
+        self.updated_at = datetime.utcnow()
+
+        # Update user's XP
+        if self.user:
+            leveled_up, new_level, coins = self.user.add_xp(
+                xp_earned, source="workout")
+            return {
+                'workouts_completed': self.workouts_completed,
+                'xp_earned': xp_earned,
+                'leveled_up': leveled_up,
+                'new_level': new_level,
+                'coins_earned': coins
+            }
+
+        return {
+            'workouts_completed': self.workouts_completed,
+            'xp_earned': xp_earned
+        }
+
+    def unlock_item(self):
+        """Track that an item was unlocked."""
+        self.items_unlocked += 1
+        self.updated_at = datetime.utcnow()
+
+    def create_avatar(self):
+        """Track that an avatar was created."""
+        self.avatars_created += 1
+        self.updated_at = datetime.utcnow()
+
+    # 🎁 DAILY REWARD SYSTEM
+    def can_claim_daily_reward(self):
+        """Check if user can claim today's daily reward."""
+        if self.last_daily_reward is None:
+            return True
+        return date.today() > self.last_daily_reward
+
+    def claim_daily_reward(self):
+        """
+        Claim daily reward.
+        Returns: (success: bool, reward_coins: int, streak: int)
+        """
+        if not self.can_claim_daily_reward():
+            return False, 0, self.daily_reward_streak
+
+        today = date.today()
+
+        # Check if streak continues
+        if self.last_daily_reward:
+            days_since = (today - self.last_daily_reward).days
+            if days_since == 1:
+                # Streak continues
+                self.daily_reward_streak += 1
+            else:
+                # Streak broken
+                self.daily_reward_streak = 1
+        else:
+            # First reward
+            self.daily_reward_streak = 1
+
+        self.last_daily_reward = today
+
+        # Calculate reward (base 10 + streak bonus)
+        reward_coins = 10 + (self.daily_reward_streak * 2)
+
+        # Give coins to user
+        if self.user:
+            self.user.add_coins(reward_coins, source="daily_reward")
+
+        return True, reward_coins, self.daily_reward_streak
+
+    def to_dict(self):
+        return {
+            'user_id': self.user_id,
+            'workouts_completed': self.workouts_completed,
+            'total_games_played': self.total_games_played,
+            'avatars_created': self.avatars_created,
+            'items_unlocked': self.items_unlocked,
+            'daily_reward_streak': self.daily_reward_streak,
+            'can_claim_daily_reward': self.can_claim_daily_reward(),
+            'last_daily_reward': self.last_daily_reward.isoformat() if self.last_daily_reward else None
+        }
+
+    def __repr__(self):
+        return f'<UserProgress user={self.user_id} games={self.total_games_played} workouts={self.workouts_completed}>'
+
+
+# ===================================
+# USER GAME STATS MODEL - GAME-SPECIFIC DATA
+# ===================================
+class UserGameStats(db.Model):
+    """
+    Tracks game-specific statistics.
+    PRIMARY SOURCE for: Game unlocks, Favorites, Completions
+    """
+    __tablename__ = 'user_game_stats'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey(
+        'users.id'), nullable=False, unique=True)
+
+    # Lists stored as JSON
+    unlocked_games = db.Column(JSON, default=list, nullable=False)
+    completed_games = db.Column(JSON, default=list, nullable=False)
+    favorite_games = db.Column(JSON, default=list, nullable=False)
+
+    # Legacy fields (use UserProgress.total_games_played instead)
+    total_games_played = db.Column(db.Integer, default=0, nullable=False)
+    weekly_streak = db.Column(db.Integer, default=0, nullable=False)
+
+    # Legacy XP tracking (use User.xp instead)
+    level = db.Column(db.Integer, default=1, nullable=False)
+    xp = db.Column(db.Integer, default=0, nullable=False)
+
+    # Timestamps
+    created_at = db.Column(
+        db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
+                           onupdate=datetime.utcnow, nullable=False)
+
+    def unlock_game(self, game_id):
+        """Unlock a game if not already unlocked."""
+        if not self.unlocked_games:
+            self.unlocked_games = []
+        if game_id not in self.unlocked_games:
+            self.unlocked_games = self.unlocked_games + [game_id]
+            return True
+        return False
+
+    def complete_game(self, game_id):
+        """Mark a game as completed."""
+        if not self.completed_games:
+            self.completed_games = []
+        if game_id not in self.completed_games:
+            self.completed_games = self.completed_games + [game_id]
+            return True
+        return False
+
+    def toggle_favorite(self, game_id):
+        """Toggle favorite status for a game. Returns new favorite state."""
+        if not self.favorite_games:
+            self.favorite_games = []
+
+        if game_id in self.favorite_games:
+            self.favorite_games = [
+                g for g in self.favorite_games if g != game_id]
+            return False
+        else:
+            self.favorite_games = self.favorite_games + [game_id]
+            return True
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'unlocked_games': self.unlocked_games or [],
+            'completed_games': self.completed_games or [],
+            'favorite_games': self.favorite_games or [],
+            'total_games_played': self.total_games_played,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+    def __repr__(self):
+        return f'<UserGameStats user={self.user_id}>'
+
+
+# ===================================
+# GAME SESSION MODEL - INDIVIDUAL PLAYS
+# ===================================
+class GameSession(db.Model):
+    """
+    Tracks individual game play sessions.
+    Use this to record each time a game is played with score/duration.
+    """
+    __tablename__ = 'game_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    game_id = db.Column(db.String(100), nullable=False)
+
+    # Session data
+    score = db.Column(db.Integer, default=0)
+    duration_minutes = db.Column(db.Integer, default=0)
+    xp_earned = db.Column(db.Integer, default=0)
+    completed = db.Column(db.Boolean, default=False)
+    played_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @staticmethod
+    def record_session(user_id, game_id, score=0, duration_minutes=0, xp_earned=10, completed=False):
+        """
+        Helper method to record a game session and update all related stats.
+
+        Args:
+            user_id: User ID
+            game_id: Game identifier
+            score: Score achieved
+            duration_minutes: How long they played
+            xp_earned: XP to award
+            completed: Whether they finished the game
+
+        Returns:
+            dict with session data and updated stats
+        """
+        from api.models import User, UserProgress, UserGameStats, Game
+
+        # Create session record
+        session = GameSession(
+            user_id=user_id,
+            game_id=game_id,
+            score=score,
+            duration_minutes=duration_minutes,
+            xp_earned=xp_earned,
+            completed=completed
+        )
+        db.session.add(session)
+
+        # Update user stats
+        user = User.query.get(user_id)
+        if user:
+            leveled_up, new_level, coins = user.add_xp(
+                xp_earned, source="game")
+        else:
+            leveled_up, new_level, coins = False, 1, 0
+
+        # Update progress
+        progress = UserProgress.query.filter_by(user_id=user_id).first()
+        if not progress:
+            progress = UserProgress(user_id=user_id)
+            db.session.add(progress)
+        progress.record_game_played(xp_earned)
+
+        # Update game stats
+        game_stats = UserGameStats.query.filter_by(user_id=user_id).first()
+        if not game_stats:
+            game_stats = UserGameStats(user_id=user_id)
+            db.session.add(game_stats)
+        game_stats.total_games_played += 1
+
+        # Mark as completed if needed
+        if completed:
+            game_stats.complete_game(game_id)
+
+        # Update Game model if it exists
+        game = Game.query.filter_by(user_id=user_id, name=game_id).first()
+        if game:
+            game.times_played += 1
+            game.last_played = datetime.utcnow()
+            if score > game.personal_best:
+                game.personal_best = score
+
+        db.session.commit()
+
+        return {
+            'session_id': session.id,
+            'score': score,
+            'xp_earned': xp_earned,
+            'leveled_up': leveled_up,
+            'new_level': new_level,
+            'coins_earned': coins,
+            'total_games_played': progress.total_games_played,
+            'streak_days': user.streak_days if user else 0
+        }
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'game_id': self.game_id,
+            'score': self.score,
+            'duration_minutes': self.duration_minutes,
+            'xp_earned': self.xp_earned,
+            'completed': self.completed,
+            'played_at': self.played_at.isoformat() if self.played_at else None
+        }
+
+    def __repr__(self):
+        return f'<GameSession {self.game_id} by user {self.user_id}>'
 
 
 # ===================================
@@ -220,273 +653,92 @@ class Game(db.Model):
             'id': self.id,
             'name': self.name,
             'progress': self.progress,
-            'user_id': self.user_id,
-            'personal_best': self.personal_best,
-            'times_played': self.times_played,
-            'total_time': self.total_time,
-            'is_favorite': self.is_favorite,
-            'last_played': self.last_played.isoformat() if self.last_played else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
-
-    def update_best_score(self, score):
-        if score > self.personal_best:
-            self.personal_best = score
-            return True
-        return False
-
-    def record_play_session(self, duration_minutes, score=None):
-        self.times_played += 1
-        self.total_time += duration_minutes
-        self.last_played = datetime.utcnow()
-        self.updated_at = datetime.utcnow()
-        if score is not None:
-            self.update_best_score(score)
-
-    def toggle_favorite(self):
-        self.is_favorite = not self.is_favorite
-        return self.is_favorite
-
-    def __repr__(self):
-        return f'<Game {self.id}: {self.name} - {self.progress}%>'
-
-
-# ===================================
-# INVENTORY ITEM MODEL
-# ===================================
-class InventoryItem(db.Model):
-    """Template items that users can unlock."""
-    __tablename__ = 'inventory_items'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(255), nullable=True)
-    category = db.Column(db.String(50), nullable=False)
-    subcategory = db.Column(db.String(50), nullable=True)
-    rarity = db.Column(db.String(20), default='common', nullable=False)
-    xp_cost = db.Column(db.Integer, default=0, nullable=False)
-    coin_cost = db.Column(db.Integer, default=0, nullable=False)
-    level_required = db.Column(db.Integer, default=1, nullable=False)
-    image_url = db.Column(db.String(255), nullable=True)
-    color = db.Column(db.String(20), default='#3B82F6', nullable=False)
-    icon = db.Column(db.String(50), nullable=True)
-    is_unlockable = db.Column(db.Boolean, default=True, nullable=False)
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(
-        db.DateTime, default=datetime.utcnow, nullable=False)
-
-    def serialize(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'category': self.category,
-            'subcategory': self.subcategory,
-            'rarity': self.rarity,
-            'xp_cost': self.xp_cost,
-            'coin_cost': self.coin_cost,
-            'level_required': self.level_required,
-            'image_url': self.image_url,
-            'color': self.color,
-            'icon': self.icon,
-            'is_unlockable': self.is_unlockable,
-            'is_active': self.is_active
+            'personalBest': self.personal_best,
+            'timesPlayed': self.times_played,
+            'totalTime': self.total_time,
+            'isFavorite': self.is_favorite,
+            'lastPlayed': self.last_played.isoformat() if self.last_played else None,
+            'userId': self.user_id,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'updatedAt': self.updated_at.isoformat() if self.updated_at else None
         }
 
     def __repr__(self):
-        return f'<InventoryItem {self.id}: {self.name}>'
+        return f'<Game {self.name} for user {self.user_id}>'
 
 
 # ===================================
 # USER INVENTORY MODEL
 # ===================================
+
 class UserInventory(db.Model):
-    """Tracks which items a user owns."""
+    """Tracks user's inventory items (legacy - being phased out)."""
     __tablename__ = 'user_inventory'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    item_id = db.Column(db.Integer, db.ForeignKey(
-        'inventory_items.id'), nullable=False)
-    is_equipped = db.Column(db.Boolean, default=False, nullable=False)
-    is_favorite = db.Column(db.Boolean, default=False, nullable=False)
-    acquired_at = db.Column(
-        db.DateTime, default=datetime.utcnow, nullable=False)
-
-    item = db.relationship('InventoryItem', backref='owned_by')
-    __table_args__ = (db.UniqueConstraint(
-        'user_id', 'item_id', name='unique_user_item'),)
+    item_id = db.Column(db.Integer, nullable=False)
+    item_name = db.Column(db.String(100), nullable=False)
+    item_type = db.Column(db.String(50), nullable=False)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+    acquired_date = db.Column(db.DateTime, default=datetime.utcnow)
 
     def serialize(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
             'item_id': self.item_id,
-            'is_equipped': self.is_equipped,
-            'is_favorite': self.is_favorite,
-            'acquired_at': self.acquired_at.isoformat() if self.acquired_at else None,
-            'item': self.item.serialize() if self.item else None
+            'item_name': self.item_name,
+            'item_type': self.item_type,
+            'quantity': self.quantity,
+            'acquired_date': self.acquired_date.isoformat() if self.acquired_date else None
         }
 
     def __repr__(self):
-        return f'<UserInventory User:{self.user_id} Item:{self.item_id}>'
-
-
-# ===================================
-# ACHIEVEMENT MODEL
-# ===================================
-class Achievement(db.Model):
-    """Achievement badges and accomplishments."""
-    __tablename__ = 'achievements'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(255), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    requirement_type = db.Column(db.String(50), nullable=False)
-    requirement_value = db.Column(db.Integer, nullable=False)
-    xp_reward = db.Column(db.Integer, default=0, nullable=False)
-    coin_reward = db.Column(db.Integer, default=0, nullable=False)
-    item_reward_id = db.Column(db.Integer, db.ForeignKey(
-        'inventory_items.id'), nullable=True)
-    icon = db.Column(db.String(50), nullable=False)
-    color = db.Column(db.String(20), default='#FFD700', nullable=False)
-    rarity = db.Column(db.String(20), default='common', nullable=False)
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(
-        db.DateTime, default=datetime.utcnow, nullable=False)
-
-    item_reward = db.relationship(
-        'InventoryItem', backref='achievement_rewards')
-
-    def serialize(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'category': self.category,
-            'requirement_type': self.requirement_type,
-            'requirement_value': self.requirement_value,
-            'xp_reward': self.xp_reward,
-            'coin_reward': self.coin_reward,
-            'item_reward_id': self.item_reward_id,
-            'icon': self.icon,
-            'color': self.color,
-            'rarity': self.rarity,
-            'is_active': self.is_active,
-            'item_reward': self.item_reward.serialize() if self.item_reward else None
-        }
-
-    def __repr__(self):
-        return f'<Achievement {self.id}: {self.name}>'
+        return f'<UserInventory {self.item_name} for user {self.user_id}>'
 
 
 # ===================================
 # USER ACHIEVEMENT MODEL
 # ===================================
 class UserAchievement(db.Model):
-    """Tracks which achievements a user has earned."""
+    """Tracks user achievements."""
     __tablename__ = 'user_achievements'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    achievement_id = db.Column(db.Integer, db.ForeignKey(
-        'achievements.id'), nullable=False)
-    progress = db.Column(db.Integer, default=0, nullable=False)
-    is_completed = db.Column(db.Boolean, default=False, nullable=False)
-    earned_at = db.Column(db.DateTime, nullable=True)
-
-    achievement = db.relationship('Achievement', backref='earned_by')
-    __table_args__ = (db.UniqueConstraint(
-        'user_id', 'achievement_id', name='unique_user_achievement'),)
+    achievement_name = db.Column(db.String(100), nullable=False)
+    achievement_description = db.Column(db.String(255))
+    progress = db.Column(db.Integer, default=0)
+    target = db.Column(db.Integer, default=100)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_date = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def serialize(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'achievement_id': self.achievement_id,
+            'name': self.achievement_name,
+            'description': self.achievement_description,
             'progress': self.progress,
+            'target': self.target,
             'is_completed': self.is_completed,
-            'earned_at': self.earned_at.isoformat() if self.earned_at else None,
-            'achievement': self.achievement.serialize() if self.achievement else None
+            'completed_date': self.completed_date.isoformat() if self.completed_date else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
-    def __repr__(self):
-        return f'<UserAchievement User:{self.user_id} Achievement:{self.achievement_id}>'
-
-
-# ===================================
-# USER GAME STATS MODEL
-# ===================================
-class UserGameStats(db.Model):
-    """Tracks detailed game statistics for users."""
-    __tablename__ = 'user_game_stats'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    level = db.Column(db.Integer, default=1, nullable=False)
-    xp = db.Column(db.Integer, default=0, nullable=False)
-    total_games_played = db.Column(db.Integer, default=0, nullable=False)
-    weekly_streak = db.Column(db.Integer, default=0, nullable=False)
-    unlocked_games = db.Column(
-        JSON, default=['dance', 'yoga', 'memory-match'], nullable=False)
-    completed_games = db.Column(JSON, default=[], nullable=False)
-    favorite_games = db.Column(JSON, default=[], nullable=False)
-    created_at = db.Column(
-        db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
-                           onupdate=datetime.utcnow, nullable=False)
-
-    def serialize(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'level': self.level,
-            'xp': self.xp,
-            'total_games_played': self.total_games_played,
-            'weekly_streak': self.weekly_streak,
-            'unlocked_games': self.unlocked_games or [],
-            'completed_games': self.completed_games or [],
-            'favorite_games': self.favorite_games or [],
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
+    def update_progress(self, amount):
+        """Update progress and check if completed."""
+        self.progress += amount
+        if self.progress >= self.target and not self.is_completed:
+            self.is_completed = True
+            self.completed_date = datetime.utcnow()
+            return True
+        return False
 
     def __repr__(self):
-        return f'<UserGameStats user_id={self.user_id} level={self.level}>'
-
-
-# ===================================
-# GAME SESSION MODEL
-# ===================================
-class GameSession(db.Model):
-    """Tracks individual game play sessions."""
-    __tablename__ = 'game_sessions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    game_id = db.Column(db.String(50), nullable=False)
-    xp_earned = db.Column(db.Integer, default=0, nullable=False)
-    score = db.Column(db.Integer, default=0, nullable=False)
-    duration_minutes = db.Column(db.Integer, default=0, nullable=False)
-    completed = db.Column(db.Boolean, default=False, nullable=False)
-    played_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-
-    def serialize(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'game_id': self.game_id,
-            'xp_earned': self.xp_earned,
-            'score': self.score,
-            'duration_minutes': self.duration_minutes,
-            'completed': self.completed,
-            'played_at': self.played_at.isoformat() if self.played_at else None
-        }
-
-    def __repr__(self):
-        return f'<GameSession user_id={self.user_id} game_id={self.game_id}>'
+        return f'<UserAchievement {self.achievement_name} for user {self.user_id}>'
 
 
 # ===================================
@@ -501,7 +753,7 @@ class UserAvatar(db.Model):
     avatar_style = db.Column(db.String(50), nullable=False)
     avatar_seed = db.Column(db.String(255), nullable=False)
     avatar_options = db.Column(db.Text, nullable=False)
-    is_current = db.Column(db.Boolean, default=True)
+    is_current = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -523,7 +775,7 @@ class UserAvatar(db.Model):
 
 
 # ===================================
-# UNLOCKED ITEM MODEL
+# UNLOCKED ITEM MODEL (UPDATED)
 # ===================================
 class UnlockedItem(db.Model):
     """Tracks unlocked customization items."""
@@ -531,11 +783,14 @@ class UnlockedItem(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    item_category = db.Column(db.String(50), nullable=False)
-    item_value = db.Column(db.String(100), nullable=False)
-    avatar_style = db.Column(db.String(50), nullable=False)
+    item_catalog_id = db.Column(db.Integer, nullable=True)
+    item_category = db.Column(db.String(50), nullable=True)
+    item_value = db.Column(db.String(100), nullable=True)
+    avatar_style = db.Column(db.String(50), nullable=True)
+    unlock_method = db.Column(db.String(50), default='purchase')
     unlocked_at = db.Column(db.DateTime, default=datetime.utcnow)
-    unlocked_by = db.Column(db.String(50))
+    unlocked_by = db.Column(db.String(50), nullable=True)
+    is_equipped = db.Column(db.Boolean, default=False)
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'item_category', 'item_value', 'avatar_style',
@@ -546,57 +801,18 @@ class UnlockedItem(db.Model):
         return {
             'id': self.id,
             'user_id': self.user_id,
+            'item_catalog_id': self.item_catalog_id,
             'category': self.item_category,
             'value': self.item_value,
             'style': self.avatar_style,
+            'unlock_method': self.unlock_method,
             'unlocked_at': self.unlocked_at.isoformat(),
-            'unlocked_by': self.unlocked_by
+            'unlocked_by': self.unlocked_by,
+            'is_equipped': self.is_equipped
         }
 
     def __repr__(self):
         return f'<UnlockedItem {self.item_category}:{self.item_value} for {self.user_id}>'
-
-
-# ===================================
-# USER PROGRESS MODEL
-# ===================================
-class UserProgress(db.Model):
-    """Tracks user progression and rewards."""
-    __tablename__ = 'user_progress'
-
-    user_id = db.Column(db.Integer, db.ForeignKey(
-        'users.id'), primary_key=True)
-    total_points = db.Column(db.Integer, default=0)
-    level = db.Column(db.Integer, default=1)
-    experience_points = db.Column(db.Integer, default=0)
-    avatars_created = db.Column(db.Integer, default=0)
-    items_unlocked = db.Column(db.Integer, default=0)
-    last_daily_reward = db.Column(db.Date)
-    streak_days = db.Column(db.Integer, default=0)
-
-    def to_dict(self):
-        return {
-            'user_id': self.user_id,
-            'total_points': self.total_points,
-            'level': self.level,
-            'experience_points': self.experience_points,
-            'avatars_created': self.avatars_created,
-            'items_unlocked': self.items_unlocked,
-            'streak_days': self.streak_days,
-            'last_daily_reward': self.last_daily_reward.isoformat() if self.last_daily_reward else None
-        }
-
-    def add_points(self, points):
-        self.total_points += points
-        self.experience_points += points
-        new_level = (self.experience_points // 100) + 1
-        leveled_up = new_level > self.level
-        if leveled_up:
-            self.level = new_level
-        return leveled_up, new_level
-
-    def __repr__(self):
-        return f'<UserProgress {self.user_id} - Level {self.level}>'
 
 
 # ===================================
@@ -672,24 +888,72 @@ class SavedAvatarPreset(db.Model):
 # HELPER FUNCTIONS
 # ===================================
 
-def init_default_items_for_user(user_id):
-    """Initialize default unlocked items for a new user"""
+def init_user_data(user_id):
+    """
+    Initialize all necessary data for a new user.
+    Call this after creating a new user account.
+    """
+    # Create UserProgress
+    progress = UserProgress(user_id=user_id)
+    db.session.add(progress)
+
+    # Create UserGameStats
+    game_stats = UserGameStats(user_id=user_id)
+    db.session.add(game_stats)
+
+    # Unlock default items
     default_items = ItemCatalog.query.filter_by(is_default=True).all()
     for item in default_items:
         unlocked = UnlockedItem(
             user_id=user_id,
+            item_catalog_id=item.id,
             item_category=item.item_category,
             item_value=item.item_value,
             avatar_style=item.avatar_style,
-            unlocked_by='default'
+            unlock_method='default',
+            unlocked_by='system'
         )
         db.session.add(unlocked)
+
+    progress.items_unlocked = len(default_items)
+
+    # Create default avatar
+    default_options = {
+        'topType': 'ShortHairShortFlat',
+        'hairColor': 'Brown',
+        'skinColor': 'Light',
+        'clothesType': 'Hoodie',
+        'eyeType': 'Default',
+        'mouthType': 'Smile'
+    }
+    avatar = UserAvatar(
+        user_id=user_id,
+        avatar_style='avataaars',
+        avatar_seed=f'{user_id}-default-{int(datetime.utcnow().timestamp())}',
+        avatar_options=json.dumps(default_options),
+        is_current=True
+    )
+    db.session.add(avatar)
+    progress.create_avatar()
+
     db.session.commit()
-    return len(default_items)
+
+    return {
+        'progress': progress,
+        'game_stats': game_stats,
+        'default_items_unlocked': len(default_items),
+        'avatar_created': True
+    }
+
+
+# Legacy helper functions for backwards compatibility
+def init_default_items_for_user(user_id):
+    """Legacy function - use init_user_data instead."""
+    return init_user_data(user_id)
 
 
 def init_user_progress(user_id):
-    """Initialize progress for a new user"""
+    """Legacy function - use init_user_data instead."""
     progress = UserProgress(user_id=user_id)
     db.session.add(progress)
     db.session.commit()
@@ -697,7 +961,7 @@ def init_user_progress(user_id):
 
 
 def create_default_avatar_for_user(user_id, style='avataaars'):
-    """Create a default avatar for a new user"""
+    """Legacy function - use init_user_data instead."""
     default_options = {
         'topType': 'ShortHairShortFlat',
         'hairColor': 'Brown',
