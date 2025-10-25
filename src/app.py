@@ -90,41 +90,72 @@ def create_app():
             f"https://{CODESPACE_NAME}-3001.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
             # Vite dev server (port 5173)
             f"https://{CODESPACE_NAME}-5173.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+            # With port numbers at the end (alternative format)
             f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3000",
-            # Frontend
             f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:3001",
-            # Backend
             f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}:5173",
-            # Vite
             # Base domain (no port)
             f"https://{CODESPACE_NAME}.{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
         ]
         allowed_origins.extend(codespace_origins)
+        
         print("\n" + "=" * 60)
         print("🌐 GitHub Codespaces Detected!")
         print("=" * 60)
-        print("✅ Allowing these origins:")
+        print("✅ Codespaces origins added:")
         for origin in codespace_origins:
             print(f"   • {origin}")
         print("=" * 60 + "\n")
 
-    # Configure CORS
+    # FORCE ADD: Your specific frontend URL (in case Codespaces detection fails)
+    specific_frontend = "https://stunning-palm-tree-g4p7v5x9wwqj2wqvr.app.github.dev:3000"
+    if specific_frontend not in allowed_origins:
+        allowed_origins.append(specific_frontend)
+        print(f"🔧 Force-added specific frontend URL: {specific_frontend}\n")
+
+    # ===============================
+    # DEBUG: Print all allowed origins
+    # ===============================
+    print("\n" + "=" * 60)
+    print("🔍 CORS DEBUG INFORMATION")
+    print("=" * 60)
+    print(f"CODESPACE_NAME: '{CODESPACE_NAME}'")
+    print(f"GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN: '{GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}'")
+    print(f"\n📋 ALL ALLOWED ORIGINS ({len(allowed_origins)} total):")
+    for i, origin in enumerate(allowed_origins, 1):
+        print(f"   {i}. {origin}")
+    print("=" * 60 + "\n")
+
+    # ===============================
+    # Configure CORS - More permissive for debugging
+    # ===============================
     CORS(app,
          resources={
-             r"/api/*": {
+             r"/*": {  # Apply to ALL routes (not just /api/*)
                  "origins": allowed_origins,
-                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-                 "allow_headers": ["Content-Type", "Authorization"],
+                 "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+                 "allow_headers": [
+                     "Content-Type", 
+                     "Authorization", 
+                     "Accept", 
+                     "X-Requested-With",
+                     "X-CSRF-Token"
+                 ],
                  "supports_credentials": True,
                  "expose_headers": ["Content-Type", "Authorization"],
-                 "max_age": 3600
+                 "max_age": 3600,
+                 "send_wildcard": False,
+                 "always_send": True
              }
-         })
+         },
+         supports_credentials=True)
 
-    print("🔒 CORS Configuration:")
+    print("🔒 CORS Configuration Applied:")
     print(f"   • Mode: {ENV}")
+    print(f"   • Pattern: ALL routes (/*)")
     print(f"   • Allowed origins: {len(allowed_origins)} URLs")
     print(f"   • Credentials: Enabled")
+    print(f"   • Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH")
     print("")
 
     # ===============================

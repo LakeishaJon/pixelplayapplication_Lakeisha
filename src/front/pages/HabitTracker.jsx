@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Home, LayoutDashboard, ShoppingBag } from 'lucide-react';
 import { getUserData } from '../utils/auth';
+import '../styles/Dashboard.css';
 
 const HabitTracker = () => {
   const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [gameData, setGameData] = useState({
     dailyPoints: 0,
     completedTasks: [],
@@ -17,75 +16,13 @@ const HabitTracker = () => {
     gameStates: {}
   });
 
-  const [sequenceProgress, setSequenceProgress] = useState({});
-  const [activeTimers, setActiveTimers] = useState({});
-  const [memoryGame, setMemoryGame] = useState({});
-  const [mathAnswers, setMathAnswers] = useState({});
+  // Game-specific states
+  const [quizStates, setQuizStates] = useState({});
+  const [timerStates, setTimerStates] = useState({});
+  const [counterStates, setCounterStates] = useState({});
+  const [mathStates, setMathStates] = useState({});
+  const [memoryStates, setMemoryStates] = useState({});
   const [timeUntilReset, setTimeUntilReset] = useState('');
-
-  // 🎨 Consistent button styles
-  const gameButtonStyle = {
-    width: '100%',
-    padding: '0.75rem 1.5rem',
-    borderRadius: '20px',
-    fontWeight: '700',
-    fontSize: '0.95rem',
-    border: 'none',
-    cursor: 'pointer',
-    background: 'linear-gradient(135deg, #EC4899, #8B5CF6)',
-    color: 'white',
-    boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)',
-    transition: 'all 0.3s ease',
-    marginTop: '0.5rem'
-  };
-
-  const gameButtonDisabledStyle = {
-    ...gameButtonStyle,
-    background: '#D1D5DB',
-    cursor: 'not-allowed',
-    boxShadow: 'none',
-    opacity: 0.6
-  };
-
-  const quizOptionStyle = {
-    width: '100%',
-    padding: '0.75rem 1rem',
-    borderRadius: '16px',
-    fontWeight: '600',
-    fontSize: '0.9rem',
-    border: '2px solid #E5E7EB',
-    background: 'white',
-    color: '#1F2937',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    marginTop: '0.5rem',
-    textAlign: 'left'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '0.75rem 1rem',
-    borderRadius: '16px',
-    fontWeight: '600',
-    fontSize: '1.1rem',
-    border: '2px solid #E5E7EB',
-    background: 'white',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginTop: '0.5rem',
-    marginBottom: '0.5rem',
-    outline: 'none'
-  };
-
-  const handleNavigation = (path) => {
-    console.log('Navigating to:', path);
-    try {
-      navigate(path);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      window.location.href = path;
-    }
-  };
 
   const routines = [
     {
@@ -94,6 +31,7 @@ const HabitTracker = () => {
       icon: '🛏️',
       description: 'Get a daily motivation quote!',
       gameType: 'quote',
+      points: 10,
       gameData: {
         quotes: [
           "Making your bed is the first victory of the day! 🏆",
@@ -110,6 +48,7 @@ const HabitTracker = () => {
       icon: '🪥',
       description: 'Brush for 2 minutes with our timer game!',
       gameType: 'timer',
+      points: 10,
       gameData: {
         duration: 120,
         encouragementMessages: [
@@ -127,6 +66,7 @@ const HabitTracker = () => {
       icon: '🍎',
       description: 'Learn fun food facts and play nutrition quiz!',
       gameType: 'quiz',
+      points: 10,
       gameData: {
         questions: [
           {
@@ -153,6 +93,7 @@ const HabitTracker = () => {
       icon: '🧼',
       description: 'Play the handwashing sequence game!',
       gameType: 'sequence',
+      points: 10,
       gameData: {
         steps: [
           { icon: '🚿', text: 'Turn on water' },
@@ -170,6 +111,7 @@ const HabitTracker = () => {
       icon: '📚',
       description: 'Play word memory game!',
       gameType: 'memory',
+      points: 10,
       gameData: {
         cards: ['📖', '✏️', '🎭', '🌟', '🦄', '🚀', '🌈', '🎨'],
         gridSize: 4
@@ -181,6 +123,7 @@ const HabitTracker = () => {
       icon: '💧',
       description: 'Track glasses and get hydration facts!',
       gameType: 'counter',
+      points: 10,
       gameData: {
         target: 8,
         facts: [
@@ -196,6 +139,7 @@ const HabitTracker = () => {
       icon: '🧸',
       description: 'Solve a fun math problem about organizing!',
       gameType: 'math',
+      points: 10,
       gameData: {
         problems: [
           { question: "If you have 12 toys and put 4 in each box, how many boxes do you need?", answer: 3 },
@@ -210,9 +154,19 @@ const HabitTracker = () => {
 
   useEffect(() => {
     loadUserData();
+    updateTimeUntilMidnight();
     const interval = setInterval(updateTimeUntilMidnight, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    // Cleanup timers on unmount
+    return () => {
+      Object.values(timerStates).forEach(state => {
+        if (state.interval) clearInterval(state.interval);
+      });
+    };
+  }, [timerStates]);
 
   const loadUserData = async () => {
     try {
@@ -224,38 +178,65 @@ const HabitTracker = () => {
       }
 
       setUser(authUser);
-
       const savedData = localStorage.getItem(`habitTracker_${authUser.id}`);
+      
       if (savedData) {
         const data = JSON.parse(savedData);
-        setGameData({
-          dailyPoints: data.dailyPoints || 0,
-          completedTasks: data.completedTasks || [],
-          lastResetDate: data.lastResetDate || getCurrentDateString(),
-          streakDays: data.streakDays || 0,
-          gameStates: data.gameStates || {}
-        });
+        const today = getCurrentDateString();
+        
+        // Check if we need to reset daily progress
+        if (data.lastResetDate !== today) {
+          // Check if it's consecutive day for streak
+          const yesterday = getYesterdayDateString();
+          const streakDays = data.lastResetDate === yesterday ? data.streakDays + 1 : 1;
+          
+          const newData = {
+            dailyPoints: 0,
+            completedTasks: [],
+            lastResetDate: today,
+            streakDays: streakDays,
+            gameStates: {}
+          };
+          setGameData(newData);
+          saveUserData(authUser.id, newData);
+        } else {
+          setGameData(data);
+        }
       } else {
-        const currentDate = getCurrentDateString();
-        setGameData(prev => ({
-          ...prev,
-          lastResetDate: currentDate
-        }));
+        resetDailyProgress(authUser.id);
       }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error loading user data:', error);
-    } finally {
       setLoading(false);
     }
+  };
 
-    updateTimeUntilMidnight();
+  const saveUserData = (userId, data) => {
+    localStorage.setItem(`habitTracker_${userId}`, JSON.stringify(data));
   };
 
   const getCurrentDateString = () => {
-    const now = new Date();
-    return now.getFullYear() + '-' +
-      String(now.getMonth() + 1).padStart(2, '0') + '-' +
-      String(now.getDate()).padStart(2, '0');
+    return new Date().toDateString();
+  };
+
+  const getYesterdayDateString = () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return yesterday.toDateString();
+  };
+
+  const resetDailyProgress = (userId) => {
+    const newData = {
+      dailyPoints: 0,
+      completedTasks: [],
+      lastResetDate: getCurrentDateString(),
+      streakDays: 1,
+      gameStates: {}
+    };
+    setGameData(newData);
+    saveUserData(userId, newData);
   };
 
   const updateTimeUntilMidnight = () => {
@@ -265,331 +246,347 @@ const HabitTracker = () => {
     const diff = midnight - now;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    setTimeUntilReset(`${hours}h ${minutes}m until reset`);
+    setTimeUntilReset(`Tasks reset in ${hours}h ${minutes}m`);
   };
 
-  const enableTaskCompletion = (routineId) => {
-    setGameData(prev => ({
-      ...prev,
-      gameStates: {
-        ...prev.gameStates,
-        [routineId]: { ...prev.gameStates[routineId], completed: true }
-      }
-    }));
-  };
-
-  const completeTask = async (routineId) => {
-    if (!user) {
-      alert('Please log in to save your progress!');
-      return;
-    }
-
-    if (gameData.completedTasks.includes(routineId)) return;
-
-    const newCompletedTasks = [...gameData.completedTasks, routineId];
-    const newDailyPoints = gameData.dailyPoints + 10;
-    const allTasksCompleted = newCompletedTasks.length === routines.length;
-
-    setGameData(prev => ({
-      ...prev,
-      completedTasks: newCompletedTasks,
-      dailyPoints: newDailyPoints
-    }));
-
-    try {
-      const savedData = {
-        dailyPoints: newDailyPoints,
-        completedTasks: newCompletedTasks,
-        streakDays: gameData.streakDays,
-        lastResetDate: gameData.lastResetDate
+  const completeTask = (taskId, routine) => {
+    if (!gameData.completedTasks.includes(taskId)) {
+      const newData = {
+        ...gameData,
+        completedTasks: [...gameData.completedTasks, taskId],
+        dailyPoints: gameData.dailyPoints + routine.points
       };
-      localStorage.setItem(`habitTracker_${user.id}`, JSON.stringify(savedData));
-
-      if (allTasksCompleted) {
-        setTimeout(() => alert('🎉 All tasks completed! Great job! 🎉'), 500);
-      }
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
+      setGameData(newData);
+      saveUserData(user.id, newData);
+      
+      // Show success message
+      alert(`🎉 Great job! You earned ${routine.points} points!`);
     }
   };
 
-  const showQuote = (routineId) => {
-    const routine = routines.find(r => r.id === routineId);
-    const quotes = routine.gameData.quotes;
-    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-    alert(randomQuote);
-    setTimeout(() => enableTaskCompletion(routineId), 1000);
+  const getProgress = () => {
+    return Math.round((gameData.completedTasks.length / routines.length) * 100);
   };
 
-  const startTimer = (routineId) => {
-    const routine = routines.find(r => r.id === routineId);
-    let timeLeft = routine.gameData.duration;
-    setActiveTimers(prev => ({ ...prev, [routineId]: timeLeft }));
+  const handleNavigation = (path) => {
+    setLoading(true);
+    setTimeout(() => {
+      navigate(path);
+    }, 300);
+  };
+
+  // ===== QUIZ GAME LOGIC =====
+  const handleQuizAnswer = (routineId, routine, questionIndex, selectedOption) => {
+    const question = routine.gameData.questions[questionIndex];
+    const isCorrect = selectedOption === question.correct;
+    
+    if (isCorrect) {
+      const currentState = quizStates[routineId] || { currentQuestion: 0, correctAnswers: 0 };
+      const newCorrectAnswers = currentState.correctAnswers + 1;
+      const nextQuestion = questionIndex + 1;
+      
+      if (nextQuestion >= routine.gameData.questions.length) {
+        // Quiz complete!
+        alert(`✅ Perfect! You got all ${newCorrectAnswers} questions right!`);
+        completeTask(routineId, routine);
+        setQuizStates({ ...quizStates, [routineId]: { currentQuestion: 0, correctAnswers: 0 } });
+      } else {
+        // Move to next question
+        alert('✅ Correct! Moving to next question...');
+        setQuizStates({
+          ...quizStates,
+          [routineId]: { currentQuestion: nextQuestion, correctAnswers: newCorrectAnswers }
+        });
+      }
+    } else {
+      alert('❌ Oops! Try again!');
+    }
+  };
+
+  // ===== TIMER GAME LOGIC =====
+  const startTimer = (routineId, routine) => {
+    const duration = routine.gameData.duration;
+    const messages = routine.gameData.encouragementMessages;
+    
+    const newState = {
+      timeLeft: duration,
+      isRunning: true,
+      messageIndex: 0
+    };
+    
+    setTimerStates(prev => ({
+      ...prev,
+      [routineId]: newState
+    }));
 
     const interval = setInterval(() => {
-      timeLeft--;
-      setActiveTimers(prev => ({ ...prev, [routineId]: timeLeft }));
-
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        setActiveTimers(prev => {
-          const newTimers = { ...prev };
-          delete newTimers[routineId];
-          return newTimers;
-        });
-        alert('🎉 Perfect brushing! 🦷✨');
-        enableTaskCompletion(routineId);
-      }
+      setTimerStates(prev => {
+        const current = prev[routineId];
+        if (!current || !current.isRunning) {
+          clearInterval(interval);
+          return prev;
+        }
+        
+        const newTimeLeft = current.timeLeft - 1;
+        
+        if (newTimeLeft <= 0) {
+          clearInterval(interval);
+          setTimeout(() => {
+            alert('🎉 Great job! You brushed for the full 2 minutes!');
+            completeTask(routineId, routine);
+            setTimerStates(p => ({
+              ...p,
+              [routineId]: { timeLeft: 0, isRunning: false, messageIndex: 0 }
+            }));
+          }, 100);
+          return {
+            ...prev,
+            [routineId]: { ...current, timeLeft: 0, isRunning: false }
+          };
+        }
+        
+        const messageIndex = Math.floor((duration - newTimeLeft) / (duration / messages.length));
+        
+        return {
+          ...prev,
+          [routineId]: { ...current, timeLeft: newTimeLeft, messageIndex }
+        };
+      });
     }, 1000);
   };
 
-  const selectQuizAnswer = (routineId, answerIndex) => {
-    const routine = routines.find(r => r.id === routineId);
-    const currentQuestionIndex = gameData.gameStates[routineId]?.currentQuestion || 0;
-    const question = routine.gameData.questions[currentQuestionIndex];
-
-    if (answerIndex === question.correct) {
-      const nextQuestionIndex = currentQuestionIndex + 1;
-      if (nextQuestionIndex >= routine.gameData.questions.length) {
-        alert('🎉 Perfect! You know your nutrition facts!');
-        enableTaskCompletion(routineId);
-      } else {
-        setGameData(prev => ({
-          ...prev,
-          gameStates: {
-            ...prev.gameStates,
-            [routineId]: {
-              ...prev.gameStates[routineId],
-              currentQuestion: nextQuestionIndex,
-              score: (prev.gameStates[routineId]?.score || 0) + 1
-            }
-          }
-        }));
-        alert('Correct! Next question...');
-      }
-    } else {
-      alert('Try again!');
-    }
-  };
-
-  const selectStep = (routineId, stepIndex) => {
-    const routine = routines.find(r => r.id === routineId);
-    const expectedStep = sequenceProgress[routineId] || 0;
-
-    if (stepIndex === expectedStep) {
-      const newProgress = expectedStep + 1;
-      setSequenceProgress(prev => ({ ...prev, [routineId]: newProgress }));
-      if (newProgress >= routine.gameData.steps.length) {
-        alert('🎉 Perfect handwashing!');
-        enableTaskCompletion(routineId);
-      }
-    } else {
-      alert('Try the correct order!');
-    }
-  };
-
-  const initMemoryGame = (routineId) => {
-    const routine = routines.find(r => r.id === routineId);
-    const cards = routine.gameData.cards;
-    const gameCards = [...cards, ...cards].sort(() => Math.random() - 0.5);
-    setMemoryGame(prev => ({
-      ...prev,
-      [routineId]: { cards: gameCards, flippedCards: [], matchedCards: [], attempts: 0 }
-    }));
-  };
-
-  const flipMemoryCard = (routineId, cardIndex) => {
-    const game = memoryGame[routineId];
-    if (!game || game.flippedCards.length >= 2 || game.flippedCards.includes(cardIndex) || game.matchedCards.includes(cardIndex)) return;
-
-    const newFlippedCards = [...game.flippedCards, cardIndex];
-    setMemoryGame(prev => ({
-      ...prev,
-      [routineId]: { ...game, flippedCards: newFlippedCards }
-    }));
-
-    if (newFlippedCards.length === 2) {
-      const [first, second] = newFlippedCards;
+  // ===== COUNTER GAME LOGIC =====
+  const incrementCounter = (routineId, routine) => {
+    const current = counterStates[routineId] || { count: 0 };
+    const newCount = current.count + 1;
+    
+    setCounterStates({
+      ...counterStates,
+      [routineId]: { count: newCount }
+    });
+    
+    if (newCount >= routine.gameData.target) {
       setTimeout(() => {
-        if (game.cards[first] === game.cards[second]) {
-          setMemoryGame(prev => ({
-            ...prev,
+        alert(`💧 Amazing! You drank ${routine.gameData.target} glasses of water!`);
+        completeTask(routineId, routine);
+      }, 300);
+    }
+  };
+
+  // ===== MATH GAME LOGIC =====
+  const checkMathAnswer = (routineId, routine, problemIndex) => {
+    const userAnswer = mathStates[routineId]?.answer || '';
+    const problem = routine.gameData.problems[problemIndex];
+    
+    if (parseInt(userAnswer) === problem.answer) {
+      alert('✅ Correct! Great math skills!');
+      completeTask(routineId, routine);
+      setMathStates({ ...mathStates, [routineId]: { answer: '' } });
+    } else {
+      alert('❌ Not quite! Try again!');
+    }
+  };
+
+  // ===== MEMORY GAME LOGIC =====
+  const initMemoryGame = (routineId, routine) => {
+    const cards = [...routine.gameData.cards, ...routine.gameData.cards];
+    const shuffled = cards.sort(() => Math.random() - 0.5);
+    
+    setMemoryStates({
+      ...memoryStates,
+      [routineId]: {
+        cards: shuffled,
+        flipped: [],
+        matched: [],
+        firstCard: null,
+        secondCard: null
+      }
+    });
+  };
+
+  const flipCard = (routineId, routine, index) => {
+    const state = memoryStates[routineId];
+    if (!state || state.flipped.includes(index) || state.matched.includes(index) || state.secondCard !== null) {
+      return;
+    }
+
+    const newFlipped = [...state.flipped, index];
+    
+    if (state.firstCard === null) {
+      setMemoryStates({
+        ...memoryStates,
+        [routineId]: { ...state, flipped: newFlipped, firstCard: index }
+      });
+    } else {
+      setMemoryStates({
+        ...memoryStates,
+        [routineId]: { ...state, flipped: newFlipped, secondCard: index }
+      });
+
+      setTimeout(() => {
+        const firstCardValue = state.cards[state.firstCard];
+        const secondCardValue = state.cards[index];
+
+        if (firstCardValue === secondCardValue) {
+          const newMatched = [...state.matched, state.firstCard, index];
+          setMemoryStates({
+            ...memoryStates,
             [routineId]: {
-              ...prev[routineId],
-              flippedCards: [],
-              matchedCards: [...prev[routineId].matchedCards, first, second],
-              attempts: prev[routineId].attempts + 1
+              ...state,
+              matched: newMatched,
+              flipped: [],
+              firstCard: null,
+              secondCard: null
             }
-          }));
-          if (game.matchedCards.length + 2 >= game.cards.length) {
+          });
+
+          if (newMatched.length === state.cards.length) {
             setTimeout(() => {
-              alert('🎉 Amazing memory!');
-              enableTaskCompletion(routineId);
-            }, 500);
+              alert('🎉 You matched all pairs! Great memory!');
+              completeTask(routineId, routine);
+            }, 300);
           }
         } else {
-          setMemoryGame(prev => ({
-            ...prev,
+          setMemoryStates({
+            ...memoryStates,
             [routineId]: {
-              ...prev[routineId],
-              flippedCards: [],
-              attempts: prev[routineId].attempts + 1
+              ...state,
+              flipped: [],
+              firstCard: null,
+              secondCard: null
             }
-          }));
+          });
         }
       }, 1000);
     }
   };
 
-  const addWaterGlass = (routineId) => {
-    const routine = routines.find(r => r.id === routineId);
-    const current = gameData.gameStates[routineId]?.waterCount || 0;
-    if (current < routine.gameData.target) {
-      const newCount = current + 1;
-      setGameData(prev => ({
-        ...prev,
-        gameStates: {
-          ...prev.gameStates,
-          [routineId]: { ...prev.gameStates[routineId], waterCount: newCount }
-        }
-      }));
-      if (newCount >= routine.gameData.target) {
-        setTimeout(() => {
-          alert('🎉 Hydration goal reached!');
-          enableTaskCompletion(routineId);
-        }, 500);
-      }
-    }
-  };
-
-  // 🆕 NEW: Math problem handler
-  const checkMathAnswer = (routineId) => {
-    const routine = routines.find(r => r.id === routineId);
-    const currentProblemIndex = gameData.gameStates[routineId]?.currentProblem || 0;
-    const problem = routine.gameData.problems[currentProblemIndex];
-    const userAnswer = parseInt(mathAnswers[routineId] || '');
-
-    if (isNaN(userAnswer)) {
-      alert('Please enter a number! 🔢');
-      return;
-    }
-
-    if (userAnswer === problem.answer) {
-      const nextProblemIndex = currentProblemIndex + 1;
-
-      if (nextProblemIndex >= routine.gameData.problems.length) {
-        alert('🎉 Perfect! You\'re a math star! ⭐');
-        enableTaskCompletion(routineId);
-        setMathAnswers(prev => ({ ...prev, [routineId]: '' }));
-      } else {
-        setGameData(prev => ({
-          ...prev,
-          gameStates: {
-            ...prev.gameStates,
-            [routineId]: {
-              ...prev.gameStates[routineId],
-              currentProblem: nextProblemIndex,
-              score: (prev.gameStates[routineId]?.score || 0) + 1
-            }
-          }
-        }));
-        setMathAnswers(prev => ({ ...prev, [routineId]: '' }));
-        alert('Correct! Next problem... 🎯');
-      }
-    } else {
-      alert(`Not quite! Try again! Hint: The answer is ${problem.answer > userAnswer ? 'bigger' : 'smaller'} 💡`);
-    }
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
+  // ===== RENDER GAME CONTENT =====
   const renderGameContent = (routine) => {
-    const isGameCompleted = gameData.gameStates[routine.id]?.completed;
+    const isCompleted = gameData.completedTasks.includes(routine.id);
+
+    if (isCompleted) {
+      return (
+        <div style={{ textAlign: 'center', padding: '1rem', color: '#10B981', fontWeight: '600' }}>
+          ✅ Completed! Great job!
+        </div>
+      );
+    }
 
     switch (routine.gameType) {
       case 'quote':
         return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              fontSize: '0.9rem',
-              color: '#6B7280',
-              marginBottom: '0.75rem',
-              lineHeight: '1.5'
-            }}>
-              Click to get your daily inspiration!
-            </div>
-            <button
-              style={isGameCompleted ? gameButtonDisabledStyle : gameButtonStyle}
-              onClick={() => showQuote(routine.id)}
-              disabled={isGameCompleted}
-            >
-              {isGameCompleted ? '✅ Quote Received!' : 'Get My Quote! ✨'}
-            </button>
+          <div style={{ 
+            textAlign: 'center', 
+            fontSize: '0.95rem', 
+            fontStyle: 'italic', 
+            color: '#4B5563', 
+            padding: '1rem',
+            background: 'white',
+            borderRadius: '12px'
+          }}>
+            {routine.gameData.quotes[Math.floor(Math.random() * routine.gameData.quotes.length)]}
           </div>
         );
 
       case 'timer':
-        const timerActive = activeTimers[routine.id];
+        const timerState = timerStates[routine.id];
+        const timeLeft = timerState?.timeLeft || routine.gameData.duration;
+        const isRunning = timerState?.isRunning || false;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        const messageIndex = timerState?.messageIndex || 0;
+
         return (
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              fontSize: '2.5rem',
-              fontWeight: '800',
-              color: timerActive ? '#EC4899' : isGameCompleted ? '#10B981' : '#8B5CF6',
-              marginBottom: '0.75rem',
-              fontFamily: 'monospace'
+              fontSize: '3rem',
+              fontWeight: '700',
+              color: '#8B5CF6',
+              marginBottom: '1rem'
             }}>
-              {timerActive ? formatTime(timerActive) : isGameCompleted ? '✅ Complete!' : '2:00'}
+              {minutes}:{seconds.toString().padStart(2, '0')}
             </div>
+            {isRunning && (
+              <div style={{
+                fontSize: '0.9rem',
+                color: '#6B7280',
+                marginBottom: '1rem',
+                fontWeight: '600'
+              }}>
+                {routine.gameData.encouragementMessages[messageIndex]}
+              </div>
+            )}
             <button
-              style={timerActive || isGameCompleted ? gameButtonDisabledStyle : gameButtonStyle}
-              onClick={() => startTimer(routine.id)}
-              disabled={timerActive || isGameCompleted}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '20px',
+                fontWeight: '700',
+                fontSize: '0.95rem',
+                border: 'none',
+                cursor: isRunning ? 'not-allowed' : 'pointer',
+                background: isRunning ? '#D1D5DB' : 'linear-gradient(135deg, #EC4899, #8B5CF6)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onClick={() => !isRunning && startTimer(routine.id, routine)}
+              disabled={isRunning}
             >
-              {timerActive ? 'Brushing... 🪥' : isGameCompleted ? '✅ Done!' : 'Start Timer ⏱️'}
+              {isRunning ? '⏱️ Timer Running...' : '⏱️ Start 2-Minute Timer'}
             </button>
           </div>
         );
 
       case 'quiz':
-        const currentQuestionIndex = gameData.gameStates[routine.id]?.currentQuestion || 0;
-        const question = routine.gameData.questions[currentQuestionIndex];
+        const quizState = quizStates[routine.id] || { currentQuestion: 0, correctAnswers: 0 };
+        const currentQuestion = routine.gameData.questions[quizState.currentQuestion];
+
         return (
           <div>
             <div style={{
-              fontSize: '0.95rem',
-              fontWeight: '600',
-              color: '#1F2937',
-              marginBottom: '0.75rem',
-              lineHeight: '1.5'
+              textAlign: 'center',
+              fontSize: '0.875rem',
+              color: '#6B7280',
+              marginBottom: '0.5rem',
+              fontWeight: '600'
             }}>
-              {question.question}
+              Question {quizState.currentQuestion + 1} of {routine.gameData.questions.length}
             </div>
-            {question.options.map((option, index) => (
+            <p style={{ 
+              textAlign: 'center', 
+              fontWeight: '600', 
+              color: '#374151', 
+              marginBottom: '0.75rem' 
+            }}>
+              {currentQuestion.question}
+            </p>
+            {currentQuestion.options.map((option, idx) => (
               <button
-                key={index}
+                key={idx}
                 style={{
-                  ...quizOptionStyle,
-                  opacity: isGameCompleted ? 0.6 : 1,
-                  cursor: isGameCompleted ? 'not-allowed' : 'pointer'
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '16px',
+                  fontWeight: '600',
+                  fontSize: '0.9rem',
+                  border: '2px solid #E5E7EB',
+                  background: 'white',
+                  color: '#1F2937',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  marginTop: '0.5rem',
+                  textAlign: 'left'
                 }}
-                onClick={() => selectQuizAnswer(routine.id, index)}
-                disabled={isGameCompleted}
+                onClick={() => handleQuizAnswer(routine.id, routine, quizState.currentQuestion, idx)}
                 onMouseEnter={(e) => {
-                  if (!isGameCompleted) {
-                    e.target.style.borderColor = '#EC4899';
-                    e.target.style.background = '#FDF2F8';
-                  }
+                  e.target.style.borderColor = '#8B5CF6';
+                  e.target.style.background = '#F3F4F6';
                 }}
                 onMouseLeave={(e) => {
-                  if (!isGameCompleted) {
-                    e.target.style.borderColor = '#E5E7EB';
-                    e.target.style.background = 'white';
-                  }
+                  e.target.style.borderColor = '#E5E7EB';
+                  e.target.style.background = 'white';
                 }}
               >
                 {option}
@@ -599,215 +596,211 @@ const HabitTracker = () => {
         );
 
       case 'sequence':
-        const progress = sequenceProgress[routine.id] || 0;
         return (
           <div>
-            <div style={{
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#8B5CF6',
-              marginBottom: '0.75rem',
-              textAlign: 'center'
-            }}>
-              Step {progress + 1} of {routine.gameData.steps.length}
-            </div>
-            {routine.gameData.steps.map((step, index) => (
-              <button
-                key={index}
-                style={{
-                  ...quizOptionStyle,
-                  opacity: isGameCompleted ? 0.6 : index < progress ? 0.5 : 1,
-                  cursor: isGameCompleted ? 'not-allowed' : 'pointer'
-                }}
-                onClick={() => selectStep(routine.id, index)}
-                disabled={isGameCompleted}
-                onMouseEnter={(e) => {
-                  if (!isGameCompleted) {
-                    e.target.style.borderColor = '#8B5CF6';
-                    e.target.style.background = '#F5F3FF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isGameCompleted) {
-                    e.target.style.borderColor = '#E5E7EB';
-                    e.target.style.background = 'white';
-                  }
-                }}
-              >
-                {step.icon} {step.text}
-              </button>
+            {routine.gameData.steps.map((step, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0.5rem',
+                marginBottom: '0.5rem',
+                background: 'white',
+                borderRadius: '12px',
+                border: '2px solid #E5E7EB'
+              }}>
+                <span style={{ fontSize: '1.5rem', marginRight: '0.75rem' }}>{step.icon}</span>
+                <span style={{ fontSize: '0.85rem', color: '#4B5563', fontWeight: '600' }}>{step.text}</span>
+              </div>
             ))}
           </div>
         );
 
       case 'memory':
-        const game = memoryGame[routine.id];
-        if (!game) {
+        const memoryState = memoryStates[routine.id];
+        
+        if (!memoryState) {
           return (
             <div style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: '0.9rem',
-                color: '#6B7280',
-                marginBottom: '0.75rem'
-              }}>
-                Match all the pairs!
-              </div>
               <button
-                style={gameButtonStyle}
-                onClick={() => initMemoryGame(routine.id)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '20px',
+                  fontWeight: '700',
+                  fontSize: '0.95rem',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #EC4899, #8B5CF6)',
+                  color: 'white',
+                  boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)',
+                  transition: 'all 0.3s ease'
+                }}
+                onClick={() => initMemoryGame(routine.id, routine)}
               >
-                Start Memory Game 🧠
+                🎮 Start Memory Game
               </button>
             </div>
           );
         }
+
         return (
-          <div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '0.5rem',
-              marginBottom: '0.75rem'
-            }}>
-              {game.cards.map((card, index) => (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '0.5rem'
+          }}>
+            {memoryState.cards.map((card, idx) => {
+              const isFlipped = memoryState.flipped.includes(idx) || memoryState.matched.includes(idx);
+              return (
                 <button
-                  key={index}
+                  key={idx}
                   style={{
                     aspectRatio: '1',
-                    borderRadius: '12px',
+                    fontSize: '2rem',
                     border: '2px solid #E5E7EB',
-                    background: game.matchedCards.includes(index)
-                      ? 'linear-gradient(135deg, #10B981, #059669)'
-                      : 'white',
-                    fontSize: '1.5rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: game.flippedCards.includes(index) || game.matchedCards.includes(index)
-                      ? '0 4px 8px rgba(0,0,0,0.1)'
-                      : 'none'
+                    borderRadius: '12px',
+                    background: isFlipped ? 'white' : '#F3F4F6',
+                    cursor: isFlipped ? 'default' : 'pointer',
+                    transition: 'all 0.3s ease'
                   }}
-                  onClick={() => flipMemoryCard(routine.id, index)}
+                  onClick={() => flipCard(routine.id, routine, idx)}
+                  disabled={isFlipped}
                 >
-                  {game.flippedCards.includes(index) || game.matchedCards.includes(index) ? card : '❓'}
+                  {isFlipped ? card : '?'}
                 </button>
-              ))}
-            </div>
-            <div style={{
-              fontSize: '0.85rem',
-              color: '#6B7280',
-              textAlign: 'center',
-              fontWeight: '600'
-            }}>
-              Attempts: {game.attempts}
-            </div>
+              );
+            })}
           </div>
         );
 
       case 'counter':
-        const waterCount = gameData.gameStates[routine.id]?.waterCount || 0;
+        const counterState = counterStates[routine.id] || { count: 0 };
+        const progress = (counterState.count / routine.gameData.target) * 100;
+
         return (
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              fontSize: '1.5rem',
-              marginBottom: '0.5rem',
-              minHeight: '2rem'
+              fontSize: '2.5rem',
+              fontWeight: '700',
+              color: '#1F2937',
+              marginBottom: '0.5rem'
             }}>
-              {'🥤'.repeat(waterCount)}{'⚪'.repeat(routine.gameData.target - waterCount)}
+              {counterState.count} / {routine.gameData.target}
             </div>
             <div style={{
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              color: '#6B7280',
-              marginBottom: '0.75rem'
+              width: '100%',
+              height: '8px',
+              background: '#E5E7EB',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              marginBottom: '1rem'
             }}>
-              {waterCount} / {routine.gameData.target} cups
+              <div style={{
+                width: `${progress}%`,
+                height: '100%',
+                background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+            <div style={{
+              fontSize: '0.875rem',
+              color: '#6B7280',
+              marginBottom: '1rem',
+              fontStyle: 'italic'
+            }}>
+              {routine.gameData.facts[counterState.count % routine.gameData.facts.length]}
             </div>
             <button
-              style={waterCount >= routine.gameData.target ? gameButtonDisabledStyle : gameButtonStyle}
-              onClick={() => addWaterGlass(routine.id)}
-              disabled={waterCount >= routine.gameData.target}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '20px',
+                fontWeight: '700',
+                fontSize: '0.95rem',
+                border: 'none',
+                cursor: 'pointer',
+                background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(6, 182, 212, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onClick={() => incrementCounter(routine.id, routine)}
             >
-              {waterCount >= routine.gameData.target ? '✅ Goal Reached!' : 'Add Glass 💧'}
+              💧 Add Glass
             </button>
           </div>
         );
 
-      // 🆕 NEW: Math game case
       case 'math':
-        const currentProblemIndex = gameData.gameStates[routine.id]?.currentProblem || 0;
-        const problem = routine.gameData.problems[currentProblemIndex];
+        const mathState = mathStates[routine.id] || { answer: '' };
+        const problemIndex = 0;
+        const problem = routine.gameData.problems[problemIndex];
+
         return (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              fontSize: '0.95rem',
-              fontWeight: '600',
-              color: '#1F2937',
+          <div>
+            <p style={{ 
+              textAlign: 'center', 
+              fontWeight: '600', 
+              color: '#374151', 
               marginBottom: '0.75rem',
-              lineHeight: '1.5'
+              fontSize: '0.95rem'
             }}>
               {problem.question}
-            </div>
+            </p>
             <input
               type="number"
+              placeholder="Your answer"
+              value={mathState.answer}
+              onChange={(e) => setMathStates({
+                ...mathStates,
+                [routine.id]: { answer: e.target.value }
+              })}
               style={{
-                ...inputStyle,
-                borderColor: isGameCompleted ? '#D1D5DB' : '#E5E7EB'
-              }}
-              value={mathAnswers[routine.id] || ''}
-              onChange={(e) => setMathAnswers(prev => ({ ...prev, [routine.id]: e.target.value }))}
-              placeholder="Type your answer..."
-              disabled={isGameCompleted}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !isGameCompleted) {
-                  checkMathAnswer(routine.id);
-                }
+                width: '100%',
+                padding: '0.75rem 1rem',
+                borderRadius: '16px',
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                border: '2px solid #E5E7EB',
+                background: 'white',
+                color: '#1F2937',
+                textAlign: 'center',
+                marginTop: '0.5rem',
+                marginBottom: '0.5rem',
+                outline: 'none'
               }}
             />
             <button
-              style={isGameCompleted ? gameButtonDisabledStyle : gameButtonStyle}
-              onClick={() => checkMathAnswer(routine.id)}
-              disabled={isGameCompleted}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1.5rem',
+                borderRadius: '20px',
+                fontWeight: '700',
+                fontSize: '0.95rem',
+                border: 'none',
+                cursor: 'pointer',
+                background: 'linear-gradient(135deg, #EC4899, #8B5CF6)',
+                color: 'white',
+                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onClick={() => checkMathAnswer(routine.id, routine, problemIndex)}
             >
-              {isGameCompleted ? '✅ Solved!' : 'Check Answer 🔢'}
+              ✅ Check Answer
             </button>
-            <div style={{
-              fontSize: '0.85rem',
-              color: '#6B7280',
-              marginTop: '0.5rem',
-              fontWeight: '600'
-            }}>
-              Problem {currentProblemIndex + 1} of {routine.gameData.problems.length}
-            </div>
           </div>
         );
 
       default:
-        return <div style={{ textAlign: 'center', color: '#6B7280' }}>Fun activity!</div>;
+        return null;
     }
-  };
-
-  const getProgress = () => {
-    const completed = gameData.completedTasks.length;
-    const total = routines.length;
-    return Math.round((completed / total) * 100);
   };
 
   if (loading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1.5rem',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📋</div>
-          <div>Loading your routines...</div>
-        </div>
+      <div className="page-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading habits...</p>
       </div>
     );
   }
@@ -822,10 +815,8 @@ const HabitTracker = () => {
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-        padding: '0.75rem 0',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
+        padding: '1rem 2rem',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
       }}>
         <div style={{
           maxWidth: '1400px',
@@ -833,82 +824,77 @@ const HabitTracker = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 2rem'
+          gap: '1rem'
         }}>
-          <button
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.5rem 1rem',
-              background: 'rgba(139, 92, 246, 0.1)',
-              color: '#8B5CF6',
-              border: 'none',
-              borderRadius: '12px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              fontSize: '0.875rem'
-            }}
-            onClick={() => handleNavigation('/dashboard')}
-          >
-            <ArrowLeft size={20} />
-            <span>Back</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <button
+              onClick={() => handleNavigation('/dashboard')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                background: 'white',
+                border: '2px solid #E5E7EB',
+                borderRadius: '12px',
+                color: '#374151',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <ArrowLeft size={20} />
+              <span>Back</span>
+            </button>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '1.25rem',
-            fontWeight: '700',
-            color: '#1F2937'
-          }}>
-            <span style={{ fontSize: '1.5rem' }}>📋</span>
-            <span style={{ color: '#8B5CF6' }}>Routine Tracker</span>
+            <h1 style={{
+              fontSize: '1.5rem',
+              fontWeight: '800',
+              color: '#1F2937',
+              margin: 0
+            }}>📊 Routine Tracker</h1>
           </div>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '12px',
-                border: 'none',
-                background: 'rgba(139, 92, 246, 0.1)',
-                color: '#8B5CF6',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.875rem'
-              }}
-              onClick={() => handleNavigation('/')}
-            >
-              <Home size={18} />
-              <span>Home</span>
-            </button>
-            <button
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '12px',
-                border: 'none',
-                background: 'rgba(139, 92, 246, 0.1)',
-                color: '#8B5CF6',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.875rem'
-              }}
               onClick={() => handleNavigation('/dashboard')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                background: 'white',
+                border: '2px solid #E5E7EB',
+                borderRadius: '12px',
+                color: '#374151',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
             >
-              <LayoutDashboard size={18} />
+              <LayoutDashboard size={20} />
               <span>Dashboard</span>
+            </button>
+
+            <button
+              onClick={() => handleNavigation('/reward-store')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
+                border: 'none',
+                borderRadius: '12px',
+                color: 'white',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+              }}
+            >
+              <ShoppingBag size={20} />
+              <span>Rewards</span>
             </button>
           </div>
         </div>
@@ -1032,13 +1018,37 @@ const HabitTracker = () => {
                         fontWeight: '600',
                         marginBottom: '0.5rem'
                       }}>
-                        Optional Activity
+                        {isCompleted ? 'Completed!' : 'Play the Game'}
                       </div>
                       {renderGameContent(routine)}
                     </div>
 
-                    <button
-                      style={{
+                    {!isCompleted && (
+                      <button
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem 1.5rem',
+                          borderRadius: '16px',
+                          fontWeight: '700',
+                          fontSize: '1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                          color: 'white',
+                          boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                        }}
+                        onClick={() => completeTask(routine.id, routine)}
+                      >
+                        ✨ Mark as Complete (+{routine.points} pts)
+                      </button>
+                    )}
+
+                    {isCompleted && (
+                      <div style={{
                         width: '100%',
                         padding: '0.75rem 1.5rem',
                         borderRadius: '16px',
@@ -1048,20 +1058,13 @@ const HabitTracker = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '0.5rem',
-                        border: 'none',
-                        cursor: isCompleted ? 'not-allowed' : 'pointer',
-                        background: isCompleted
-                          ? 'linear-gradient(135deg, #10B981, #059669)'
-                          : 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                        background: 'linear-gradient(135deg, #10B981, #059669)',
                         color: 'white',
-                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                        opacity: isCompleted ? 0.8 : 1
-                      }}
-                      onClick={() => completeTask(routine.id)}
-                      disabled={isCompleted}
-                    >
-                      {isCompleted ? '✅ Completed!' : '✨ Complete Task!'}
-                    </button>
+                        opacity: 0.8
+                      }}>
+                        ✅ Completed! +{routine.points} pts
+                      </div>
+                    )}
                   </div>
 
                   {isCompleted && (
@@ -1100,7 +1103,7 @@ const HabitTracker = () => {
             <h2 style={{
               fontSize: '2rem',
               fontWeight: '800',
-              color: '#1F2937',
+              color: 'white',
               margin: '0 0 1.5rem 0'
             }}>Daily Progress</h2>
 
@@ -1133,7 +1136,7 @@ const HabitTracker = () => {
 
             <p style={{
               fontSize: '1.125rem',
-              color: '#6B7280',
+              color: 'white',
               fontWeight: '600',
               margin: 0
             }}>

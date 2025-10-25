@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Home, LayoutDashboard, ShoppingCart, Lock, Check } from 'lucide-react';
+import { ArrowLeft, Home, LayoutDashboard, CheckCircle, Lock, Check, ShoppingCart } from 'lucide-react';
+import '../styles/Dashboard.css';
 
 const RewardStore = ({ userId, userName, onPurchase }) => {
     const navigate = useNavigate();
@@ -145,13 +146,10 @@ const RewardStore = ({ userId, userName, onPurchase }) => {
     };
 
     const handleNavigation = (path) => {
-        console.log('Navigating to:', path);
-        try {
+        setLoading(true);
+        setTimeout(() => {
             navigate(path);
-        } catch (error) {
-            console.error('Navigation error:', error);
-            window.location.href = path;
-        }
+        }, 300);
     };
 
     const canAfford = (cost) => userPoints >= cost;
@@ -159,20 +157,9 @@ const RewardStore = ({ userId, userName, onPurchase }) => {
 
     if (loading) {
         return (
-            <div style={{
-                minHeight: '100vh',
-                background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '1.5rem',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-            }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🎁</div>
-                    <div>Loading rewards...</div>
-                </div>
+            <div className="page-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading rewards...</p>
             </div>
         );
     }
@@ -183,15 +170,42 @@ const RewardStore = ({ userId, userName, onPurchase }) => {
             background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
-            {/* Navigation Bar - GameHub Style */}
+            {/* Purchase Confirmation Toast */}
+            {showPurchaseConfirm && (
+                <div style={{
+                    position: 'fixed',
+                    top: '2rem',
+                    right: '2rem',
+                    background: 'linear-gradient(135deg, #10B981, #059669)',
+                    color: 'white',
+                    padding: '1.5rem 2rem',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    animation: 'slideInRight 0.3s ease'
+                }}>
+                    <div style={{ fontSize: '2rem' }}>{showPurchaseConfirm.emoji}</div>
+                    <div>
+                        <div style={{ fontWeight: '700', fontSize: '1.125rem', marginBottom: '0.25rem' }}>
+                            Purchase Successful!
+                        </div>
+                        <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>
+                            You got {showPurchaseConfirm.name}! 🎉
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Navigation Bar */}
             <nav style={{
                 background: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(10px)',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-                padding: '0.75rem 0',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100
+                padding: '1rem 2rem',
+                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)'
             }}>
                 <div style={{
                     maxWidth: '1400px',
@@ -199,110 +213,99 @@ const RewardStore = ({ userId, userName, onPurchase }) => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0 2rem'
+                    gap: '1rem'
                 }}>
-                    <button
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.5rem 1rem',
-                            background: 'rgba(139, 92, 246, 0.1)',
-                            color: '#8B5CF6',
-                            border: 'none',
-                            borderRadius: '12px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem'
-                        }}
-                        onClick={() => handleNavigation('/dashboard')}
-                    >
-                        <ArrowLeft size={20} />
-                        <span>Back</span>
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button
+                            onClick={() => handleNavigation('/dashboard')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.5rem 1rem',
+                                background: 'white',
+                                border: '2px solid #E5E7EB',
+                                borderRadius: '12px',
+                                color: '#374151',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.borderColor = '#8B5CF6';
+                                e.target.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#E5E7EB';
+                                e.target.style.transform = 'scale(1)';
+                            }}
+                        >
+                            <ArrowLeft size={20} />
+                            <span>Back</span>
+                        </button>
 
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '1.25rem',
-                        fontWeight: '700',
-                        color: '#1F2937'
-                    }}>
-                        <span style={{ fontSize: '1.5rem' }}>🎁</span>
-                        <span style={{ color: '#8B5CF6' }}>Reward Store</span>
+                        <h1 style={{
+                            fontSize: '1.5rem',
+                            fontWeight: '800',
+                            color: '#1F2937',
+                            margin: 0
+                        }}>🎁 Reward Store</h1>
                     </div>
 
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem'
-                    }}>
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
                         <button
-                            style={{
-                                padding: '0.5rem 1rem',
-                                borderRadius: '12px',
-                                border: 'none',
-                                background: 'rgba(139, 92, 246, 0.1)',
-                                color: '#8B5CF6',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                fontSize: '0.875rem'
-                            }}
-                            onClick={() => handleNavigation('/')}
-                        >
-                            <Home size={18} />
-                            <span>Home</span>
-                        </button>
-                        <button
-                            style={{
-                                padding: '0.5rem 1rem',
-                                borderRadius: '12px',
-                                border: 'none',
-                                background: 'rgba(139, 92, 246, 0.1)',
-                                color: '#8B5CF6',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                fontSize: '0.875rem'
-                            }}
                             onClick={() => handleNavigation('/dashboard')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.5rem 1rem',
+                                background: 'white',
+                                border: '2px solid #E5E7EB',
+                                borderRadius: '12px',
+                                color: '#374151',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.target.style.borderColor = '#8B5CF6';
+                                e.target.style.transform = 'scale(1.05)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#E5E7EB';
+                                e.target.style.transform = 'scale(1)';
+                            }}
                         >
-                            <LayoutDashboard size={18} />
+                            <LayoutDashboard size={20} />
                             <span>Dashboard</span>
+                        </button>
+
+                        <button
+                            onClick={() => handleNavigation('/habit-tracker')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.5rem 1rem',
+                                background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                                border: 'none',
+                                borderRadius: '12px',
+                                color: 'white',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                            }}
+                            onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                        >
+                            <CheckCircle size={20} />
+                            <span>Track Progress</span>
                         </button>
                     </div>
                 </div>
             </nav>
-
-            {/* Purchase Confirmation Toast */}
-            {showPurchaseConfirm && (
-                <div style={{
-                    position: 'fixed',
-                    top: '90px',
-                    right: '20px',
-                    background: 'white',
-                    color: '#1F2937',
-                    padding: '1.5rem',
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
-                    zIndex: 1000,
-                    borderLeft: '4px solid #10B981',
-                    minWidth: '300px'
-                }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '0.5rem', color: '#10B981' }}>
-                        🎉 Purchase Successful!
-                    </div>
-                    <div style={{ fontSize: '1rem', color: '#6B7280' }}>
-                        You got: {showPurchaseConfirm.emoji} {showPurchaseConfirm.name}
-                    </div>
-                </div>
-            )}
 
             {/* Main Content */}
             <main style={{
@@ -339,29 +342,28 @@ const RewardStore = ({ userId, userName, onPurchase }) => {
                             gap: '0.75rem',
                             padding: '0.75rem 2rem',
                             background: 'linear-gradient(135deg, #F59E0B, #EF4444)',
-                            borderRadius: '50px',
-                            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
+                            color: 'white',
+                            borderRadius: '20px',
+                            fontSize: '1.25rem',
+                            fontWeight: '700',
+                            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.4)'
                         }}>
-                            <span style={{ fontSize: '2rem', fontWeight: '900', color: 'white' }}>
-                                {userPoints}
-                            </span>
-                            <span style={{ color: 'white', fontSize: '1.125rem', fontWeight: '700' }}>
-                                🪙 Points
-                            </span>
+                            <span style={{ fontSize: '1.5rem' }}>⭐</span>
+                            <span>{userPoints} Points</span>
                         </div>
                     </div>
                 </section>
 
                 {/* Rewards Grid */}
-                <section style={{ marginBottom: '2rem' }}>
+                <section style={{ marginBottom: '3rem' }}>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                         gap: '1.5rem'
                     }}>
-                        {rewards.map((reward) => {
-                            const affordable = canAfford(reward.cost);
+                        {rewards.map(reward => {
                             const owned = isOwned(reward.id);
+                            const affordable = canAfford(reward.cost);
                             const isPurchasing = purchasing === reward.id;
 
                             return (
@@ -369,12 +371,12 @@ const RewardStore = ({ userId, userName, onPurchase }) => {
                                     key={reward.id}
                                     style={{
                                         position: 'relative',
-                                        background: 'rgba(255, 255, 255, 0.95)',
+                                        background: owned ? 'linear-gradient(135deg, #D1FAE5, #A7F3D0)' : 'rgba(255, 255, 255, 0.95)',
                                         borderRadius: '20px',
-                                        border: owned ? '2px solid #10B981' : affordable ? '2px solid #8B5CF6' : '1px solid rgba(255, 255, 255, 0.2)',
+                                        border: owned ? '2px solid #10B981' : '1px solid rgba(255, 255, 255, 0.2)',
                                         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
                                         transition: 'all 0.3s ease',
-                                        opacity: owned ? 0.8 : 1
+                                        overflow: 'hidden'
                                     }}
                                 >
                                     <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -386,128 +388,123 @@ const RewardStore = ({ userId, userName, onPurchase }) => {
                                             fontWeight: '700',
                                             color: '#1F2937',
                                             margin: '0 0 0.5rem 0'
-                                        }}>{reward.name}</h3>
-                                        
-                                        <div style={{
-                                            display: 'inline-block',
-                                            padding: '0.25rem 0.75rem',
-                                            background: 'rgba(139, 92, 246, 0.1)',
-                                            color: '#8B5CF6',
-                                            borderRadius: '12px',
-                                            fontSize: '0.75rem',
-                                            fontWeight: '600',
-                                            marginBottom: '0.75rem'
                                         }}>
-                                            {reward.category}
-                                        </div>
-
+                                            {reward.name}
+                                        </h3>
                                         <p style={{
                                             color: '#6B7280',
-                                            margin: '0 0 1.5rem 0',
-                                            lineHeight: '1.5',
                                             fontSize: '0.9rem',
-                                            minHeight: '40px'
-                                        }}>{reward.description}</p>
+                                            margin: '0 0 1rem 0',
+                                            lineHeight: '1.5'
+                                        }}>
+                                            {reward.description}
+                                        </p>
 
                                         <div style={{
-                                            display: 'flex',
+                                            display: 'inline-flex',
                                             alignItems: 'center',
-                                            justifyContent: 'center',
-                                            marginBottom: '1rem',
-                                            fontSize: '1.5rem',
-                                            fontWeight: '800',
-                                            color: affordable ? '#10B981' : '#EF4444'
+                                            gap: '0.5rem',
+                                            padding: '0.5rem 1rem',
+                                            background: owned ? '#10B981' : affordable ? '#8B5CF6' : '#9CA3AF',
+                                            color: 'white',
+                                            borderRadius: '12px',
+                                            fontSize: '1.125rem',
+                                            fontWeight: '700',
+                                            marginBottom: '1rem'
                                         }}>
-                                            <span style={{ marginRight: '0.5rem' }}>🪙</span>
-                                            {reward.cost}
+                                            <span>⭐</span>
+                                            <span>{reward.cost}</span>
                                         </div>
 
-                                        {owned ? (
-                                            <button
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.75rem 1.5rem',
-                                                    borderRadius: '16px',
-                                                    fontWeight: '700',
-                                                    fontSize: '1rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '0.5rem',
-                                                    border: 'none',
-                                                    cursor: 'not-allowed',
-                                                    background: 'linear-gradient(135deg, #10B981, #059669)',
-                                                    color: 'white'
-                                                }}
-                                                disabled
-                                            >
-                                                <Check size={20} />
-                                                <span>Owned</span>
-                                            </button>
-                                        ) : affordable ? (
-                                            <button
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.75rem 1.5rem',
-                                                    borderRadius: '16px',
-                                                    fontWeight: '700',
-                                                    fontSize: '1rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '0.5rem',
-                                                    border: 'none',
-                                                    cursor: isPurchasing ? 'not-allowed' : 'pointer',
-                                                    background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-                                                    color: 'white',
-                                                    boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
-                                                    transition: 'all 0.2s ease'
-                                                }}
-                                                onClick={() => handlePurchase(reward)}
-                                                disabled={isPurchasing}
-                                                onMouseEnter={(e) => {
-                                                    if (!isPurchasing) {
-                                                        e.target.style.transform = 'translateY(-2px)';
-                                                        e.target.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
-                                                    }
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    e.target.style.transform = 'translateY(0)';
-                                                    e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
-                                                }}
-                                            >
-                                                {isPurchasing ? (
-                                                    <>⏳ Buying...</>
-                                                ) : (
-                                                    <>
-                                                        <ShoppingCart size={20} />
-                                                        <span>Buy Now</span>
-                                                    </>
-                                                )}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '0.75rem 1.5rem',
-                                                    borderRadius: '16px',
-                                                    fontWeight: '700',
-                                                    fontSize: '1rem',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '0.5rem',
-                                                    border: 'none',
-                                                    cursor: 'not-allowed',
-                                                    background: '#E5E7EB',
-                                                    color: '#9CA3AF'
-                                                }}
-                                                disabled
-                                            >
-                                                <Lock size={20} />
-                                                <span>Need {reward.cost - userPoints} More</span>
-                                            </button>
-                                        )}
+                                        <div>
+                                            {owned ? (
+                                                <button
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.75rem 1.5rem',
+                                                        borderRadius: '16px',
+                                                        fontWeight: '700',
+                                                        fontSize: '1rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        border: 'none',
+                                                        cursor: 'not-allowed',
+                                                        background: '#10B981',
+                                                        color: 'white',
+                                                        opacity: 0.8
+                                                    }}
+                                                    disabled
+                                                >
+                                                    <Check size={20} />
+                                                    <span>Owned</span>
+                                                </button>
+                                            ) : affordable ? (
+                                                <button
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.75rem 1.5rem',
+                                                        borderRadius: '16px',
+                                                        fontWeight: '700',
+                                                        fontSize: '1rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        border: 'none',
+                                                        cursor: isPurchasing ? 'not-allowed' : 'pointer',
+                                                        background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                                                        color: 'white',
+                                                        boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+                                                        transition: 'all 0.2s ease'
+                                                    }}
+                                                    onClick={() => handlePurchase(reward)}
+                                                    disabled={isPurchasing}
+                                                    onMouseEnter={(e) => {
+                                                        if (!isPurchasing) {
+                                                            e.target.style.transform = 'translateY(-2px)';
+                                                            e.target.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.4)';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.target.style.transform = 'translateY(0)';
+                                                        e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.3)';
+                                                    }}
+                                                >
+                                                    {isPurchasing ? (
+                                                        <>⏳ Buying...</>
+                                                    ) : (
+                                                        <>
+                                                            <ShoppingCart size={20} />
+                                                            <span>Buy Now</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.75rem 1.5rem',
+                                                        borderRadius: '16px',
+                                                        fontWeight: '700',
+                                                        fontSize: '1rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '0.5rem',
+                                                        border: 'none',
+                                                        cursor: 'not-allowed',
+                                                        background: '#E5E7EB',
+                                                        color: '#9CA3AF'
+                                                    }}
+                                                    disabled
+                                                >
+                                                    <Lock size={20} />
+                                                    <span>Need {reward.cost - userPoints} More</span>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {owned && (

@@ -46,25 +46,55 @@ const AuthCallback = () => {
 
                 // Verify tokens were saved
                 const savedToken = localStorage.getItem('userToken') ||
-                    localStorage.getItem('pixelplay_token');
+                    localStorage.getItem('pixelplay_token') ||
+                    localStorage.getItem('access_token');
 
                 if (savedToken) {
                     console.log('✅ Tokens stored successfully!');
                     console.log('📦 Token keys in storage:', Object.keys(localStorage).filter(k => k.includes('token')));
 
-                    // Try to fetch user profile
+                    const backendUrl = import.meta.env.VITE_BACKEND_URL ||
+                        'https://stunning-palm-tree-g4p7v5x9wwqj2wqvr-3001.app.github.dev';
+
+                    // STEP 1: Test if the token works with the test endpoint
+                    console.log('🧪 Testing token validity...');
                     try {
-                        const backendUrl = import.meta.env.VITE_BACKEND_URL ||
-                            'https://stunning-palm-tree-g4p7v5x9wwqj2wqvr-3001.app.github.dev';
-
-                        console.log('🔍 Fetching user profile...');
-
-                        const response = await fetch(`${backendUrl}/api/auth/profile`, {
+                        const testResponse = await fetch(`${backendUrl}/api/auth/test-token`, {
+                            method: 'GET',
                             headers: {
                                 'Authorization': `Bearer ${accessToken}`,
                                 'Content-Type': 'application/json'
                             }
                         });
+
+                        console.log('🧪 Test token response status:', testResponse.status);
+
+                        if (testResponse.ok) {
+                            const testData = await testResponse.json();
+                            console.log('✅ Token is valid!', testData);
+                        } else {
+                            const errorText = await testResponse.text();
+                            console.error('❌ Token test failed:', testResponse.status, errorText);
+                        }
+                    } catch (testError) {
+                        console.error('❌ Token test error:', testError);
+                    }
+
+                    // STEP 2: Try to fetch user profile
+                    try {
+                        console.log('🔍 Fetching user profile...');
+                        console.log('🔑 Using token:', accessToken.substring(0, 20) + '...');
+
+                        const response = await fetch(`${backendUrl}/api/auth/profile`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        console.log('📡 Profile response status:', response.status);
+                        console.log('📡 Profile response headers:', Object.fromEntries(response.headers.entries()));
 
                         if (response.ok) {
                             const data = await response.json();
@@ -80,12 +110,18 @@ const AuthCallback = () => {
                                 navigate('/home');
                             }, 1500);
                         } else {
-                            console.warn('⚠️ Profile fetch failed, but continuing with login');
+                            const errorData = await response.text();
+                            console.warn('⚠️ Profile fetch failed:', response.status, errorData);
+                            console.warn('⚠️ But continuing with login anyway');
+
+                            // Continue to home even if profile fetch fails
                             setStatus('success');
                             setTimeout(() => navigate('/home'), 1500);
                         }
                     } catch (fetchError) {
                         console.warn('⚠️ Could not fetch profile, but tokens are saved:', fetchError);
+
+                        // Continue to home even if profile fetch fails
                         setStatus('success');
                         setTimeout(() => navigate('/home'), 1500);
                     }

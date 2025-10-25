@@ -2,24 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserData, logout, requireAuth } from '../utils/auth';
 import '../styles/Dashboard.css';
-
-// ===================================
-// 🎯 IMPORT THE STATS HOOK
-// ===================================
-// Make sure you have useUserStats.js in your hooks folder!
-// If not, copy it from the previous files
 import { useUserStats } from '../hooks/useUserStats';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const user = getUserData();
-
-  // ===================================
-  // 📊 USE THE STATS HOOK FOR REAL DATA
-  // ===================================
   const { userStats, loading: statsLoading, refreshStats } = useUserStats();
-
-  // Local loading state for page initialization
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -27,25 +15,34 @@ const Dashboard = () => {
   }, []);
 
   const handleNavigation = (route) => {
-    switch (route) {
-      case 'home':
-        navigate('/');
-        break;
-      case 'games':
-        navigate('/games');
-        break;
-      case 'workout':
-        navigate('/story-creator');
-        break;
-      case 'editor':
-        navigate('/avatar-editor');
-        break;
-      case 'inventory':
-        navigate('/collection');
-        break;
-      default:
-        console.log(`Navigation to ${route} not implemented`);
-    }
+    setLoading(true);
+    setTimeout(() => {
+      switch (route) {
+        case 'home':
+          navigate('/');
+          break;
+        case 'games':
+          navigate('/games');
+          break;
+        case 'workout':
+          navigate('/story-creator');
+          break;
+        case 'editor':
+          navigate('/avatar-editor');
+          break;
+        case 'inventory':
+          navigate('/collection');
+          break;
+        case 'habits':
+          navigate('/habit-tracker');
+          break;
+        case 'rewards':
+          navigate('/reward-store');
+          break;
+        default:
+          console.log(`Navigation to ${route} not implemented`);
+      }
+    }, 300);
   };
 
   const quickActions = [
@@ -85,14 +82,13 @@ const Dashboard = () => {
 
   if (loading || statsLoading) {
     return (
-      <div className="dashboard-loading">
+      <div className="page-loading">
         <div className="loading-spinner"></div>
         <p>Loading your dashboard...</p>
       </div>
     );
   }
 
-  // Calculate level progress
   const currentLevelXP = (userStats.level - 1) * 100;
   const nextLevelXP = userStats.level * 100;
   const xpInCurrentLevel = userStats.xp - currentLevelXP;
@@ -111,30 +107,28 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="nav-center">
-            <button
-              className="nav-btn nav-btn-active"
-              onClick={() => handleNavigation('home')}
-            >
+            <button className="nav-btn nav-btn-active" onClick={() => handleNavigation('home')}>
               <span className="nav-btn-icon">🏠</span>
               Home
             </button>
-            <button
-              className="nav-btn"
-              onClick={() => handleNavigation('editor')}
-            >
+            <button className="nav-btn" onClick={() => handleNavigation('editor')}>
               <span className="nav-btn-icon">🎨</span>
               Editor
             </button>
-            <button
-              className="nav-btn"
-              onClick={() => handleNavigation('inventory')}
-            >
+            <button className="nav-btn" onClick={() => handleNavigation('inventory')}>
               <span className="nav-btn-icon">👜</span>
               Collection
             </button>
+            <button className="nav-btn" onClick={() => handleNavigation('habits')}>
+              <span className="nav-btn-icon">✅</span>
+              Habits
+            </button>
+            <button className="nav-btn" onClick={() => handleNavigation('rewards')}>
+              <span className="nav-btn-icon">🎁</span>
+              Rewards
+            </button>
           </div>
           <div className="nav-right">
-            {/* ✅ REAL LEVEL AND POINTS FROM BACKEND */}
             <div className="user-level">
               <span className="level-label">Level {userStats.level}</span>
               <span className="points-label">{userStats.xp} pts</span>
@@ -155,7 +149,6 @@ const Dashboard = () => {
               <h1>Welcome Back Champion!</h1>
               <p>Ready to continue your fitness journey?</p>
             </div>
-            {/* ✅ REAL LEVEL AND XP FROM BACKEND */}
             <div className="level-display">
               <div className="level-badge">
                 <span className="level-title">Level {userStats.level}</span>
@@ -168,7 +161,6 @@ const Dashboard = () => {
         {/* Stats and Avatar Section */}
         <section className="stats-avatar-section">
           <div className="section-grid">
-
             {/* Avatar Card */}
             <div className="avatar-section">
               <div className="avatar-card">
@@ -178,31 +170,20 @@ const Dashboard = () => {
                     <div className="avatar-placeholder">
                       <span style={{ fontSize: '3rem' }}>👤</span>
                     </div>
-                    <button
-                      className="avatar-edit-badge"
-                      onClick={() => handleNavigation('editor')}
-                      title="Edit Avatar"
-                    >
+                    <button className="avatar-edit-badge" onClick={() => handleNavigation('editor')} title="Edit Avatar">
                       <span>✏️</span>
                     </button>
                   </div>
                 </div>
-                <button
-                  className="customize-btn"
-                  onClick={() => handleNavigation('editor')}
-                >
+                <button className="customize-btn" onClick={() => handleNavigation('editor')}>
                   Customize Avatar
                 </button>
               </div>
             </div>
 
-            {/* ===================================
-                🎯 UPDATED: STATS GRID WITH REAL DATA
-                =================================== */}
+            {/* Stats Grid */}
             <div className="stats-section">
               <div className="stats-grid-container">
-
-                {/* ✅ WORKOUTS - Real data from backend */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">🏋️</span>
@@ -212,7 +193,6 @@ const Dashboard = () => {
                   <div className="stat-subtitle">Completed</div>
                 </div>
 
-                {/* ✅ ACTIVE TIME - Calculated from games (estimate) */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">⏱️</span>
@@ -222,7 +202,6 @@ const Dashboard = () => {
                   <div className="stat-subtitle">Minutes</div>
                 </div>
 
-                {/* ✅ XP EARNED - Real XP from backend */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">⭐</span>
@@ -232,7 +211,6 @@ const Dashboard = () => {
                   <div className="stat-subtitle">Total Points</div>
                 </div>
 
-                {/* ✅ STREAK - Real streak from backend */}
                 <div className="stat-card">
                   <div className="stat-header">
                     <span className="stat-icon">🔥</span>
@@ -241,7 +219,6 @@ const Dashboard = () => {
                   <div className="stat-value">{userStats.weeklyStreak}</div>
                   <div className="stat-subtitle">Days</div>
                 </div>
-
               </div>
             </div>
           </div>
@@ -252,11 +229,7 @@ const Dashboard = () => {
           <h2 className="section-title">Quick Actions</h2>
           <div className="actions-grid">
             {quickActions.map(action => (
-              <button
-                key={action.id}
-                className={`action-card bg-gradient-to-br ${action.gradient}`}
-                onClick={action.action}
-              >
+              <button key={action.id} className={`action-card bg-gradient-to-br ${action.gradient}`} onClick={action.action}>
                 <div className="action-content">
                   <div className="action-icon">{action.icon}</div>
                   <h3 className="action-title">{action.title}</h3>
@@ -265,92 +238,88 @@ const Dashboard = () => {
                 <div className="action-arrow">→</div>
               </button>
             ))}
+            
+            {/* NEW: Track Progress Button */}
+            <button className="action-card bg-gradient-to-br from-indigo-400 to-cyan-500" onClick={() => handleNavigation('habits')}>
+              <div className="action-content">
+                <div className="action-icon">✅</div>
+                <h3 className="action-title">Track Progress</h3>
+                <p className="action-description">Complete daily habits</p>
+              </div>
+              <div className="action-arrow">→</div>
+            </button>
+
+            {/* NEW: Reward Store Button */}
+            <button className="action-card bg-gradient-to-br from-yellow-400 to-pink-500" onClick={() => handleNavigation('rewards')}>
+              <div className="action-content">
+                <div className="action-icon">🎁</div>
+                <h3 className="action-title">Reward Store</h3>
+                <p className="action-description">Spend your points</p>
+              </div>
+              <div className="action-arrow">→</div>
+            </button>
           </div>
         </section>
 
-        {/* ===================================
-            🎯 UPDATED: PROGRESS SECTION WITH REAL DATA
-            =================================== */}
+        {/* Progress Section */}
         <section className="progress-section" style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}>
-          <div
-            className="progress-card"
-            style={{
-              background: 'linear-gradient(135deg, #a855f7, #E32BED, #fb923c)',
-              borderRadius: '24px',
-              padding: '2rem',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-              textAlign: 'center',
-              color: '#fff',
-              width: '100%',
-              maxWidth: '800px',
-            }}
-          >
+          <div className="progress-card" style={{
+            background: 'linear-gradient(135deg, #a855f7, #E32BED, #fb923c)',
+            borderRadius: '24px',
+            padding: '2rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center',
+            color: '#fff',
+            width: '100%',
+            maxWidth: '800px',
+          }}>
             <h2 className="section-title" style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: '700' }}>
               Your Progress
             </h2>
 
             <div className="progress-info">
-              {/* ✅ REAL LEVEL AND XP */}
               <div className="progress-level" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '600', marginBottom: '1rem' }}>
                 <span>Level {userStats.level}</span>
                 <span>{userStats.xp} XP</span>
               </div>
 
-              {/* ✅ REAL PROGRESS BAR */}
               <div className="progress-bar-container" style={{ background: 'rgba(255, 255, 255, 0.2)', borderRadius: '10px', height: '12px', overflow: 'hidden', marginBottom: '0.75rem' }}>
-                <div
-                  className="progress-bar"
-                  style={{
-                    width: '100%',
+                <div className="progress-bar" style={{ width: '100%', height: '100%', borderRadius: '10px' }}>
+                  <div className="progress-fill" style={{
+                    width: `${levelProgress}%`,
+                    background: 'rgba(255, 255, 255, 0.9)',
                     height: '100%',
-                    borderRadius: '10px',
-                  }}
-                >
-                  <div
-                    className="progress-fill"
-                    style={{
-                      width: `${levelProgress}%`,
-                      background: 'rgba(255, 255, 255, 0.9)',
-                      height: '100%',
-                      transition: 'width 0.5s ease-in-out',
-                    }}
-                  ></div>
+                    transition: 'width 0.5s ease-in-out',
+                  }}></div>
                 </div>
               </div>
 
-              {/* ✅ REAL XP NEEDED */}
               <span className="progress-text" style={{ fontSize: '0.9rem', opacity: 0.9 }}>
                 Next Level: {xpNeededForLevel - xpInCurrentLevel} XP to go
               </span>
             </div>
 
-            {/* Optional: Refresh button */}
-            <button
-              onClick={refreshStats}
-              style={{
-                marginTop: '1.5rem',
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '2px solid rgba(255, 255, 255, 0.4)',
-                color: 'white',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.95rem',
-                transition: 'all 0.2s'
-              }}
+            <button onClick={refreshStats} style={{
+              marginTop: '1.5rem',
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: '2px solid rgba(255, 255, 255, 0.4)',
+              color: 'white',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.95rem',
+              transition: 'all 0.2s'
+            }}
               onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-            >
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}>
               🔄 Refresh Stats
             </button>
           </div>
         </section>
 
-        {/* ===================================
-            💎 BONUS: ADDITIONAL STATS DISPLAY
-            =================================== */}
+        {/* Additional Stats */}
         <section className="additional-stats" style={{ padding: '2rem' }}>
           <div style={{
             background: 'linear-gradient(to right top, #fb735f, #ff6871, #ff5f85, #ff599c, #ff58b5, #fa5ec4, #f365d2, #eb6ce0, #df74e4, #d37be6, #c881e7, #bd86e7)',
@@ -403,7 +372,6 @@ const Dashboard = () => {
             </div>
           </div>
         </section>
-
       </main>
     </div>
   );

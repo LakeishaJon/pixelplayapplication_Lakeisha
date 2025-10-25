@@ -14,7 +14,7 @@ import axios from 'axios';
  * - Returns loading state and refresh function
  */
 
-const API_BASE_URL = 'https://stunning-palm-tree-g4p7v5x9wwqj2wqvr-3001.app.github.dev/'
+const API_BASE_URL = 'https://stunning-palm-tree-g4p7v5x9wwqj2wqvr-3001.app.github.dev'
 
 export const useUserStats = () => {
     const [userStats, setUserStats] = useState({
@@ -37,9 +37,9 @@ export const useUserStats = () => {
         try {
             setLoading(true);
             setError(null);
-            
+
             const token = localStorage.getItem('token');
-            
+
             // Try to load from localStorage first for instant display
             const savedStats = localStorage.getItem('pixelplay_user_stats');
             if (savedStats) {
@@ -47,7 +47,7 @@ export const useUserStats = () => {
                 setUserStats(parsed);
                 console.log('📊 Loaded stats from localStorage:', parsed);
             }
-            
+
             // If user is logged in, fetch fresh data from backend
             if (token) {
                 console.log('📡 Fetching fresh stats from backend...');
@@ -57,7 +57,7 @@ export const useUserStats = () => {
                         headers: { 'Authorization': `Bearer ${token}` }
                     }
                 );
-                
+
                 if (response.data.success) {
                     const stats = response.data.stats;
                     const loadedStats = {
@@ -70,19 +70,19 @@ export const useUserStats = () => {
                         completedGames: stats.completed_games || [],
                         favoriteGames: stats.favorite_games || []
                     };
-                    
+
                     setUserStats(loadedStats);
-                    
+
                     // Save to localStorage as backup
                     localStorage.setItem('pixelplay_user_stats', JSON.stringify(loadedStats));
-                    
+
                     console.log('✅ Stats updated from backend:', loadedStats);
                 }
             }
         } catch (err) {
             console.error('❌ Failed to load stats:', err);
             setError(err.message);
-            
+
             // Keep using localStorage data if backend fails
         } finally {
             setLoading(false);
