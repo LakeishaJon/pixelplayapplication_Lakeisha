@@ -1,17 +1,29 @@
-
 import React from 'react';
-import { RouterProvider } from 'react-router-dom';
-import { AvatarProvider } from './Context/AvatarContext'; 
-import router from './router';
-import '../styles/Avatar.css'; 
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AvatarProvider } from './Context/AvatarContext';
+import AvatarEditorPage from './pages/AvatarEditorPage';
+import Dashboard from './pages/Dashboard';
+import '../styles/Avatar.css';
 
 function App() {
   return (
     <div className="App">
-      {/* 🎫 AvatarProvider: Gives ALL pages access to avatar features */}
+      {/* 🎫 STEP 1: Give everyone the membership wristband */}
       <AvatarProvider>
-        {/* 🛣️ RouterProvider: Handles all page navigation using your router.js */}
-        <RouterProvider router={router} />
+        
+        {/* 🛣️ STEP 2: Set up the park map for navigation */}
+        <Router>
+          <Routes>
+            {/* 🏠 Home entrance - Shows the Dashboard */}
+            <Route path="/" element={<Dashboard />} />
+            
+            {/* 🎨 Avatar customization booth */}
+            <Route path="/avatar-editor" element={<AvatarEditorPage />} />
+            
+            {/* Add more rides (pages) here! */}
+          </Routes>
+        </Router>
+        
       </AvatarProvider>
     </div>
   );

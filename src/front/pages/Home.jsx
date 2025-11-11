@@ -1,32 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { logout, getUserData, requireAuth } from '../utils/auth';
+import { logout, getUserData, isAuthenticated } from '../utils/auth';
 import '../styles/Home.css';
 import { useUserStats } from '../hooks/useUserStats';
+import { useAvatar } from '../Contexts/AvatarContext';
+import AvatarDisplay from '../components/AvatarDisplay';
 
 const Home = () => {
   const navigate = useNavigate();
   const [isLoaded, setIsLoaded] = useState(false);
   const user = getUserData();
-  
-  // ===================================
-  // 📊 USE THE STATS HOOK
-  // ===================================
-  const { userStats, loading: statsLoading } = useUserStats();
+
+  // ✅ FIX: Add error handling for hooks
+  const { userStats, loading: statsLoading, error: statsError } = useUserStats();
+  const { currentAvatar, error: avatarError } = useAvatar();
 
   useEffect(() => {
-    // Check authentication on component mount
-    requireAuth('/login');
+    console.log('🏠 Home component mounted');
+
+    // ✅ FIX: Check auth without causing redirect loop
+    // Let ProtectedRoute handle this instead of requireAuth
+    if (!isAuthenticated()) {
+      console.log('❌ Not authenticated, redirecting to login');
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    console.log('✅ User authenticated, loading home page');
     setIsLoaded(true);
-  }, []);
+  }, [navigate]); // ✅ FIX: Added navigate to dependency array
 
   const handleNavigation = (path) => {
+    console.log('🔀 Navigating to:', path);
     navigate(path);
   };
 
   const handleLogout = async () => {
+    console.log('👋 Logging out...');
     await logout();
-    window.location.href = '/login';
+    navigate('/login', { replace: true });
   };
 
   const features = [
@@ -79,6 +91,14 @@ const Home = () => {
     { number: '∞', label: 'Fun Levels' }
   ];
 
+  // ✅ FIX: Provide default values for potentially undefined data
+  const safeUserStats = {
+    level: userStats?.level ?? 1,
+    xp: userStats?.xp ?? 0,
+    totalGamesPlayed: userStats?.totalGamesPlayed ?? 0,
+    weeklyStreak: userStats?.weeklyStreak ?? 0
+  };
+
   return (
     <div className="home-container">
       {/* Navigation Header */}
@@ -90,7 +110,9 @@ const Home = () => {
           </div>
           <div className="nav-actions">
             {user && (
-              <span className="welcome-text">Welcome, {user.name || user.email}!</span>
+              <span className="welcome-text">
+                Welcome, {user.name || user.email || 'Player'}!
+              </span>
             )}
             <button
               className="nav-button nav-button-secondary"
@@ -141,10 +163,8 @@ const Home = () => {
               </button>
             </div>
           </div>
-          
-          {/* ===================================
-              🎯 UPDATED: STAT CARD WITH REAL DATA
-              =================================== */}
+
+          {/* Hero visual with avatar */}
           <div className="hero-visual">
             <div className="hero-card">
               <div className="card-header">
@@ -152,35 +172,91 @@ const Home = () => {
               </div>
               <div className="card-content">
                 <div className="avatar-preview">
-                  <div className="avatar-circle">
-                    <span className="avatar-icon">👤</span>
+                  <div className="avatar-circle" style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    {/* ✅ FIX: Only render if currentAvatar exists */}
+                    {currentAvatar ? (
+                      <AvatarDisplay
+                        config={currentAvatar}
+                        size="large"
+                        showLevel={true}
+                        level={safeUserStats.level}
+                        showBorder={true}
+                      />
+                    ) : (
+                      <div style={{ fontSize: '4rem' }}>👤</div>
+                    )}
                   </div>
                   <div className="avatar-info">
-                    {/* ✅ REAL LEVEL FROM BACKEND */}
                     <span className="avatar-level">
-                      Level {statsLoading ? '...' : userStats.level}
+                      Level {statsLoading ? '...' : safeUserStats.level}
                     </span>
-                    {/* ✅ REAL XP FROM BACKEND */}
                     <span className="avatar-xp">
-                      {statsLoading ? '...' : userStats.xp} XP
+                      {statsLoading ? '...' : safeUserStats.xp} XP
                     </span>
                   </div>
                 </div>
                 <div className="preview-stats">
                   <div className="preview-stat">
                     <span className="stat-icon">🏋️</span>
-                    {/* ✅ REAL WORKOUTS FROM BACKEND */}
                     <span className="stat-text">
-                      {statsLoading ? '...' : userStats.totalGamesPlayed} Workouts
+                      {statsLoading ? '...' : safeUserStats.totalGamesPlayed} Workouts
                     </span>
                   </div>
                   <div className="preview-stat">
                     <span className="stat-icon">🔥</span>
-                    {/* ✅ REAL STREAK FROM BACKEND */}
                     <span className="stat-text">
-                      {statsLoading ? '...' : userStats.weeklyStreak} Day Streak
+                      {statsLoading ? '...' : safeUserStats.weeklyStreak} Day Streak
                     </span>
                   </div>
+                </div>
+                {/* Quick avatar actions */}
+                <div style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  marginTop: '1rem',
+                  justifyContent: 'center'
+                }}>
+                  <button
+                    onClick={() => handleNavigation('/avatar-editor')}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      transition: 'transform 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    🎨 Edit Avatar
+                  </button>
+                  <button
+                    onClick={() => handleNavigation('/avatar-manager')}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      transition: 'transform 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    👥 Collection
+                  </button>
                 </div>
               </div>
             </div>

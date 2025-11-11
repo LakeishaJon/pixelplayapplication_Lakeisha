@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAvatar } from '../Contexts/AvatarContext';
 import AvatarDisplay from './AvatarDisplay';
+import ProfileCard from '../components/ProfileCard';
 import '../styles/Navigation.css';
 
 const Navigation = ({ currentPage, onNavigate }) => {

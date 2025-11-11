@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { getUserData, logout, requireAuth } from '../utils/auth';
 import '../styles/Dashboard.css';
 import { useUserStats } from '../hooks/useUserStats';
+import { useAvatar } from '../Contexts/AvatarContext';
+import AvatarDisplay from '../components/AvatarDisplay';
+import ProfileCard from '../components/ProfileCard';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const user = getUserData();
   const { userStats, loading: statsLoading, refreshStats } = useUserStats();
+  const { currentAvatar } = useAvatar();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,6 +42,9 @@ const Dashboard = () => {
           break;
         case 'rewards':
           navigate('/reward-store');
+          break;
+        case 'avatars':
+          navigate('/avatar-manager');
           break;
         default:
           console.log(`Navigation to ${route} not implemented`);
@@ -129,13 +136,12 @@ const Dashboard = () => {
             </button>
           </div>
           <div className="nav-right">
-            <div className="user-level">
-              <span className="level-label">Level {userStats.level}</span>
-              <span className="points-label">{userStats.xp} pts</span>
-            </div>
-            <div className="avatar-badge">
-              <span>👤</span>
-            </div>
+            {/* ✨ NEW: ProfileCard in Navbar */}
+            <ProfileCard 
+              variant="navbar"
+              showLevel={true}
+              onViewProfile={() => handleNavigation('home')}
+            />
           </div>
         </div>
       </nav>
@@ -161,23 +167,66 @@ const Dashboard = () => {
         {/* Stats and Avatar Section */}
         <section className="stats-avatar-section">
           <div className="section-grid">
-            {/* Avatar Card */}
+            {/* ✨ UPDATED: Avatar Card with Real Avatar Display */}
             <div className="avatar-section">
               <div className="avatar-card">
                 <h2>Your Avatar</h2>
                 <div className="avatar-display">
                   <div className="avatar-circle">
-                    <div className="avatar-placeholder">
-                      <span style={{ fontSize: '3rem' }}>👤</span>
-                    </div>
-                    <button className="avatar-edit-badge" onClick={() => handleNavigation('editor')} title="Edit Avatar">
+                    {/* ✅ NEW: Real Avatar Display */}
+                    <AvatarDisplay
+                      config={currentAvatar}
+                      size="xlarge"
+                      showLevel={true}
+                      level={userStats.level}
+                      showBorder={true}
+                    />
+                    <button 
+                      className="avatar-edit-badge" 
+                      onClick={() => handleNavigation('editor')} 
+                      title="Edit Avatar"
+                      style={{
+                        position: 'absolute',
+                        bottom: '10px',
+                        right: '10px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                        transition: 'transform 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
                       <span>✏️</span>
                     </button>
                   </div>
                 </div>
-                <button className="customize-btn" onClick={() => handleNavigation('editor')}>
-                  Customize Avatar
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                  <button 
+                    className="customize-btn" 
+                    onClick={() => handleNavigation('editor')}
+                    style={{ flex: 1 }}
+                  >
+                    🎨 Customize
+                  </button>
+                  <button 
+                    className="customize-btn" 
+                    onClick={() => handleNavigation('avatars')}
+                    style={{ 
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    }}
+                  >
+                    👥 Collection
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -239,7 +288,7 @@ const Dashboard = () => {
               </button>
             ))}
             
-            {/* NEW: Track Progress Button */}
+            {/* Track Progress Button */}
             <button className="action-card bg-gradient-to-br from-indigo-400 to-cyan-500" onClick={() => handleNavigation('habits')}>
               <div className="action-content">
                 <div className="action-icon">✅</div>
@@ -249,7 +298,7 @@ const Dashboard = () => {
               <div className="action-arrow">→</div>
             </button>
 
-            {/* NEW: Reward Store Button */}
+            {/* Reward Store Button */}
             <button className="action-card bg-gradient-to-br from-yellow-400 to-pink-500" onClick={() => handleNavigation('rewards')}>
               <div className="action-content">
                 <div className="action-icon">🎁</div>
