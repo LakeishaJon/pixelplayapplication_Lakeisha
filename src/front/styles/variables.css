@@ -1,0 +1,83 @@
+:root {
+  /* Primary Colors */
+  --primary-green: #4CAF50;
+  --primary-blue: #2196F3;
+  --primary-orange: #FF9800;
+  --primary-purple: #9C27B0;
+  --primary-red: #F44336;
+
+  /* Secondary Colors */
+  --light-green: #E8F5E8;
+  --light-blue: #E3F2FD;
+  --light-orange: #FFF3E0;
+  --light-purple: #F3E5F5;
+  --light-red: #FFEBEE;
+
+  /* Neutral Colors */
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --text-light: #999999;
+  --border-color: #e0e0e0;
+  --background-light: #f9f9f9;
+  --white: #ffffff;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-success: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  --gradient-warning: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+  --gradient-background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+
+  /* Spacing */
+  --spacing-xs: 5px;
+  --spacing-sm: 10px;
+  --spacing-md: 15px;
+  --spacing-lg: 20px;
+  --spacing-xl: 30px;
+
+  /* Border Radius */
+  --radius-sm: 5px;
+  --radius-md: 10px;
+  --radius-lg: 15px;
+  --radius-xl: 20px;
+  --radius-round: 50%;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 15px 35px rgba(0, 0, 0, 0.1);
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+
+  /* Z-indexes */
+  --z-navigation: 100;
+  --z-modal: 1000;
+  --z-tooltip: 2000;
+}
+
+/* Usage examples with CSS variables */
+.btn-primary {
+  background: var(--primary-green);
+  color: var(--white);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.btn-primary:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.card {
+  background: var(--white);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: var(--shadow-sm);
+}
+

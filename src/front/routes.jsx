@@ -1,30 +1,175 @@
-// Import necessary components and functions from react-router-dom.
+/**
+ * 🗺️ App Routes Configuration
+ * 
+ * This file defines all the pages in your app and how to navigate between them!
+ * Think of it like a map of your entire application.
+ */
 
-import {
-    createBrowserRouter,
-    createRoutesFromElements,
-    Route,
-} from "react-router-dom";
-import { Layout } from "./pages/Layout";
-import { Home } from "./pages/Home";
-import { Single } from "./pages/Single";
-import { Demo } from "./pages/Demo";
+import React from "react";
+import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom";
+import RootLayout from "./components/RootLayout";
+import ProtectedRoute from "./Contexts/ProtectedRoute";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import GameHub from "./components/GameHub";
+import AvatarEditor from "./components/AvatarEditor";
+import HabitTracker from "./pages/HabitTracker";
+import RewardStore from "./pages/RewardStore";
+import StoryCreator from "./pages/StoryCreator";
+import AuthCallback from './pages/AuthCallback';
+import AvatarManager from "./components/AvatarManager";
 
-export const router = createBrowserRouter(
-    createRoutesFromElements(
-    // CreateRoutesFromElements function allows you to build route elements declaratively.
-    // Create your routes here, if you want to keep the Navbar and Footer in all views, add your new routes inside the containing Route.
-    // Root, on the contrary, create a sister Route, if you have doubts, try it!
-    // Note: keep in mind that errorElement will be the default page when you don't get a route, customize that page to make your project more attractive.
-    // Note: The child paths of the Layout element replace the Outlet component with the elements contained in the "element" attribute of these child paths.
+// ===============================
+// 🗺️ ROUTER CONFIGURATION
+// ===============================
+// This creates all the routes (pages) in your app
 
-      // Root Route: All navigation will start from here.
-      <Route path="/" element={<Layout />} errorElement={<h1>Not found!</h1>} >
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      // ===============================
+      // 🏠 DEFAULT ROUTE
+      // ===============================
+      // When someone visits your app, send them to login
+      {
+        index: true,
+        element: <Navigate to="/login" replace />,
+      },
 
-        {/* Nested Routes: Defines sub-routes within the BaseHome component. */}
-        <Route path= "/" element={<Home />} />
-        <Route path="/single/:theId" element={ <Single />} />  {/* Dynamic route for single items */}
-        <Route path="/demo" element={<Demo />} />
-      </Route>
-    )
-);
+      // ===============================
+      // 🔓 PUBLIC ROUTES (No login required)
+      // ===============================
+
+      // Login page
+      {
+        path: "login",
+        element: <Login />,
+      },
+
+      // OAuth callback - handles Google login redirect
+      // ⚠️ CRITICAL: This must exist for Google login to work!
+      {
+        path: 'auth/callback',
+        element: <AuthCallback />
+      },
+
+      // ===============================
+      // 🔐 PROTECTED ROUTES (Login required)
+      // ===============================
+
+      // Home page (main landing after login)
+      {
+        path: "home",
+        element: (
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Dashboard
+      {
+        path: "dashboard",
+        element: (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Games section
+      {
+        path: "games",
+        element: (
+          <ProtectedRoute>
+            <GameHub />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Avatar editor
+      {
+        path: "avatar-editor",
+        element: (
+          <ProtectedRoute>
+            <AvatarEditor />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Avatar collection manager
+      {
+        path: "avatar-manager",
+        element: (
+          <ProtectedRoute>
+            <AvatarManager />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Alternative path for avatar collection
+      {
+        path: "collection",
+        element: (
+          <ProtectedRoute>
+            <AvatarManager />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Habit tracker
+      {
+        path: "habit-tracker",
+        element: (
+          <ProtectedRoute>
+            <HabitTracker />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Reward store
+      {
+        path: "reward-store",
+        element: (
+          <ProtectedRoute>
+            <RewardStore />
+          </ProtectedRoute>
+        ),
+      },
+
+      // Story creator
+      {
+        path: "story-creator",
+        element: (
+          <ProtectedRoute>
+            <StoryCreator />
+          </ProtectedRoute>
+        ),
+      },
+
+      // ===============================
+      // 🔀 CATCH-ALL ROUTE
+      // ===============================
+      // Any unknown URL redirects to login
+      {
+        path: "*",
+        element: <Navigate to="/login" replace />,
+      },
+    ],
+  },
+]);
+
+// ===============================
+// 📦 APP COMPONENT
+// ===============================
+// This wraps the router and provides it to your entire app
+
+function App() {
+  return <RouterProvider router={router} />;
+}
+
+// ✅ CRITICAL FIX: Export App, not router!
+export default router;
